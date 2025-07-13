@@ -82,13 +82,21 @@ class GameRunner:
         while game.status.value == "in_progress" and move_count < max_moves:
             move_count += 1
             
+            # Debug logging
+            logger.debug(
+                f"Game loop iteration {move_count}",
+                extra={
+                    "game_id": game.game_id,
+                    "game_status": game.status.value,
+                    "move_count": move_count,
+                    "max_moves": max_moves
+                }
+            )
+            
             # Get current board state
             board_state = game.get_board_representation("ascii")
             
             try:
-                # Get the prompt that will be sent
-                prompt = self.model.format_prompt(board_state, prompt_format)
-                
                 # Log the move attempt
                 logger.info(
                     f"Move {move_count} - Sending prompt to model",
@@ -100,7 +108,7 @@ class GameRunner:
                     }
                 )
                 
-                # Get model's move
+                # Get model's move (play_move handles prompt formatting internally)
                 response = await self.model.play_move(board_state, prompt_format)
                 
                 # Log the model response
@@ -127,8 +135,11 @@ class GameRunner:
                 action = response.action
                 
                 # Store AI interaction details for the move
+                # Get the actual prompt that was sent (play_move formats it internally)
+                actual_prompt = self.model.format_prompt(board_state, prompt_format if prompt_format != "auto" else self.model.get_optimal_prompt_format())
+                
                 ai_details = {
-                    'prompt_sent': prompt,
+                    'prompt_sent': actual_prompt,
                     'full_response': response.content,
                     'model_reasoning': response.reasoning,
                     'tokens_used': response.tokens_used
@@ -157,6 +168,16 @@ class GameRunner:
                 # Reset error counter on successful move
                 consecutive_errors = 0
                 
+                # Debug: Log end of successful move
+                logger.debug(
+                    f"Move {move_count} completed successfully",
+                    extra={
+                        "game_id": game.game_id,
+                        "game_status_after_move": game.status.value,
+                        "will_continue": game.status.value == "in_progress" and move_count < max_moves
+                    }
+                )
+                
             except InvalidModelResponseError as e:
                 consecutive_errors += 1
                 
@@ -175,8 +196,15 @@ class GameRunner:
                 
                 # Create a dummy action for the failed move
                 dummy_action = Action(ActionType.REVEAL, Position(0, 0))
+                
+                # Try to get the prompt that would have been sent
+                try:
+                    actual_prompt = self.model.format_prompt(board_state, prompt_format if prompt_format != "auto" else self.model.get_optimal_prompt_format())
+                except:
+                    actual_prompt = None
+                    
                 ai_details = {
-                    'prompt_sent': prompt if 'prompt' in locals() else None,
+                    'prompt_sent': actual_prompt,
                     'full_response': response.content if 'response' in locals() else None,
                     'model_reasoning': response.reasoning if 'response' in locals() else None,
                     'tokens_used': response.tokens_used if 'response' in locals() else None
@@ -205,6 +233,18 @@ class GameRunner:
                 if verbose:
                     print(f"Unexpected error: {e}")
                 break
+        
+        # Debug: Log why loop exited
+        logger.debug(
+            f"Game loop exited",
+            extra={
+                "game_id": game.game_id,
+                "final_status": game.status.value,
+                "total_moves": move_count,
+                "max_moves": max_moves,
+                "loop_condition": game.status.value == "in_progress" and move_count < max_moves
+            }
+        )
         
         # Ensure game has end time
         if not game.end_time:
