@@ -285,7 +285,7 @@
                                     <td>${game.num_moves}</td>
                                     <td>${(game.board_coverage * 100).toFixed(1)}%</td>
                                     <td>${game.mines_correctly_flagged}/${game.total_mines}</td>
-                                    <td><button class="toggle-moves" onclick="toggleGameMoves(${index})">View Moves</button></td>
+                                    <td><button class="toggle-moves" onclick="toggleGameMoves(${index}, event)">View Moves</button></td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -336,15 +336,16 @@
             document.getElementById('summaryContent').innerHTML = html;
         }
 
-        function toggleGameMoves(gameIndex) {
+        function toggleGameMoves(gameIndex, event) {
             const movesDiv = document.getElementById(`game-${gameIndex}-moves`);
+            const button = event.target;
             if (movesDiv) {
                 if (movesDiv.style.display === 'none') {
                     movesDiv.style.display = 'block';
-                    event.target.textContent = 'Hide Moves';
+                    button.textContent = 'Hide Moves';
                 } else {
                     movesDiv.style.display = 'none';
-                    event.target.textContent = 'View Moves';
+                    button.textContent = 'View Moves';
                 }
             }
         }

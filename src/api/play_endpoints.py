@@ -89,7 +89,7 @@ async def start_play(
         f"Play session requested",
         extra={
             "play_job_id": job_id,
-            "model": request.model_name,
+            "model_name": request.model_name,
             "provider": request.model_provider,
             "num_games": request.num_games,
             "game_type": request.game_type,
