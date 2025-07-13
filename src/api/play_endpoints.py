@@ -14,7 +14,7 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
 from pydantic import BaseModel
 
 from src.core.config import settings
-from src.core.logging_config import get_logger, LogContext
+from src.core.logging_config import get_logger
 from src.core.types import Difficulty, ModelConfig
 from src.core.storage import get_storage
 from src.evaluation import EvaluationEngine
@@ -276,161 +276,160 @@ async def run_play_session(
     """Background task to run a play session (generate games and evaluate)."""
     start_time = time.time()
     
-    with LogContext(logger, job_id=job_id, model=model_name):
-        try:
-            logger.info(f"Starting play session")
-            games[job_id].status = "running"
-            games[job_id].message = f"Generating {num_games} games..."
-            
-            # Step 1: Generate games
-            logger.info(f"Generating games for play session")
-            generator = TaskGenerator()
-            repository = TaskRepository()
-            
-            generated_tasks = []
-            for i in range(num_games):
-                try:
-                    # Update progress
-                    games[job_id].progress = (i / num_games) * 0.3  # First 30% for generation
-                    
-                    # Convert string difficulty to enum if provided
-                    diff_enum = None
-                    if difficulty:
-                        try:
-                            diff_enum = Difficulty(difficulty.lower())
-                        except ValueError:
-                            logger.warning(f"Invalid difficulty '{difficulty}', using default")
-                            diff_enum = Difficulty.EXPERT
-                    else:
+    try:
+        logger.info(f"Starting play session", extra={"job_id": job_id, "model": model_name})
+        games[job_id].status = "running"
+        games[job_id].message = f"Generating {num_games} games..."
+        
+        # Step 1: Generate games
+        logger.info(f"Generating games for play session")
+        generator = TaskGenerator()
+        repository = TaskRepository()
+        
+        generated_tasks = []
+        for i in range(num_games):
+            try:
+                # Update progress
+                games[job_id].progress = (i / num_games) * 0.3  # First 30% for generation
+                
+                # Convert string difficulty to enum if provided
+                diff_enum = None
+                if difficulty:
+                    try:
+                        diff_enum = Difficulty(difficulty.lower())
+                    except ValueError:
+                        logger.warning(f"Invalid difficulty '{difficulty}', using default")
                         diff_enum = Difficulty.EXPERT
-                    
-                    # Generate task based on type
-                    if game_type == "static":
-                        task = generator.generate_static_task(difficulty=diff_enum)
-                    elif game_type == "interactive":
-                        task = generator.generate_interactive_task(difficulty=diff_enum)
-                    else:
-                        # Mix of both
-                        task = (generator.generate_static_task(difficulty=diff_enum) 
-                                if i % 2 == 0 else 
-                                generator.generate_interactive_task(difficulty=diff_enum))
-                    
-                    # Save task
-                    repository.save_task(task)
-                    generated_tasks.append(task)
-                    
-                except Exception as task_error:
-                    logger.warning(
-                        f"Failed to generate game {i}",
-                        extra={"error": str(task_error)},
-                        exc_info=True
-                    )
-            
-            if not generated_tasks:
-                raise Exception("Failed to generate any games")
-            
-            logger.info(f"Generated {len(generated_tasks)} games")
-            games[job_id].message = f"Playing {len(generated_tasks)} games with {model_name}..."
-            
-            # Step 2: Create model and evaluate
-            logger.debug(f"Creating model configuration")
-            model_config = ModelConfig(
-                name=model_name,
-                provider=model_provider,
-                model_id=model_name,
-                temperature=0.7,
-                max_tokens=1000,
-                additional_params={}
+                else:
+                    diff_enum = Difficulty.EXPERT
+                
+                # Generate task based on type
+                if game_type == "static":
+                    task = generator.generate_static_task(difficulty=diff_enum)
+                elif game_type == "interactive":
+                    task = generator.generate_interactive_task(difficulty=diff_enum)
+                else:
+                    # Mix of both
+                    task = (generator.generate_static_task(difficulty=diff_enum) 
+                            if i % 2 == 0 else 
+                            generator.generate_interactive_task(difficulty=diff_enum))
+                
+                # Save task
+                repository.save_task(task)
+                generated_tasks.append(task)
+                
+            except Exception as task_error:
+                logger.warning(
+                    f"Failed to generate game {i}",
+                    extra={"error": str(task_error)},
+                    exc_info=True
+                )
+        
+        if not generated_tasks:
+            raise Exception("Failed to generate any games")
+        
+        logger.info(f"Generated {len(generated_tasks)} games")
+        games[job_id].message = f"Playing {len(generated_tasks)} games with {model_name}..."
+        
+        # Step 2: Create model and evaluate
+        logger.debug(f"Creating model configuration")
+        model_config = ModelConfig(
+            name=model_name,
+            provider=model_provider,
+            model_id=model_name,
+            temperature=0.7,
+            max_tokens=1000,
+            additional_params={}
+        )
+        
+        if api_key:
+            model_config.additional_params["api_key"] = api_key
+        
+        # Create evaluation engine
+        engine = EvaluationEngine()
+        
+        # Run evaluation on generated tasks with manual progress tracking
+        logger.info(f"Starting to play games")
+        
+        # Since evaluate_model doesn't support progress callbacks,
+        # we'll run the evaluation and update progress manually
+        start_eval_time = time.time()
+        
+        # Update status before starting
+        games[job_id].message = f"Playing {len(generated_tasks)} games with {model_name}..."
+        games[job_id].progress = 0.3  # 30% done with generation
+        
+        try:
+            results = await engine.evaluate_model(
+                model_config=model_config,
+                tasks=generated_tasks,
+                prompt_format="standard",
+                verbose=False  # We'll handle our own logging
             )
             
-            if api_key:
-                model_config.additional_params["api_key"] = api_key
-            
-            # Create evaluation engine
-            engine = EvaluationEngine()
-            
-            # Run evaluation on generated tasks with manual progress tracking
-            logger.info(f"Starting to play games")
-            
-            # Since evaluate_model doesn't support progress callbacks,
-            # we'll run the evaluation and update progress manually
-            start_eval_time = time.time()
-            
-            # Update status before starting
-            games[job_id].message = f"Playing {len(generated_tasks)} games with {model_name}..."
-            games[job_id].progress = 0.3  # 30% done with generation
-            
-            try:
-                results = await engine.evaluate_model(
-                    model_config=model_config,
-                    tasks=generated_tasks,
-                    prompt_format="standard",
-                    verbose=False  # We'll handle our own logging
-                )
-                
-                # Update to completed
-                games[job_id].progress = 1.0
-                games[job_id].games_completed = len(generated_tasks)
-                
-            except Exception as eval_error:
-                logger.error(f"Evaluation failed: {str(eval_error)}", exc_info=True)
-                raise
-            
-            # Extract metrics
-            metrics = results.get("metrics", {})
-            games[job_id].current_metrics = {
-                "win_rate": metrics.get("win_rate", 0.0),
-                "accuracy": metrics.get("accuracy", 0.0),
-                "valid_move_rate": metrics.get("valid_move_rate", 0.0),
-                "coverage": metrics.get("board_coverage_on_loss", 0.0)
-            }
-            
-            # Save results with job_id in filename for easy lookup
-            timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-            results_file = f"play_{job_id}_{model_name}_{timestamp}.json"
-            results_path = Path("data/results") / results_file
-            results_path.parent.mkdir(parents=True, exist_ok=True)
-            
-            # Add job_id to results for reference
-            results["job_id"] = job_id
-            results["model_name"] = model_name
-            results["num_games"] = len(generated_tasks)
-            results["timestamp"] = timestamp
-            
-            with open(results_path, "w") as f:
-                json.dump(results, f, indent=2, default=str)
-            
-            # Complete
-            duration = time.time() - start_time
-            games[job_id].status = "completed"
+            # Update to completed
             games[job_id].progress = 1.0
             games[job_id].games_completed = len(generated_tasks)
-            games[job_id].message = f"Completed {len(generated_tasks)} games successfully!"
-            games[job_id].completed_at = datetime.utcnow()
-            games[job_id].results_file = str(results_file)  # Store the filename
             
-            logger.info(
-                f"Play session completed",
-                extra={
-                    "duration": duration,
-                    "games_played": len(generated_tasks),
-                    "win_rate": metrics.get("win_rate", 0.0),
-                    "metrics": games[job_id].current_metrics
-                }
-            )
-            
-        except Exception as e:
-            duration = time.time() - start_time
-            games[job_id].status = "failed"
-            games[job_id].message = f"Error: {str(e)}"
-            games[job_id].completed_at = datetime.utcnow()
-            
-            logger.error(
-                f"Play session failed",
-                extra={
-                    "duration": duration,
-                    "error_type": type(e).__name__,
-                    "error_details": traceback.format_exc()
-                },
-                exc_info=True
-            )
+        except Exception as eval_error:
+            logger.error(f"Evaluation failed: {str(eval_error)}", exc_info=True)
+            raise
+        
+        # Extract metrics
+        metrics = results.get("metrics", {})
+        games[job_id].current_metrics = {
+            "win_rate": metrics.get("win_rate", 0.0),
+            "accuracy": metrics.get("accuracy", 0.0),
+            "valid_move_rate": metrics.get("valid_move_rate", 0.0),
+            "coverage": metrics.get("board_coverage_on_loss", 0.0)
+        }
+        
+        # Save results with job_id in filename for easy lookup
+        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        results_file = f"play_{job_id}_{model_name}_{timestamp}.json"
+        results_path = Path("data/results") / results_file
+        results_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Add job_id to results for reference
+        results["job_id"] = job_id
+        results["model_name"] = model_name
+        results["num_games"] = len(generated_tasks)
+        results["timestamp"] = timestamp
+        
+        with open(results_path, "w") as f:
+            json.dump(results, f, indent=2, default=str)
+        
+        # Complete
+        duration = time.time() - start_time
+        games[job_id].status = "completed"
+        games[job_id].progress = 1.0
+        games[job_id].games_completed = len(generated_tasks)
+        games[job_id].message = f"Completed {len(generated_tasks)} games successfully!"
+        games[job_id].completed_at = datetime.utcnow()
+        games[job_id].results_file = str(results_file)  # Store the filename
+        
+        logger.info(
+            f"Play session completed",
+            extra={
+                "duration": duration,
+                "games_played": len(generated_tasks),
+                "win_rate": metrics.get("win_rate", 0.0),
+                "metrics": games[job_id].current_metrics
+            }
+        )
+        
+    except Exception as e:
+        duration = time.time() - start_time
+        games[job_id].status = "failed"
+        games[job_id].message = f"Error: {str(e)}"
+        games[job_id].completed_at = datetime.utcnow()
+        
+        logger.error(
+            f"Play session failed",
+            extra={
+                "duration": duration,
+                "error_type": type(e).__name__,
+                "error_details": traceback.format_exc()
+            },
+            exc_info=True
+        )
