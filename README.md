@@ -23,11 +23,16 @@ The Minesweeper AI Benchmark tests LLMs' ability to:
 
 ## Quick Start
 
-### Installation
+### Option 1: Use Hosted Version
+Visit the deployed platform at: [Coming Soon - Deploy with button below]
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/oschlofredrik/minesweeper-ai-benchmark)
+
+### Option 2: Run Locally
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/oschlofredrik/minesweeper-ai-benchmark.git
 cd minesweeper-benchmark
 
 # Install dependencies
