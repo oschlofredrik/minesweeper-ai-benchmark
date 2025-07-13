@@ -186,7 +186,7 @@ class ModelConfig:
     model_id: str  # e.g., "gpt-4", "claude-3"
     temperature: float = 0.7
     max_tokens: int = 1000
-    additional_params: Dict[str, Any] = None
+    additional_params: Optional[Dict[str, Any]] = None
     
     def __post_init__(self) -> None:
         if self.additional_params is None:

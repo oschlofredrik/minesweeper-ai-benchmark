@@ -5,7 +5,8 @@ from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 from datetime import datetime
 
-from src.models import create_model, ModelConfig
+from src.models import create_model
+from src.core.types import ModelConfig
 from src.core.exceptions import ModelAPIError
 
 

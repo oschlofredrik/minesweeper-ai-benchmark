@@ -8,16 +8,18 @@ from uuid import uuid4
 import json
 import time
 import traceback
+import os
 
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
 from pydantic import BaseModel
 
 from src.core.config import settings
 from src.core.logging_config import get_logger, LogContext
-from src.core.types import Difficulty
+from src.core.types import Difficulty, ModelConfig
+from src.core.storage import get_storage
 from src.evaluation import EvaluationEngine
 from src.tasks import TaskRepository, TaskGenerator
-from src.models import create_model, ModelConfig
+from src.models import create_model
 
 # Initialize logger
 logger = get_logger("api.play")
@@ -168,6 +170,30 @@ class PlaySummary(BaseModel):
     aggregate_stats: Dict[str, Any]
     timestamp: str
 
+
+@router.get("/games/{job_id}/results")
+async def get_game_results(job_id: str):
+    """Get raw results data for a completed game session."""
+    if job_id not in games:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    
+    game = games[job_id]
+    
+    if not game.results_file:
+        raise HTTPException(status_code=404, detail="Results not available yet")
+    
+    try:
+        # The results_file contains just the filename, we need the full path
+        results_path = Path("data/results") / game.results_file
+        if not results_path.exists():
+            raise HTTPException(status_code=404, detail="Results file not found")
+        
+        with open(results_path, 'r') as f:
+            results = json.load(f)
+        return results
+    except Exception as e:
+        logger.error(f"Error loading results for {job_id}: {e}")
+        raise HTTPException(status_code=500, detail="Error loading results")
 
 @router.get("/games/{job_id}/summary")
 async def get_game_summary(job_id: str):

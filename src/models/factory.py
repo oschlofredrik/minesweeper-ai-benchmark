@@ -1,6 +1,6 @@
 """Factory for creating model instances."""
 
-from typing import Dict, Any, Type
+from typing import Dict, Any, Type, List
 from src.core.types import ModelConfig
 from .base import BaseModel
 from .openai import OpenAIModel
@@ -60,6 +60,6 @@ def register_model(provider: str, model_class: Type[BaseModel]) -> None:
     MODEL_REGISTRY[provider.lower()] = model_class
 
 
-def list_providers() -> list[str]:
+def list_providers() -> List[str]:
     """Get list of available model providers."""
     return list(MODEL_REGISTRY.keys())

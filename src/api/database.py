@@ -6,6 +6,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 import asyncio
 
+from src.core.storage import get_storage
 from .models import LeaderboardEntry, ModelResult, GameReplay
 
 
@@ -120,7 +121,22 @@ async def get_model_results(model_id: str) -> Optional[ModelResult]:
 
 async def get_game_replay(game_id: str) -> Optional[Dict[str, Any]]:
     """Get replay data for a specific game."""
-    # Look for transcript files
+    storage = get_storage()
+    
+    # Try to load game from storage backend
+    game_result = storage.load_game(game_id)
+    if game_result:
+        # Convert GameResult to replay format
+        return {
+            "game_id": game_id,
+            "model_name": game_result.model_config.name,
+            "task_id": game_result.task_id if hasattr(game_result, 'task_id') else "unknown",
+            "moves": [move.to_dict() for move in game_result.moves],
+            "final_status": "won" if game_result.won else "lost",
+            "num_moves": game_result.num_moves,
+        }
+    
+    # Fallback to looking for transcript files for backward compatibility
     transcripts_dir = Path("data/results")
     
     for file in transcripts_dir.glob("*_transcripts.json"):

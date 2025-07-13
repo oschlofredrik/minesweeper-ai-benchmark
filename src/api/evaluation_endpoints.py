@@ -21,10 +21,10 @@ from src.core.logging_config import (
     log_evaluation_error,
     LogContext
 )
-from src.core.types import Difficulty
+from src.core.types import Difficulty, ModelConfig
 from src.evaluation import EvaluationEngine
 from src.tasks import TaskRepository, TaskGenerator
-from src.models import create_model, ModelConfig
+from src.models import create_model
 
 # Initialize logger
 logger = get_logger("api.evaluation")

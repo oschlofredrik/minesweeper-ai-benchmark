@@ -154,7 +154,22 @@ async def get_model_games(
     limit: int = Query(20, description="Number of games to return"),
 ):
     """Get list of games played by a model."""
-    # Load game transcripts for the model
+    from src.core.storage import get_storage
+    storage = get_storage()
+    
+    # Try to get games from storage backend
+    games = storage.list_games(model_name=model_id, limit=limit)
+    
+    if games:
+        # Convert to expected format
+        return [{
+            "game_id": game.get("game_id"),
+            "won": game.get("won", False),
+            "moves": game.get("num_moves", 0),
+            "board_coverage": game.get("board_coverage", 0),
+        } for game in games]
+    
+    # Fallback to reading result files for backward compatibility
     results_dir = Path("data/results")
     games = []
     
@@ -203,12 +218,16 @@ async def compare_models(request: EvaluationRequest):
 @app.get("/api/stats")
 async def get_platform_stats():
     """Get overall platform statistics."""
-    results_dir = Path("data/results")
-    tasks_dir = Path("data/tasks")
+    from src.core.storage import get_storage
+    storage = get_storage()
     
-    # Count files
+    # Try to get stats from storage backend
+    tasks = storage.list_tasks()
+    num_tasks = len(tasks)
+    
+    # For evaluations, we still need to count result files since they contain aggregate data
+    results_dir = Path("data/results")
     num_evaluations = len(list(results_dir.glob("*.json")))
-    num_tasks = len(list(tasks_dir.glob("**/*.json")))
     
     # Get unique models from results
     models = set()
