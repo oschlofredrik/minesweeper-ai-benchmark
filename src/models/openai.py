@@ -35,6 +35,9 @@ class OpenAIModel(BaseModel):
         self.client = AsyncOpenAI(api_key=api_key)
         self.model_id = model_config.get("model_id", "gpt-4")
         self.timeout = model_config.get("timeout", settings.model_timeout)
+        
+        # Check if this is a reasoning model
+        self.is_reasoning_model = any(x in self.model_id.lower() for x in ['o1', 'reasoning'])
     
     async def generate(self, prompt: str, **kwargs) -> ModelResponse:
         """
@@ -70,7 +73,7 @@ class OpenAIModel(BaseModel):
                     messages=[
                         {
                             "role": "system",
-                            "content": "You are an expert Minesweeper player. Analyze the board carefully and make logical deductions."
+                            "content": "You are an expert Minesweeper player. Analyze the board carefully and make logical deductions. Think step by step through your reasoning before deciding on your move."
                         },
                         {
                             "role": "user",
@@ -84,9 +87,18 @@ class OpenAIModel(BaseModel):
                 timeout=self.timeout
             )
             
-            # Extract response
+            # Extract response and reasoning
             content = response.choices[0].message.content
             tokens_used = response.usage.total_tokens if response.usage else None
+            
+            # For o1 models, check if there's reasoning in the response structure
+            reasoning_text = None
+            if hasattr(response.choices[0], 'message') and hasattr(response.choices[0].message, 'reasoning'):
+                reasoning_text = response.choices[0].message.reasoning
+            elif 'o1' in self.model_id.lower() or 'reasoning' in self.model_id.lower():
+                # For o1 models, the response often starts with reasoning
+                # We'll extract it in the base class
+                pass
             
             # Log successful response
             logger.info(
@@ -109,13 +121,19 @@ class OpenAIModel(BaseModel):
                 }
             )
             
-            return ModelResponse(
+            model_response = ModelResponse(
                 content=content,
                 raw_response=response,
                 model_name=f"OpenAI/{self.model_id}",
                 timestamp=datetime.utcnow(),
                 tokens_used=tokens_used,
             )
+            
+            # If we found reasoning in the API response, use it
+            if reasoning_text:
+                model_response.reasoning = reasoning_text
+            
+            return model_response
             
         except asyncio.TimeoutError:
             logger.error(

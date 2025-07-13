@@ -35,6 +35,9 @@ class AnthropicModel(BaseModel):
         self.client = AsyncAnthropic(api_key=api_key)
         self.model_id = model_config.get("model_id", "claude-3-opus-20240229")
         self.timeout = model_config.get("timeout", settings.model_timeout)
+        
+        # Check if this is a model with thinking/reasoning capabilities
+        self.supports_thinking = 'claude-4' in self.model_id.lower() or model_config.get("enable_thinking", False)
     
     async def generate(self, prompt: str, **kwargs) -> ModelResponse:
         """
@@ -73,15 +76,23 @@ class AnthropicModel(BaseModel):
                             "content": prompt
                         }
                     ],
-                    system="You are an expert Minesweeper player. Analyze the board carefully and make logical deductions. Always provide clear reasoning for your moves.",
+                    system="You are an expert Minesweeper player. Analyze the board carefully and make logical deductions. Think through your reasoning step by step before deciding on your move. Always provide clear reasoning for your moves.",
                     temperature=temperature,
                     max_tokens=max_tokens,
                 ),
                 timeout=self.timeout
             )
             
-            # Extract response
+            # Extract response and any thinking/reasoning
             content = response.content[0].text if response.content else ""
+            reasoning_text = None
+            
+            # Check for thinking blocks in Claude's response
+            if hasattr(response, 'content') and len(response.content) > 1:
+                for block in response.content:
+                    if hasattr(block, 'type') and block.type == 'thinking':
+                        reasoning_text = block.text
+                        break
             
             # Calculate tokens (Anthropic uses different token counting)
             tokens_used = None
@@ -109,13 +120,19 @@ class AnthropicModel(BaseModel):
                 }
             )
             
-            return ModelResponse(
+            model_response = ModelResponse(
                 content=content,
                 raw_response=response,
                 model_name=f"Anthropic/{self.model_id}",
                 timestamp=datetime.utcnow(),
                 tokens_used=tokens_used,
             )
+            
+            # If we found thinking/reasoning in the API response, use it
+            if reasoning_text:
+                model_response.reasoning = reasoning_text
+            
+            return model_response
             
         except asyncio.TimeoutError:
             logger.error(

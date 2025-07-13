@@ -178,13 +178,33 @@ class BaseModel(ABC):
         Returns:
             Extracted reasoning text or None
         """
-        # Look for common reasoning indicators
+        # For reasoning models, the entire response before the action might be reasoning
+        # Check if this looks like a reasoning-first response
+        action_indicators = ['action:', 'move:', 'reveal', 'flag', 'unflag']
+        
+        # Find where the action starts
+        action_start = len(response)
+        for indicator in action_indicators:
+            pos = response.lower().find(indicator.lower())
+            if pos != -1 and pos < action_start:
+                action_start = pos
+        
+        # If we found an action and there's substantial text before it, that's likely reasoning
+        if action_start > 50 and action_start < len(response):
+            reasoning = response[:action_start].strip()
+            # Clean up common endings
+            reasoning = re.sub(r'(Therefore|So|Thus|Hence|Now)[,:]?\s*$', '', reasoning, flags=re.IGNORECASE).strip()
+            if reasoning:
+                return reasoning
+        
+        # Otherwise, look for explicit reasoning sections
         reasoning_patterns = [
-            r'reasoning:\s*(.*?)(?=action:|$)',
-            r'explanation:\s*(.*?)(?=action:|$)',
-            r'because\s+(.*?)(?=therefore|so|thus|action:|$)',
+            r'reasoning:\s*(.*?)(?=action:|move:|$)',
+            r'explanation:\s*(.*?)(?=action:|move:|$)',
+            r'because\s+(.*?)(?=therefore|so|thus|action:|move:|$)',
             r'analysis:\s*(.*?)(?=action:|move:|$)',
             r'thinking:\s*(.*?)(?=action:|move:|$)',
+            r'thought process:\s*(.*?)(?=action:|move:|$)',
         ]
         
         for pattern in reasoning_patterns:
@@ -274,20 +294,57 @@ Let's think step by step:
 
 Provide your analysis and then state your move as: Action: [reveal/flag] (row, col)"""
         
+        elif format_type == "reasoning":  # For reasoning models
+            return f"""You are an expert Minesweeper player. Here is the current board state:
+
+{board_state}
+
+Legend:
+- ?: Hidden cell
+- F: Flagged cell
+- .: Empty cell (0 adjacent mines)
+- 1-8: Number of adjacent mines
+
+Analyze the board carefully. Think through all the logical deductions you can make based on the revealed numbers and their adjacent cells. Consider which cells must be mines and which must be safe.
+
+After your analysis, provide your next move in this format:
+Action: [reveal/flag] (row, col)"""
+        
         else:
             raise ValueError(f"Unknown prompt format type: {format_type}")
     
-    async def play_move(self, board_state: str, prompt_format: str = "standard") -> ModelResponse:
+    def get_optimal_prompt_format(self) -> str:
+        """
+        Get the optimal prompt format for this model.
+        
+        Returns:
+            Best prompt format type for the model
+        """
+        # Check if model implementation suggests a format
+        if hasattr(self, 'is_reasoning_model') and self.is_reasoning_model:
+            return "reasoning"
+        elif hasattr(self, 'supports_thinking') and self.supports_thinking:
+            return "reasoning"
+        elif 'gpt-4' in self.name.lower() or 'claude' in self.name.lower():
+            return "cot"  # Chain of thought works well for these
+        else:
+            return "standard"
+    
+    async def play_move(self, board_state: str, prompt_format: str = "auto") -> ModelResponse:
         """
         High-level method to get a move from the model.
         
         Args:
             board_state: Current board state
-            prompt_format: Format type for the prompt
+            prompt_format: Format type for the prompt ("auto" to auto-detect)
         
         Returns:
             ModelResponse with parsed action
         """
+        # Auto-detect best format if requested
+        if prompt_format == "auto":
+            prompt_format = self.get_optimal_prompt_format()
+            
         prompt = self.format_prompt(board_state, prompt_format)
         response = await self.generate(prompt)
         
@@ -298,6 +355,8 @@ Provide your analysis and then state your move as: Action: [reveal/flag] (row, c
             # Action parsing failed, will be handled by caller
             pass
         
-        response.reasoning = self.extract_reasoning(response.content)
+        # Extract reasoning if not already set by the model implementation
+        if not response.reasoning:
+            response.reasoning = self.extract_reasoning(response.content)
         
         return response
