@@ -5,6 +5,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 import openai
 from openai import AsyncOpenAI
+import json
 
 from src.core.config import settings
 from src.core.exceptions import ModelAPIError, ModelTimeoutError
@@ -39,6 +40,43 @@ class OpenAIModel(BaseModel):
         # Check if this is a reasoning model
         self.is_reasoning_model = any(x in self.model_id.lower() for x in ['o1', 'reasoning'])
     
+    def _get_minesweeper_tools(self):
+        """Get the Minesweeper function definitions for OpenAI."""
+        return [
+            {
+                "type": "function",
+                "function": {
+                    "name": "make_move",
+                    "description": "Make a move in Minesweeper by revealing, flagging, or unflagging a cell",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "action": {
+                                "type": "string",
+                                "enum": ["reveal", "flag", "unflag"],
+                                "description": "The action to perform on the cell"
+                            },
+                            "row": {
+                                "type": "integer",
+                                "description": "The row index of the cell (0-based)",
+                                "minimum": 0
+                            },
+                            "col": {
+                                "type": "integer",
+                                "description": "The column index of the cell (0-based)",
+                                "minimum": 0
+                            },
+                            "reasoning": {
+                                "type": "string",
+                                "description": "Detailed explanation for why this move is being made, including logical deductions"
+                            }
+                        },
+                        "required": ["action", "row", "col", "reasoning"]
+                    }
+                }
+            }
+        ]
+    
     async def generate(self, prompt: str, **kwargs) -> ModelResponse:
         """
         Generate response from OpenAI model.
@@ -65,40 +103,65 @@ class OpenAIModel(BaseModel):
             }
         )
         
+        # Check if we should use function calling
+        use_functions = kwargs.get("use_functions", True)
+        
         try:
+            # Build the request parameters
+            request_params = {
+                "model": self.model_id,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You are an expert Minesweeper player. Analyze the board carefully and make logical deductions. Think step by step through your reasoning before deciding on your move."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+                "n": 1,
+            }
+            
+            # Add tools if requested and not using a reasoning model
+            if use_functions and not self.is_reasoning_model:
+                request_params["tools"] = self._get_minesweeper_tools()
+                request_params["tool_choice"] = "auto"
+            
             # Create completion with timeout
             response = await asyncio.wait_for(
-                self.client.chat.completions.create(
-                    model=self.model_id,
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": "You are an expert Minesweeper player. Analyze the board carefully and make logical deductions. Think step by step through your reasoning before deciding on your move."
-                        },
-                        {
-                            "role": "user",
-                            "content": prompt
-                        }
-                    ],
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                    n=1,
-                ),
+                self.client.chat.completions.create(**request_params),
                 timeout=self.timeout
             )
             
-            # Extract response and reasoning
-            content = response.choices[0].message.content
+            # Extract response based on whether functions were used
+            message = response.choices[0].message
+            content = message.content or ""
             tokens_used = response.usage.total_tokens if response.usage else None
-            
-            # For o1 models, check if there's reasoning in the response structure
             reasoning_text = None
-            if hasattr(response.choices[0], 'message') and hasattr(response.choices[0].message, 'reasoning'):
-                reasoning_text = response.choices[0].message.reasoning
-            elif 'o1' in self.model_id.lower() or 'reasoning' in self.model_id.lower():
-                # For o1 models, the response often starts with reasoning
-                # We'll extract it in the base class
-                pass
+            function_call = None
+            
+            # Check for function calls
+            if hasattr(message, 'tool_calls') and message.tool_calls:
+                tool_call = message.tool_calls[0]
+                if tool_call.function.name == "make_move":
+                    function_call = json.loads(tool_call.function.arguments)
+                    # Extract reasoning from function call
+                    reasoning_text = function_call.get('reasoning', '')
+                    # Format content to include the action
+                    content = f"Action: {function_call['action']} ({function_call['row']}, {function_call['col']})"
+                    if reasoning_text:
+                        content = f"{reasoning_text}\n\n{content}"
+            else:
+                # For o1 models or when functions not used, check for reasoning
+                if hasattr(response.choices[0], 'message') and hasattr(response.choices[0].message, 'reasoning'):
+                    reasoning_text = response.choices[0].message.reasoning
+                elif 'o1' in self.model_id.lower() or 'reasoning' in self.model_id.lower():
+                    # For o1 models, the response often starts with reasoning
+                    # We'll extract it in the base class
+                    pass
             
             # Log successful response
             logger.info(
@@ -129,9 +192,13 @@ class OpenAIModel(BaseModel):
                 tokens_used=tokens_used,
             )
             
-            # If we found reasoning in the API response, use it
+            # If we found reasoning, use it
             if reasoning_text:
                 model_response.reasoning = reasoning_text
+            
+            # If we have a function call, add it to the response
+            if function_call:
+                model_response.function_call = function_call
             
             return model_response
             

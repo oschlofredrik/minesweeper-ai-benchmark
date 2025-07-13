@@ -109,7 +109,8 @@ class GameRunner:
                 )
                 
                 # Get model's move (play_move handles prompt formatting internally)
-                response = await self.model.play_move(board_state, prompt_format)
+                # Use function calling by default
+                response = await self.model.play_move(board_state, prompt_format, use_functions=True)
                 
                 # Log the model response
                 logger.info(

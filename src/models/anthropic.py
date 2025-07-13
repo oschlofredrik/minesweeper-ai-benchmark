@@ -39,6 +39,40 @@ class AnthropicModel(BaseModel):
         # Check if this is a model with thinking/reasoning capabilities
         self.supports_thinking = 'claude-4' in self.model_id.lower() or model_config.get("enable_thinking", False)
     
+    def _get_minesweeper_tools(self):
+        """Get the Minesweeper tool definitions for Anthropic."""
+        return [
+            {
+                "name": "make_move",
+                "description": "Make a move in Minesweeper by revealing, flagging, or unflagging a cell",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "action": {
+                            "type": "string",
+                            "enum": ["reveal", "flag", "unflag"],
+                            "description": "The action to perform on the cell"
+                        },
+                        "row": {
+                            "type": "integer",
+                            "description": "The row index of the cell (0-based)",
+                            "minimum": 0
+                        },
+                        "col": {
+                            "type": "integer",
+                            "description": "The column index of the cell (0-based)",
+                            "minimum": 0
+                        },
+                        "reasoning": {
+                            "type": "string",
+                            "description": "Detailed explanation for why this move is being made, including logical deductions"
+                        }
+                    },
+                    "required": ["action", "row", "col", "reasoning"]
+                }
+            }
+        ]
+    
     async def generate(self, prompt: str, **kwargs) -> ModelResponse:
         """
         Generate response from Anthropic model.
@@ -65,34 +99,60 @@ class AnthropicModel(BaseModel):
             }
         )
         
+        # Check if we should use tools
+        use_tools = kwargs.get("use_tools", True)
+        
         try:
+            # Build the request parameters
+            request_params = {
+                "model": self.model_id,
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                "system": "You are an expert Minesweeper player. Analyze the board carefully and make logical deductions. Think through your reasoning step by step before deciding on your move. Always provide clear reasoning for your moves.",
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+            }
+            
+            # Add tools if requested and not using thinking mode
+            if use_tools and not self.supports_thinking:
+                request_params["tools"] = self._get_minesweeper_tools()
+            
             # Create completion with timeout
             response = await asyncio.wait_for(
-                self.client.messages.create(
-                    model=self.model_id,
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": prompt
-                        }
-                    ],
-                    system="You are an expert Minesweeper player. Analyze the board carefully and make logical deductions. Think through your reasoning step by step before deciding on your move. Always provide clear reasoning for your moves.",
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                ),
+                self.client.messages.create(**request_params),
                 timeout=self.timeout
             )
             
-            # Extract response and any thinking/reasoning
-            content = response.content[0].text if response.content else ""
+            # Extract response based on content type
+            content = ""
             reasoning_text = None
+            tool_use = None
             
-            # Check for thinking blocks in Claude's response
-            if hasattr(response, 'content') and len(response.content) > 1:
+            # Process content blocks
+            if hasattr(response, 'content'):
                 for block in response.content:
-                    if hasattr(block, 'type') and block.type == 'thinking':
-                        reasoning_text = block.text
-                        break
+                    if hasattr(block, 'type'):
+                        if block.type == 'text':
+                            content += block.text
+                        elif block.type == 'thinking':
+                            reasoning_text = block.text
+                        elif block.type == 'tool_use' and block.name == 'make_move':
+                            tool_use = block.input
+                            # Extract reasoning from tool use
+                            if 'reasoning' in tool_use:
+                                reasoning_text = tool_use['reasoning']
+                            # Format content to include the action
+                            content = f"Action: {tool_use['action']} ({tool_use['row']}, {tool_use['col']})"
+                            if reasoning_text:
+                                content = f"{reasoning_text}\n\n{content}"
+            
+            # If no content was extracted, try the old way
+            if not content and response.content:
+                content = response.content[0].text if response.content else ""
             
             # Calculate tokens (Anthropic uses different token counting)
             tokens_used = None
@@ -128,9 +188,13 @@ class AnthropicModel(BaseModel):
                 tokens_used=tokens_used,
             )
             
-            # If we found thinking/reasoning in the API response, use it
+            # If we found reasoning, use it
             if reasoning_text:
                 model_response.reasoning = reasoning_text
+            
+            # If we have a tool use, add it to the response
+            if tool_use:
+                model_response.function_call = tool_use
             
             return model_response
             

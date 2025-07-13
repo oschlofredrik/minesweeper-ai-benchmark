@@ -2,13 +2,16 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 import re
 from datetime import datetime
 import asyncio
 
 from src.core.types import Action, ActionType, Position
 from src.core.exceptions import InvalidModelResponseError, ModelAPIError
+from src.core.logging_config import get_logger
+
+logger = get_logger("models.base")
 
 
 @dataclass
@@ -21,6 +24,7 @@ class ModelResponse:
     tokens_used: Optional[int] = None
     reasoning: Optional[str] = None
     action: Optional[Action] = None
+    function_call: Optional[Dict[str, Any]] = None  # For function calling responses
     
     def __post_init__(self):
         if self.timestamp is None:
@@ -249,11 +253,9 @@ Legend:
 - 1-8: Number of adjacent mines
 - *: Mine (only shown when game is over)
 
-Based on logical deduction, what is your next move? Please provide:
-1. Your reasoning for the move
-2. Your action in the format: "Action: [reveal/flag/unflag] (row, col)"
+Based on logical deduction, what is your next move?
 
-Think step by step about which cells are definitely safe or definitely mines based on the numbers shown."""
+Think step by step about which cells are definitely safe or definitely mines based on the numbers shown. Then use the make_move function to specify your action."""
         
         elif format_type == "json":
             return f"""You are playing Minesweeper. Here is the current board state:
@@ -330,7 +332,7 @@ Action: [reveal/flag] (row, col)"""
         else:
             return "standard"
     
-    async def play_move(self, board_state: str, prompt_format: str = "auto") -> ModelResponse:
+    async def play_move(self, board_state: str, prompt_format: str = "auto", use_functions: bool = True) -> ModelResponse:
         """
         High-level method to get a move from the model.
         
@@ -346,16 +348,41 @@ Action: [reveal/flag] (row, col)"""
             prompt_format = self.get_optimal_prompt_format()
             
         prompt = self.format_prompt(board_state, prompt_format)
-        response = await self.generate(prompt)
         
-        # Try to parse action and reasoning
-        try:
-            response.action = self.parse_action(response.content)
-        except InvalidModelResponseError:
-            # Action parsing failed, will be handled by caller
-            pass
+        # Pass use_functions to generate method
+        kwargs = {}
+        if hasattr(self, '_get_minesweeper_tools'):  # Check if model supports functions
+            kwargs['use_functions'] = use_functions
+            if hasattr(self, 'client') and hasattr(self.client, 'messages'):  # Anthropic
+                kwargs['use_tools'] = use_functions
         
-        # Extract reasoning if not already set by the model implementation
+        response = await self.generate(prompt, **kwargs)
+        
+        # Try to parse action from function call first, then from content
+        if response.function_call:
+            # Parse action from function call
+            try:
+                action_type = ActionType(response.function_call.get('action', '').lower())
+                position = Position(
+                    row=response.function_call.get('row', 0),
+                    col=response.function_call.get('col', 0)
+                )
+                response.action = Action(action_type, position)
+                # Use reasoning from function call if not already set
+                if not response.reasoning and 'reasoning' in response.function_call:
+                    response.reasoning = response.function_call['reasoning']
+            except (ValueError, KeyError) as e:
+                # Function call parsing failed
+                logger.warning(f"Failed to parse function call: {e}")
+        else:
+            # Try to parse action from content
+            try:
+                response.action = self.parse_action(response.content)
+            except InvalidModelResponseError:
+                # Action parsing failed, will be handled by caller
+                pass
+        
+        # Extract reasoning if not already set
         if not response.reasoning:
             response.reasoning = self.extract_reasoning(response.content)
         
