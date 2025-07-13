@@ -1,8 +1,8 @@
 """FastAPI application for the Minesweeper benchmark platform."""
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 from typing import List, Optional, Dict, Any
@@ -43,6 +43,28 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add middleware to handle HTTPS redirection
+@app.middleware("http")
+async def force_https(request, call_next):
+    """Force HTTPS in production."""
+    # Check if we're behind a proxy (like Render)
+    x_forwarded_proto = request.headers.get("x-forwarded-proto")
+    
+    if x_forwarded_proto == "http":
+        # Redirect to HTTPS
+        url = request.url.replace(scheme="https")
+        return RedirectResponse(url=url, status_code=301)
+    
+    response = await call_next(request)
+    
+    # Add security headers
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    
+    return response
 
 # Mount static files
 static_dir = Path(__file__).parent / "static"

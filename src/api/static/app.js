@@ -4,6 +4,9 @@
 let currentMetric = 'global_score';
 let currentTaskType = '';
 
+// Ensure all API calls use the same protocol as the page
+const API_BASE = '';
+
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
     loadLeaderboard();
@@ -71,7 +74,7 @@ async function loadLeaderboard() {
             url += `&task_type=${currentTaskType}`;
         }
 
-        const response = await fetch(url);
+        const response = await fetch(`${API_BASE}${url}`);
         const data = await response.json();
 
         tbody.innerHTML = '';
@@ -103,7 +106,7 @@ async function loadLeaderboard() {
 // Load platform statistics
 async function loadPlatformStats() {
     try {
-        const response = await fetch('/api/stats');
+        const response = await fetch(`${API_BASE}/api/stats`);
         const data = await response.json();
 
         document.getElementById('total-evaluations').textContent = data.total_evaluations;
@@ -201,7 +204,7 @@ async function handlePlay(e) {
     };
     
     try {
-        const response = await fetch('/api/play', {
+        const response = await fetch(`${API_BASE}/api/play`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(data)
@@ -230,7 +233,7 @@ async function handlePlay(e) {
 async function pollJobStatus(jobId) {
     const interval = setInterval(async () => {
         try {
-            const response = await fetch(`/api/play/games/${jobId}`);
+            const response = await fetch(`${API_BASE}/api/play/games/${jobId}`);
             const job = await response.json();
             
             updateGamesList();
@@ -251,7 +254,7 @@ async function pollJobStatus(jobId) {
 // Update games list
 async function updateGamesList() {
     try {
-        const response = await fetch('/api/play/games');
+        const response = await fetch(`${API_BASE}/api/play/games`);
         const games = await response.json();
         
         const gamesList = document.getElementById('games-list');

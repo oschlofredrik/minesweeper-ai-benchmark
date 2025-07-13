@@ -61,7 +61,7 @@ class GameStatus(BaseModel):
 games: Dict[str, GameStatus] = {}
 
 
-@router.post("/", response_model=PlayResponse)
+@router.post("", response_model=PlayResponse)
 async def start_play(
     request: PlayRequest,
     background_tasks: BackgroundTasks
