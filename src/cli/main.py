@@ -122,7 +122,7 @@ def evaluate(
     repo = TaskRepository()
     tasks = repo.load_tasks(
         task_type=TaskType(task_type),
-        difficulty=Difficulty(difficulty.upper()),
+        difficulty=Difficulty(difficulty.lower()),
         limit=num_games,
     )
     
@@ -134,7 +134,7 @@ def evaluate(
         new_tasks = generator.generate_task_batch(
             num_tasks=num_games - len(tasks),
             task_type=TaskType(task_type),
-            difficulty=Difficulty(difficulty.upper()),
+            difficulty=Difficulty(difficulty.lower()),
         )
         repo.save_tasks(new_tasks)
         tasks.extend(new_tasks)
@@ -221,7 +221,7 @@ def compare(
     repo = TaskRepository()
     tasks = repo.load_tasks(
         task_type=TaskType.INTERACTIVE,
-        difficulty=Difficulty(difficulty.upper()),
+        difficulty=Difficulty(difficulty.lower()),
         limit=num_games,
     )
     
@@ -230,7 +230,7 @@ def compare(
         new_tasks = generator.generate_task_batch(
             num_tasks=num_games - len(tasks),
             task_type=TaskType.INTERACTIVE,
-            difficulty=Difficulty(difficulty.upper()),
+            difficulty=Difficulty(difficulty.lower()),
         )
         repo.save_tasks(new_tasks)
         tasks.extend(new_tasks)

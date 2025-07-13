@@ -1,0 +1,17 @@
+{
+  "task_id": "84b063b8-26d0-429a-a63d-bce6372ed0dc",
+  "task_type": "interactive",
+  "difficulty": "expert",
+  "board_config": {
+    "rows": 16,
+    "cols": 30,
+    "mines": 99,
+    "seed": 82628016
+  },
+  "description": "Play a complete game of Minesweeper at expert difficulty. Board size: 16x30 with 99 mines.",
+  "metadata": {
+    "seed": 82628016,
+    "ensure_solvable": false
+  },
+  "created_at": "2025-07-13T20:40:20.483741"
+}

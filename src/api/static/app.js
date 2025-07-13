@@ -103,6 +103,159 @@ async function loadLeaderboard() {
     }
 }
 
+// Currently selected game
+let selectedGameId = null;
+let eventsUpdateInterval = null;
+
+// Select a game and show its events
+async function selectGame(jobId, element) {
+    selectedGameId = jobId;
+    
+    // Highlight selected game
+    document.querySelectorAll('.game-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    
+    // Find and highlight the clicked element
+    if (!element && event && event.currentTarget) {
+        element = event.currentTarget;
+    }
+    if (element) {
+        element.classList.add('selected');
+    }
+    
+    // Start updating events
+    updateGameEvents();
+    
+    // Clear existing interval and set new one
+    if (eventsUpdateInterval) {
+        clearInterval(eventsUpdateInterval);
+    }
+    eventsUpdateInterval = setInterval(updateGameEvents, 1000);
+}
+
+// Update game events panel
+async function updateGameEvents() {
+    if (!selectedGameId) return;
+    
+    const eventsContainer = document.getElementById('events-container');
+    if (!eventsContainer) return;
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/play/games/${selectedGameId}`);
+        const game = await response.json();
+        
+        if (!game) {
+            eventsContainer.innerHTML = '<p class="empty-state">Game not found</p>';
+            return;
+        }
+        
+        // Build events HTML
+        let eventsHtml = `
+            <div class="event-item">
+                <div class="event-timestamp">${new Date(game.created_at).toLocaleTimeString()}</div>
+                <div class="event-content">Game started - ${game.num_games} games</div>
+            </div>
+        `;
+        
+        // Add progress events
+        if (game.current_game) {
+            eventsHtml += `
+                <div class="event-item">
+                    <div class="event-timestamp">Current</div>
+                    <div class="event-content">Playing game ${game.current_game}/${game.num_games}</div>
+                </div>
+            `;
+        }
+        
+        // If we have detailed game results, show move-by-move events
+        if (game.results_file) {
+            try {
+                const resultsResponse = await fetch(`${API_BASE}/api/play/games/${selectedGameId}/results`);
+                if (resultsResponse.ok) {
+                    const results = await resultsResponse.json();
+                    
+                    if (results.game_results) {
+                        results.game_results.forEach((gameResult, gameIndex) => {
+                            eventsHtml += `
+                                <div class="event-item ${gameResult.won ? 'win' : 'loss'}">
+                                    <div class="event-timestamp">Game ${gameIndex + 1}</div>
+                                    <div class="event-content">
+                                        ${gameResult.won ? '✓ WON' : '✗ LOST'} - 
+                                        ${gameResult.num_moves} moves
+                                    </div>
+                                </div>
+                            `;
+                            
+                            // Show last few moves for the most recent game
+                            if (gameResult.moves && gameIndex === game.current_game - 2) {
+                                const recentMoves = gameResult.moves.slice(-5);
+                                recentMoves.forEach(move => {
+                                    eventsHtml += `
+                                        <div class="event-item move ${move.was_valid ? 'valid' : 'invalid'}">
+                                            <div class="event-timestamp">Move ${move.move_number}</div>
+                                            <div class="event-content">
+                                                ${move.action} - ${move.was_valid ? 'Valid' : 'Invalid'}
+                                            </div>
+                                            ${move.reasoning ? `
+                                                <div class="event-reasoning">
+                                                    ${move.reasoning.substring(0, 150)}...
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    `;
+                                });
+                            }
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading game results:', error);
+            }
+        }
+        
+        // Add completion event
+        if (game.status === 'completed') {
+            eventsHtml += `
+                <div class="event-item win">
+                    <div class="event-timestamp">${new Date(game.completed_at).toLocaleTimeString()}</div>
+                    <div class="event-content">
+                        Evaluation completed - 
+                        <a href="/summary/${selectedGameId}" target="_blank">View Summary</a>
+                    </div>
+                </div>
+            `;
+            
+            // Stop updating once completed
+            if (eventsUpdateInterval) {
+                clearInterval(eventsUpdateInterval);
+                eventsUpdateInterval = null;
+            }
+        } else if (game.status === 'failed') {
+            eventsHtml += `
+                <div class="event-item loss">
+                    <div class="event-timestamp">${new Date(game.completed_at).toLocaleTimeString()}</div>
+                    <div class="event-content">Evaluation failed: ${game.error || 'Unknown error'}</div>
+                </div>
+            `;
+            
+            // Stop updating once failed
+            if (eventsUpdateInterval) {
+                clearInterval(eventsUpdateInterval);
+                eventsUpdateInterval = null;
+            }
+        }
+        
+        eventsContainer.innerHTML = eventsHtml;
+        
+        // Auto-scroll to bottom
+        eventsContainer.scrollTop = eventsContainer.scrollHeight;
+        
+    } catch (error) {
+        eventsContainer.innerHTML = `<p class="empty-state">Error loading events: ${error.message}</p>`;
+    }
+}
+
 // Load platform statistics
 async function loadPlatformStats() {
     try {
@@ -231,12 +384,21 @@ async function handlePlay(e) {
 
 // Poll job status
 async function pollJobStatus(jobId) {
+    // Auto-select this game to show events
+    selectedGameId = jobId;
+    updateGameEvents();
+    
     const interval = setInterval(async () => {
         try {
             const response = await fetch(`${API_BASE}/api/play/games/${jobId}`);
             const job = await response.json();
             
             updateGamesList();
+            
+            // Update events if this is still the selected game
+            if (selectedGameId === jobId) {
+                updateGameEvents();
+            }
             
             if (job.status === 'completed' || job.status === 'failed') {
                 clearInterval(interval);
@@ -264,7 +426,7 @@ async function updateGamesList() {
             gamesList.innerHTML = '<p class="empty-state">No active games</p>';
         } else {
             gamesList.innerHTML = games.map(game => `
-                <div class="game-item ${game.status}">
+                <div class="game-item ${game.status}" onclick="selectGame('${game.job_id}', this)">
                     <div class="game-header">
                         <strong>${game.model_name}</strong>
                         <span class="game-status ${game.status}">${game.status.toUpperCase()}</span>

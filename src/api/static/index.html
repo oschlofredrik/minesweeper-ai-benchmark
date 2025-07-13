@@ -77,7 +77,9 @@
         <section id="play" class="section" style="display: none;">
             <h2>Play Minesweeper AI Benchmark</h2>
             
-            <div class="play-container">
+            <div class="play-split-container">
+                <div class="play-main-content">
+                    <div class="play-container">
                 <form id="play-form">
                     <div class="form-grid">
                         <div class="form-group">
@@ -143,13 +145,23 @@
                 </form>
                 
                 <div id="play-status" class="status-message"></div>
-            </div>
+                    </div>
 
-            <!-- Active Games -->
-            <div class="games-section">
-                <h3>⚡ Active Games</h3>
-                <div id="games-list" class="games-container">
-                    <p class="empty-state">No active games</p>
+                    <!-- Active Games -->
+                    <div class="games-section">
+                        <h3>⚡ Active Games</h3>
+                        <div id="games-list" class="games-container">
+                            <p class="empty-state">No active games</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Game Events Panel -->
+                <div class="play-events-panel">
+                    <h3>Game Events</h3>
+                    <div id="events-container" class="events-container">
+                        <p class="empty-state">No game selected</p>
+                    </div>
                 </div>
             </div>
         </section>

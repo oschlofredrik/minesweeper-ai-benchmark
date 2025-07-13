@@ -43,8 +43,11 @@ def create_model(config: ModelConfig) -> BaseModel:
         "model_id": config.model_id,
         "temperature": config.temperature,
         "max_tokens": config.max_tokens,
-        **config.additional_params,
     }
+    
+    # Add any additional params
+    if config.additional_params:
+        model_dict.update(config.additional_params)
     
     return model_class(model_dict)
 

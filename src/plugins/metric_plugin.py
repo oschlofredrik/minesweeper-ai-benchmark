@@ -4,8 +4,19 @@ from abc import abstractmethod
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 
-from src.core.types import GameResult, Action
+from src.core.types import Action
 from .base import Plugin, PluginType, PluginMetadata
+
+
+@dataclass
+class GameResult:
+    """Represents the result of a single game evaluation."""
+    task_uid: str
+    model_name: str
+    success: bool
+    moves: List[Action]
+    final_state: Dict[str, Any]
+    metrics: Dict[str, float]
 
 
 @dataclass

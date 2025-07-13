@@ -75,6 +75,10 @@ app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 app.include_router(evaluation_router)
 app.include_router(play_router)
 
+# Debug router (REMOVE IN PRODUCTION)
+from .debug_endpoint import router as debug_router
+app.include_router(debug_router)
+
 
 @app.get("/health")
 async def health_check():

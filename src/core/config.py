@@ -12,6 +12,10 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="allow",  # Allow extra fields from .env
+        # IMPORTANT: Environment variables take precedence over .env file
+        # This ensures Render's env vars are used in production
+        env_nested_delimiter="__",
     )
     
     # API Keys

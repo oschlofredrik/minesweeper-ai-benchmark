@@ -225,8 +225,7 @@ class MyCustomModel(ModelPlugin):
             
             "example_metric_plugin.py": '''"""Example custom metric plugin."""
 
-from src.plugins import MetricPlugin, PluginMetadata, PluginType, MetricResult
-from src.core.types import GameResult
+from src.plugins import MetricPlugin, PluginMetadata, PluginType, MetricResult, GameResult
 
 class CustomMetric(MetricPlugin):
     """Custom evaluation metric."""
