@@ -1,0 +1,147 @@
+"""Database operations for the API (currently file-based)."""
+
+import json
+from pathlib import Path
+from typing import List, Optional, Dict, Any
+from datetime import datetime
+import asyncio
+
+from .models import LeaderboardEntry, ModelResult, GameReplay
+
+
+async def get_leaderboard_data(
+    task_type: Optional[str] = None,
+    metric: str = "global_score",
+    limit: int = 50,
+) -> List[LeaderboardEntry]:
+    """
+    Get leaderboard data from stored results.
+    
+    This is a file-based implementation. In production, this would
+    query a PostgreSQL database.
+    """
+    results_dir = Path("data/results")
+    leaderboard_entries = []
+    
+    # Load all result files
+    for file in results_dir.glob("*_summary.json"):
+        try:
+            with open(file) as f:
+                data = json.load(f)
+                
+            # Extract metrics
+            metrics = data.get("metrics", {})
+            model_info = data.get("model", {})
+            eval_info = data.get("evaluation", {})
+            
+            # Create leaderboard entry
+            entry = LeaderboardEntry(
+                rank=0,  # Will be set after sorting
+                model_id=model_info.get("name", "unknown"),
+                model_name=model_info.get("name", "unknown"),
+                global_score=metrics.get("global_score", 0.0),
+                ms_s_score=metrics.get("ms_s_score", 0.0),
+                ms_i_score=metrics.get("ms_i_score", 0.0),
+                win_rate=metrics.get("win_rate", 0.0),
+                accuracy=metrics.get("accuracy", 0.0),
+                coverage=metrics.get("board_coverage_on_loss", 0.0),
+                reasoning_score=metrics.get("reasoning_quality_score", 0.0),
+                num_games=eval_info.get("num_tasks", 0),
+                last_updated=datetime.fromisoformat(
+                    eval_info.get("end_time", datetime.utcnow().isoformat())
+                ),
+            )
+            
+            leaderboard_entries.append(entry)
+            
+        except Exception as e:
+            print(f"Error loading {file}: {e}")
+            continue
+    
+    # Sort by metric
+    leaderboard_entries.sort(
+        key=lambda x: getattr(x, metric, 0.0),
+        reverse=True
+    )
+    
+    # Assign ranks
+    for i, entry in enumerate(leaderboard_entries):
+        entry.rank = i + 1
+    
+    return leaderboard_entries[:limit]
+
+
+async def get_model_results(model_id: str) -> Optional[ModelResult]:
+    """Get detailed results for a specific model."""
+    results_dir = Path("data/results")
+    
+    # Find the most recent result file for this model
+    model_files = list(results_dir.glob(f"*{model_id}*_summary.json"))
+    if not model_files:
+        return None
+    
+    # Sort by modification time and get the latest
+    latest_file = max(model_files, key=lambda f: f.stat().st_mtime)
+    
+    try:
+        with open(latest_file) as f:
+            data = json.load(f)
+        
+        metrics = data.get("metrics", {})
+        model_info = data.get("model", {})
+        eval_info = data.get("evaluation", {})
+        
+        return ModelResult(
+            model_id=model_id,
+            model_name=model_info.get("name", model_id),
+            provider=model_info.get("provider", "unknown"),
+            evaluation_date=datetime.fromisoformat(
+                eval_info.get("end_time", datetime.utcnow().isoformat())
+            ),
+            num_tasks=eval_info.get("num_tasks", 0),
+            metrics=metrics,
+            per_task_type_metrics={
+                "static": {"accuracy": metrics.get("accuracy", 0.0)},
+                "interactive": {"win_rate": metrics.get("win_rate", 0.0)},
+            },
+            confidence_intervals={
+                "win_rate": (
+                    metrics.get("win_rate", 0.0) - 0.05,
+                    metrics.get("win_rate", 0.0) + 0.05,
+                ),
+            },
+            prompt_variant=eval_info.get("prompt_format", "standard"),
+        )
+        
+    except Exception as e:
+        print(f"Error loading model results: {e}")
+        return None
+
+
+async def get_game_replay(game_id: str) -> Optional[Dict[str, Any]]:
+    """Get replay data for a specific game."""
+    # Look for transcript files
+    transcripts_dir = Path("data/results")
+    
+    for file in transcripts_dir.glob("*_transcripts.json"):
+        try:
+            with open(file) as f:
+                transcripts = json.load(f)
+            
+            for transcript in transcripts:
+                if transcript.get("game_id") == game_id:
+                    # Convert to replay format
+                    return {
+                        "game_id": game_id,
+                        "model_name": transcript.get("model_name", "unknown"),
+                        "task_id": transcript.get("task_id", "unknown"),
+                        "moves": transcript.get("moves", []),
+                        "final_status": transcript.get("final_status", "unknown"),
+                        "num_moves": transcript.get("num_moves", 0),
+                    }
+                    
+        except Exception as e:
+            print(f"Error loading transcript: {e}")
+            continue
+    
+    return None

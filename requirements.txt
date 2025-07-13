@@ -23,6 +23,7 @@ alembic>=1.13.1
 asyncpg>=0.29.0
 httpx>=0.26.0
 asyncio
+requests>=2.31.0
 
 # Game environment
 gymnasium>=0.29.1

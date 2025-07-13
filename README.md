@@ -17,6 +17,8 @@ The Minesweeper AI Benchmark tests LLMs' ability to:
 - 📊 **Comprehensive Metrics** - Win rate, move accuracy, reasoning quality, and more
 - 🔄 **Reproducible Benchmarks** - Deterministic task generation with seeding
 - 💻 **Easy-to-Use CLI** - Simple commands for evaluation, comparison, and analysis
+- 🧪 **Prompt Engineering** - A/B testing, optimization, and interactive prompt development
+- 🌐 **Web Interface** - Interactive leaderboard and visualization tools
 - 📈 **Extensible Architecture** - Modular design for adding new models and metrics
 
 ## Quick Start
@@ -50,6 +52,12 @@ python -m src.cli.main compare --models gpt-4 --models claude-3-opus-20240229
 
 # View results
 python -m src.cli.main show-results results/gpt4_results.json
+
+# Start web interface
+python -m src.cli.main serve --open-browser
+
+# Test prompts interactively
+python -m src.cli.main prompt test --model gpt-4
 ```
 
 ## Evaluation Metrics
@@ -65,23 +73,28 @@ python -m src.cli.main show-results results/gpt4_results.json
 - [Quick Start Guide](docs/quickstart.md) - Detailed usage instructions
 - [Architecture Overview](docs/architecture.md) - System design and components
 - [Project Status](docs/project-status.md) - Current capabilities and roadmap
+- [Web Interface](docs/web-interface.md) - Using the web dashboard
+- [Prompt Engineering](docs/prompt-engineering.md) - Optimizing prompts for better performance
 
 ## Project Structure
 
 ```
 minesweeper-benchmark/
 ├── src/
-│   ├── core/          # Core types and configuration
-│   ├── games/         # Minesweeper game implementation
-│   ├── models/        # LLM interfaces (OpenAI, Anthropic)
-│   ├── evaluation/    # Evaluation engine and metrics
-│   ├── tasks/         # Task generation and management
-│   └── cli/           # Command-line interface
+│   ├── core/              # Core types and configuration
+│   ├── games/             # Minesweeper game implementation
+│   ├── models/            # LLM interfaces (OpenAI, Anthropic)
+│   ├── evaluation/        # Evaluation engine and metrics
+│   ├── tasks/             # Task generation and management
+│   ├── prompt_engineering/# Prompt optimization tools
+│   ├── api/               # Web interface and API
+│   └── cli/               # Command-line interface
 ├── data/
-│   ├── tasks/         # Generated benchmark tasks
-│   └── results/       # Evaluation results
-├── tests/             # Test suite
-└── docs/              # Documentation
+│   ├── tasks/             # Generated benchmark tasks
+│   ├── results/           # Evaluation results
+│   └── prompts/           # Prompt templates
+├── tests/                 # Test suite
+└── docs/                  # Documentation
 
 ```
 

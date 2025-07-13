@@ -1,0 +1,14 @@
+{
+  "name": "test_custom",
+  "template": "Analyze this Minesweeper board:\n{board_state}\n\nYour move: ",
+  "description": "Simple test template",
+  "parameters": {},
+  "few_shot_examples": [],
+  "version": "1.0",
+  "created_at": "2025-07-13T11:56:14.325459",
+  "tags": [
+    "test",
+    "simple"
+  ],
+  "performance_metrics": {}
+}

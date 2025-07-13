@@ -16,6 +16,8 @@ from src.evaluation import EvaluationEngine
 from src.tasks import TaskRepository, TaskGenerator
 from src.games.minesweeper import MinesweeperGame
 from src.models import list_providers
+from .web_commands import add_web_commands
+from .prompt_commands import add_prompt_commands
 
 console = Console()
 
@@ -463,6 +465,13 @@ def list_models():
     console.print("  - openai/gpt-3.5-turbo")
     console.print("  - anthropic/claude-3-opus-20240229")
     console.print("  - anthropic/claude-3-sonnet-20240229")
+
+
+# Add web commands to CLI
+add_web_commands(cli)
+
+# Add prompt commands to CLI
+add_prompt_commands(cli)
 
 
 if __name__ == "__main__":

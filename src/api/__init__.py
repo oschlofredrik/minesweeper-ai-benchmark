@@ -1,0 +1,1 @@
+"""Web API for the Minesweeper benchmark platform."""
