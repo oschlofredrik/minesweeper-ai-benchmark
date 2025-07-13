@@ -2,7 +2,7 @@
 
 import asyncio
 from typing import Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import anthropic
 from anthropic import AsyncAnthropic
 
@@ -188,7 +188,7 @@ class AnthropicModel(BaseModel):
                 content=content,
                 raw_response=response,
                 model_name=f"Anthropic/{self.model_id}",
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
                 tokens_used=tokens_used,
             )
             

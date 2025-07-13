@@ -96,6 +96,18 @@ class GameRunner:
             # Get current board state
             board_state = game.get_board_representation("ascii")
             
+            # Log board state for debugging
+            logger.debug(
+                f"Move {move_count} - Current board state",
+                extra={
+                    "game_id": game.game_id,
+                    "move_count": move_count,
+                    "board_preview": board_state[:200] + "..." if len(board_state) > 200 else board_state,
+                    "cells_revealed": game.cells_revealed,
+                    "flags_placed": game.flags_placed
+                }
+            )
+            
             try:
                 # Log the move attempt
                 logger.info(
@@ -192,7 +204,9 @@ class GameRunner:
                     extra={
                         "game_id": game.game_id,
                         "game_status_after_move": game.status.value,
-                        "will_continue": game.status.value == "in_progress" and move_count < max_moves
+                        "will_continue": game.status.value == "in_progress" and move_count < max_moves,
+                        "total_cells_revealed": game.cells_revealed,
+                        "total_flags_placed": game.flags_placed
                     }
                 )
                 
