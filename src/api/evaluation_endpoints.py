@@ -369,27 +369,66 @@ async def run_evaluation_job(
                 )
                 raise
             
+            # Generate tasks for evaluation
+            logger.info(f"Generating tasks for evaluation")
+            generator = TaskGenerator()
+            repository = TaskRepository()
+            
+            tasks = []
+            for i in range(num_games):
+                try:
+                    # Convert difficulty
+                    diff_enum = Difficulty.EXPERT
+                    if difficulty:
+                        try:
+                            diff_enum = Difficulty(difficulty.lower())
+                        except ValueError:
+                            pass
+                    
+                    # Generate task
+                    if task_type == "static":
+                        task = generator.generate_static_task(difficulty=diff_enum)
+                    elif task_type == "interactive":
+                        task = generator.generate_interactive_task(difficulty=diff_enum)
+                    else:
+                        # Mix of both
+                        task = (generator.generate_static_task(difficulty=diff_enum) 
+                                if i % 2 == 0 else 
+                                generator.generate_interactive_task(difficulty=diff_enum))
+                    
+                    repository.save_task(task)
+                    tasks.append(task)
+                    
+                    # Update progress
+                    jobs[job_id].progress = (i + 1) / num_games * 0.3  # First 30% for generation
+                    jobs[job_id].message = f"Generated {i + 1}/{num_games} tasks..."
+                    
+                except Exception as task_error:
+                    logger.warning(f"Failed to generate task {i}: {str(task_error)}")
+            
+            if not tasks:
+                raise Exception("Failed to generate any tasks")
+            
+            logger.info(f"Generated {len(tasks)} tasks, starting evaluation")
+            
             # Create evaluation engine
             engine = EvaluationEngine()
             
-            # Run evaluation with progress updates
-            async def progress_callback(current: int, total: int):
-                jobs[job_id].progress = current / total
-                jobs[job_id].message = f"Completed {current}/{total} games"
-                
-                # Log progress every 10%
-                if current % max(1, total // 10) == 0:
-                    log_evaluation_progress(logger, job_id, current, total)
+            # Update status
+            jobs[job_id].message = f"Evaluating {model_name} on {len(tasks)} games..."
             
             # Run evaluation
             logger.info(f"Starting evaluation run")
             results = await engine.evaluate_model(
-                model,
-                num_tasks=num_games,
-                task_type=task_type,
-                difficulty=difficulty,
-                progress_callback=progress_callback
+                model_config=model_config,
+                tasks=tasks,
+                prompt_format="standard",
+                verbose=False
             )
+            
+            # Update progress
+            jobs[job_id].progress = 1.0
+            jobs[job_id].message = f"Completed {len(tasks)} games"
             
             # Log evaluation metrics
             metrics = results.get("metrics", {})

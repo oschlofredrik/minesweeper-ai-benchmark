@@ -238,41 +238,35 @@ async def run_play_session(
             if api_key:
                 model_config.additional_params["api_key"] = api_key
             
-            # Create model
-            model = create_model(model_config)
-            logger.debug(f"Model created successfully")
-            
             # Create evaluation engine
             engine = EvaluationEngine()
             
-            # Run evaluation with progress updates
-            async def progress_callback(current: int, total: int):
-                # 30% for generation, 70% for evaluation
-                eval_progress = current / total
-                games[job_id].progress = 0.3 + (eval_progress * 0.7)
-                games[job_id].games_completed = current
-                games[job_id].message = f"Playing game {current}/{total}..."
-                
-                # Log progress
-                if current % max(1, total // 10) == 0:
-                    logger.debug(
-                        f"Play progress: {current}/{total} games",
-                        extra={
-                            "progress": games[job_id].progress,
-                            "games_completed": current
-                        }
-                    )
-            
-            # Run evaluation on generated tasks
+            # Run evaluation on generated tasks with manual progress tracking
             logger.info(f"Starting to play games")
-            results = await engine.evaluate_model(
-                model,
-                num_tasks=len(generated_tasks),
-                task_type=game_type,
-                difficulty=difficulty,
-                progress_callback=progress_callback,
-                use_existing_tasks=True  # Use the tasks we just generated
-            )
+            
+            # Since evaluate_model doesn't support progress callbacks,
+            # we'll run the evaluation and update progress manually
+            start_eval_time = time.time()
+            
+            # Update status before starting
+            games[job_id].message = f"Playing {len(generated_tasks)} games with {model_name}..."
+            games[job_id].progress = 0.3  # 30% done with generation
+            
+            try:
+                results = await engine.evaluate_model(
+                    model_config=model_config,
+                    tasks=generated_tasks,
+                    prompt_format="standard",
+                    verbose=False  # We'll handle our own logging
+                )
+                
+                # Update to completed
+                games[job_id].progress = 1.0
+                games[job_id].games_completed = len(generated_tasks)
+                
+            except Exception as eval_error:
+                logger.error(f"Evaluation failed: {str(eval_error)}", exc_info=True)
+                raise
             
             # Extract metrics
             metrics = results.get("metrics", {})
