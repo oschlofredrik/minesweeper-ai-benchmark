@@ -7,9 +7,25 @@
     <link rel="stylesheet" href="/static/style.css">
     <style>
         .summary-container {
-            max-width: 1200px;
-            margin: 0 auto;
+            display: flex;
+            gap: 20px;
             padding: 20px;
+            max-width: 100%;
+        }
+        
+        .main-content {
+            flex: 1;
+            max-width: 800px;
+        }
+        
+        .moves-panel {
+            flex: 0 0 600px;
+            border-left: 1px solid var(--text-secondary);
+            padding-left: 20px;
+            height: calc(100vh - 140px);
+            overflow-y: auto;
+            position: sticky;
+            top: 20px;
         }
         
         .summary-header {
@@ -130,20 +146,55 @@
             font-size: 0.85em;
         }
         
-        .toggle-moves {
-            margin-top: 10px;
+        .game-selector {
+            margin-bottom: 20px;
+        }
+        
+        .game-selector button {
             padding: 5px 10px;
+            margin-right: 10px;
+            margin-bottom: 10px;
             background: var(--bg-black);
-            color: var(--accent-green);
-            border: 1px solid var(--accent-green);
+            color: var(--text-secondary);
+            border: 1px solid var(--text-secondary);
             cursor: pointer;
             text-transform: uppercase;
             font-size: 0.85em;
         }
         
-        .toggle-moves:hover {
-            background: var(--accent-green);
-            color: var(--bg-black);
+        .game-selector button.active {
+            color: var(--accent-green);
+            border-color: var(--accent-green);
+        }
+        
+        .game-selector button:hover {
+            color: var(--accent-blue);
+            border-color: var(--accent-blue);
+        }
+        
+        .moves-panel h3 {
+            color: var(--accent-green);
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--text-secondary);
+            padding-bottom: 10px;
+        }
+        
+        .move-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid var(--text-secondary);
+        }
+        
+        .move-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .move-number {
+            font-weight: bold;
+            color: var(--accent-blue);
         }
         
         .error {
@@ -172,11 +223,19 @@
             <div class="tagline">GAME SESSION SUMMARY</div>
         </header>
 
+        <a href="/" class="back-link" style="margin: 20px;">← Back to Dashboard</a>
+        
         <div class="summary-container">
-            <a href="/" class="back-link">← Back to Dashboard</a>
+            <div class="main-content">
+                <div id="summaryContent">
+                    <div class="loading">Loading summary data...</div>
+                </div>
+            </div>
             
-            <div id="summaryContent">
-                <div class="loading">Loading summary data...</div>
+            <div class="moves-panel" id="movesPanel" style="display: none;">
+                <h3>Move-by-Move Analysis</h3>
+                <div class="game-selector" id="gameSelector"></div>
+                <div id="movesList"></div>
             </div>
         </div>
     </div>
@@ -196,6 +255,7 @@
                 }
                 
                 const data = await response.json();
+                gameData = data; // Store globally for button clicks
                 displaySummary(data);
             } catch (error) {
                 document.getElementById('summaryContent').innerHTML = `
@@ -274,7 +334,6 @@
                                 <th>Moves</th>
                                 <th>Board Coverage</th>
                                 <th>Mines Found</th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -285,70 +344,85 @@
                                     <td>${game.num_moves}</td>
                                     <td>${(game.board_coverage * 100).toFixed(1)}%</td>
                                     <td>${game.mines_correctly_flagged}/${game.total_mines}</td>
-                                    <td><button class="toggle-moves" onclick="toggleGameMoves(${index}, event)">View Moves</button></td>
                                 </tr>
                             `).join('')}
                         </tbody>
                     </table>
                 `;
-                
-                // Add move-by-move details for each game
-                data.game_results.forEach((game, index) => {
-                    if (game.moves && game.moves.length > 0) {
-                        html += `
-                            <div id="game-${index}-moves" class="game-detail" style="display: none;">
-                                <h4>Game ${index + 1} - Move-by-Move Analysis</h4>
-                                <p>Total Moves: ${game.moves.length} | Valid Moves: ${game.moves.filter(m => m.was_valid).length}</p>
-                                <table class="moves-table">
-                                    <thead>
-                                        <tr>
-                                            <th width="60">Move #</th>
-                                            <th width="120">Action</th>
-                                            <th width="80">Valid</th>
-                                            <th>AI Reasoning</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        ${game.moves.map(move => `
-                                            <tr>
-                                                <td>${move.move_number}</td>
-                                                <td class="move-action">${move.action}</td>
-                                                <td class="${move.was_valid ? 'move-valid' : 'move-invalid'}">
-                                                    ${move.was_valid ? '✓' : '✗'}
-                                                </td>
-                                                <td>
-                                                    <div class="move-reasoning">${move.reasoning || 'No reasoning provided'}</div>
-                                                    ${move.error ? `<div class="move-error">Error: ${move.error}</div>` : ''}
-                                                </td>
-                                            </tr>
-                                        `).join('')}
-                                    </tbody>
-                                </table>
-                            </div>
-                        `;
-                    }
-                });
-                
-                html += `
-                `;
             }
 
             document.getElementById('summaryContent').innerHTML = html;
-        }
-
-        function toggleGameMoves(gameIndex, event) {
-            const movesDiv = document.getElementById(`game-${gameIndex}-moves`);
-            const button = event.target;
-            if (movesDiv) {
-                if (movesDiv.style.display === 'none') {
-                    movesDiv.style.display = 'block';
-                    button.textContent = 'Hide Moves';
-                } else {
-                    movesDiv.style.display = 'none';
-                    button.textContent = 'View Moves';
+            
+            // Show moves panel and populate game selector if we have games with moves
+            if (data.game_results && data.game_results.some(g => g.moves && g.moves.length > 0)) {
+                document.getElementById('movesPanel').style.display = 'block';
+                populateGameSelector(data.game_results);
+                
+                // Show first game's moves by default
+                const firstGameWithMoves = data.game_results.findIndex(g => g.moves && g.moves.length > 0);
+                if (firstGameWithMoves >= 0) {
+                    showGameMoves(firstGameWithMoves, data.game_results[firstGameWithMoves]);
                 }
             }
         }
+
+        let currentGameData = null;
+        
+        function populateGameSelector(gameResults) {
+            const selector = document.getElementById('gameSelector');
+            selector.innerHTML = gameResults.map((game, index) => {
+                if (game.moves && game.moves.length > 0) {
+                    return `<button onclick="showGameMoves(${index}, gameData.game_results[${index}])" id="gameBtn${index}">
+                        Game ${index + 1} ${game.won ? '✓' : '✗'}
+                    </button>`;
+                }
+                return '';
+            }).join('');
+        }
+        
+        function showGameMoves(gameIndex, game) {
+            // Update active button
+            document.querySelectorAll('.game-selector button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const activeBtn = document.getElementById(`gameBtn${gameIndex}`);
+            if (activeBtn) activeBtn.classList.add('active');
+            
+            // Display moves
+            const movesList = document.getElementById('movesList');
+            if (!game.moves || game.moves.length === 0) {
+                movesList.innerHTML = '<p>No moves available for this game.</p>';
+                return;
+            }
+            
+            movesList.innerHTML = `
+                <div style="margin-bottom: 15px;">
+                    <strong>Game ${gameIndex + 1}</strong> - 
+                    <span class="${game.won ? 'won' : 'lost'}">${game.won ? 'WON' : 'LOST'}</span> - 
+                    ${game.num_moves} moves - 
+                    ${game.moves.filter(m => m.was_valid).length} valid
+                </div>
+                ${game.moves.map(move => `
+                    <div class="move-item">
+                        <div class="move-header">
+                            <span class="move-number">Move ${move.move_number}</span>
+                            <span class="move-action">${move.action}</span>
+                            <span class="${move.was_valid ? 'move-valid' : 'move-invalid'}">
+                                ${move.was_valid ? '✓ Valid' : '✗ Invalid'}
+                            </span>
+                        </div>
+                        <div class="move-reasoning">
+                            <strong>AI Reasoning:</strong><br>
+                            ${move.reasoning || 'No reasoning provided'}
+                        </div>
+                        ${move.error ? `<div class="move-error">Error: ${move.error}</div>` : ''}
+                    </div>
+                `).join('')}
+            `;
+        }
+        
+        // Store game data globally for button clicks
+        let gameData = null;
 
         // Load summary on page load
         loadSummary();
