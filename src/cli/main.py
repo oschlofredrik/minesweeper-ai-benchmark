@@ -18,6 +18,7 @@ from src.games.minesweeper import MinesweeperGame
 from src.models import list_providers
 from .web_commands import add_web_commands
 from .prompt_commands import add_prompt_commands
+from .plugin_commands import add_plugin_commands
 
 console = Console()
 
@@ -472,6 +473,9 @@ add_web_commands(cli)
 
 # Add prompt commands to CLI
 add_prompt_commands(cli)
+
+# Add plugin commands to CLI
+add_plugin_commands(cli)
 
 
 if __name__ == "__main__":
