@@ -125,6 +125,15 @@ async def game_summary_page(job_id: str):
     else:
         return RedirectResponse(url="/")
 
+@app.get("/design-preview", response_class=HTMLResponse)
+async def design_preview():
+    """Serve the design preview page."""
+    preview_file = static_dir / "design-preview.html"
+    if preview_file.exists():
+        return FileResponse(preview_file)
+    else:
+        return RedirectResponse(url="/")
+
 
 @app.get("/api/leaderboard", response_model=List[LeaderboardEntry])
 async def get_leaderboard(
