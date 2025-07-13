@@ -143,8 +143,25 @@ class GameRunner:
                     'prompt_sent': actual_prompt,
                     'full_response': response.content,
                     'model_reasoning': response.reasoning,
-                    'tokens_used': response.tokens_used
+                    'tokens_used': response.tokens_used,
+                    'function_call': response.function_call
                 }
+                
+                # Log the AI details being stored
+                logger.debug(
+                    f"Move {move_count} - AI details to store",
+                    extra={
+                        "game_id": game.game_id,
+                        "move_count": move_count,
+                        "has_prompt": bool(ai_details['prompt_sent']),
+                        "prompt_length": len(ai_details['prompt_sent']) if ai_details['prompt_sent'] else 0,
+                        "has_response": bool(ai_details['full_response']),
+                        "response_length": len(ai_details['full_response']) if ai_details['full_response'] else 0,
+                        "has_reasoning": bool(ai_details['model_reasoning']),
+                        "reasoning_length": len(ai_details['model_reasoning']) if ai_details['model_reasoning'] else 0,
+                        "has_function_call": bool(ai_details['function_call'])
+                    }
+                )
                 
                 # Make the move
                 success, message, info = game.make_move(action, ai_details=ai_details)

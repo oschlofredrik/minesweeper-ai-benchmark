@@ -167,7 +167,9 @@ class AnthropicModel(BaseModel):
                     "response_length": len(content) if content else 0,
                     "tokens_used": tokens_used,
                     "input_tokens": response.usage.input_tokens if hasattr(response, 'usage') else None,
-                    "output_tokens": response.usage.output_tokens if hasattr(response, 'usage') else None
+                    "output_tokens": response.usage.output_tokens if hasattr(response, 'usage') else None,
+                    "has_tool_use": tool_use is not None,
+                    "has_reasoning": bool(reasoning_text)
                 }
             )
             
@@ -176,7 +178,9 @@ class AnthropicModel(BaseModel):
                 f"Anthropic API interaction details",
                 extra={
                     "prompt": prompt[:500] + "..." if len(prompt) > 500 else prompt,
-                    "response": content[:500] + "..." if content and len(content) > 500 else content
+                    "response": content[:500] + "..." if content and len(content) > 500 else content,
+                    "tool_use_details": tool_use if tool_use else None,
+                    "reasoning_extracted": reasoning_text if reasoning_text else None
                 }
             )
             

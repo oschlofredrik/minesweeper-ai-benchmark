@@ -208,6 +208,9 @@ class EvaluationEngine:
                         "was_valid": move.was_valid,
                         "reasoning": move.model_reasoning,
                         "error": move.error_message,
+                        "prompt_sent": move.prompt_sent,
+                        "full_response": move.full_response,
+                        "tokens_used": move.tokens_used,
                     }
                     for move in transcript.moves
                 ],

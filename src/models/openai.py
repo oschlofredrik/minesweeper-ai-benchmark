@@ -145,9 +145,26 @@ class OpenAIModel(BaseModel):
             
             # Check for function calls
             if hasattr(message, 'tool_calls') and message.tool_calls:
+                logger.info(
+                    f"OpenAI function call received",
+                    extra={
+                        "model_id": self.model_id,
+                        "num_tool_calls": len(message.tool_calls),
+                        "tool_names": [tc.function.name for tc in message.tool_calls] if message.tool_calls else []
+                    }
+                )
                 tool_call = message.tool_calls[0]
                 if tool_call.function.name == "make_move":
                     function_call = json.loads(tool_call.function.arguments)
+                    logger.debug(
+                        f"Function call parsed",
+                        extra={
+                            "action": function_call.get('action'),
+                            "position": f"({function_call.get('row')}, {function_call.get('col')})",
+                            "reasoning_length": len(function_call.get('reasoning', '')),
+                            "reasoning_preview": function_call.get('reasoning', '')[:100] + '...' if len(function_call.get('reasoning', '')) > 100 else function_call.get('reasoning', '')
+                        }
+                    )
                     # Extract reasoning from function call
                     reasoning_text = function_call.get('reasoning', '')
                     # Format content to include the action
@@ -171,7 +188,9 @@ class OpenAIModel(BaseModel):
                     "response_length": len(content) if content else 0,
                     "tokens_used": tokens_used,
                     "completion_tokens": response.usage.completion_tokens if response.usage else None,
-                    "prompt_tokens": response.usage.prompt_tokens if response.usage else None
+                    "prompt_tokens": response.usage.prompt_tokens if response.usage else None,
+                    "has_function_call": function_call is not None,
+                    "has_reasoning": bool(reasoning_text)
                 }
             )
             
@@ -180,7 +199,9 @@ class OpenAIModel(BaseModel):
                 f"OpenAI API interaction details",
                 extra={
                     "prompt": prompt[:500] + "..." if len(prompt) > 500 else prompt,
-                    "response": content[:500] + "..." if content and len(content) > 500 else content
+                    "response": content[:500] + "..." if content and len(content) > 500 else content,
+                    "function_call_details": function_call if function_call else None,
+                    "reasoning_extracted": reasoning_text if reasoning_text else None
                 }
             )
             
