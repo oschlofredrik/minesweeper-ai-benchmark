@@ -110,7 +110,17 @@ class EvaluationEngine:
                     "mines_correctly_flagged": int(game["flag_recall"] * len(transcripts[i].final_state.mine_positions)) if i < len(transcripts) else 0,
                     "total_mines": len(transcripts[i].final_state.mine_positions) if i < len(transcripts) else 0,
                     "valid_move_rate": game["valid_move_rate"],
-                    "duration": game["duration_seconds"]
+                    "duration": game["duration_seconds"],
+                    "moves": [  # Add move-by-move data
+                        {
+                            "move_number": j + 1,
+                            "action": move.action.to_string(),
+                            "was_valid": move.was_valid,
+                            "reasoning": move.model_reasoning,
+                            "error": move.error_message
+                        }
+                        for j, move in enumerate(transcripts[i].moves)
+                    ] if i < len(transcripts) else []
                 }
                 for i, game in enumerate(per_game_metrics)
             ],
