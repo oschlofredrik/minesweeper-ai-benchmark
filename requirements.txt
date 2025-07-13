@@ -15,6 +15,7 @@ rich>=13.7.0
 
 # Data processing
 numpy>=1.26.3
+scipy>=1.11.4
 sqlalchemy>=2.0.25
 alembic>=1.13.1
 
