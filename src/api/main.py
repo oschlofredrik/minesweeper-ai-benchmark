@@ -93,7 +93,7 @@ async def health_check():
 @app.get("/", response_class=HTMLResponse)
 async def root():
     """Serve the main web interface."""
-    index_file = static_dir / "index.html"
+    index_file = static_dir / "index-rams.html"
     if index_file.exists():
         return FileResponse(index_file)
     else:
@@ -131,6 +131,15 @@ async def design_preview():
     preview_file = static_dir / "design-preview.html"
     if preview_file.exists():
         return FileResponse(preview_file)
+    else:
+        return RedirectResponse(url="/")
+
+@app.get("/terminal", response_class=HTMLResponse)
+async def terminal_design():
+    """Serve the original terminal design."""
+    terminal_file = static_dir / "index.html"
+    if terminal_file.exists():
+        return FileResponse(terminal_file)
     else:
         return RedirectResponse(url="/")
 
