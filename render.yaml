@@ -1,0 +1,30 @@
+services:
+  # Web service for the API and frontend
+  - type: web
+    name: minesweeper-benchmark
+    runtime: python
+    buildCommand: pip install -r requirements-render.txt
+    startCommand: python scripts/start_web.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: minesweeper-db
+          property: connectionString
+      - key: OPENAI_API_KEY
+        sync: false  # Set manually in Render dashboard
+      - key: ANTHROPIC_API_KEY
+        sync: false  # Set manually in Render dashboard
+      - key: JUDGE_MODEL
+        value: "gpt-4o"
+      - key: ENVIRONMENT
+        value: "production"
+    autoDeploy: true
+    healthCheckPath: /health
+
+databases:
+  - name: minesweeper-db
+    databaseName: minesweeper_benchmark
+    user: minesweeper_user
+    plan: free  # Upgrade to "starter" or higher for production
