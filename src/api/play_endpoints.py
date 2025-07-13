@@ -88,7 +88,7 @@ async def start_play(
     logger.info(
         f"Play session requested",
         extra={
-            "job_id": job_id,
+            "play_job_id": job_id,
             "model": request.model_name,
             "provider": request.model_provider,
             "num_games": request.num_games,
