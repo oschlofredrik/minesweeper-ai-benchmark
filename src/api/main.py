@@ -16,6 +16,7 @@ from .models import (
     EvaluationRequest, ComparisonResult
 )
 from .database import get_leaderboard_data, get_model_results, get_game_replay
+from .evaluation_endpoints import router as evaluation_router
 
 app = FastAPI(
     title="Minesweeper AI Benchmark",
@@ -36,6 +37,9 @@ app.add_middleware(
 static_dir = Path(__file__).parent / "static"
 static_dir.mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+# Include evaluation endpoints
+app.include_router(evaluation_router)
 
 
 @app.get("/health")
