@@ -10,6 +10,7 @@ from datetime import datetime
 import json
 
 from src.core.config import settings
+from src.core.logging_config import setup_logging
 from src.evaluation import MineBenchFormatter
 from .models import (
     LeaderboardEntry, ModelResult, TaskInfo, 
@@ -17,6 +18,16 @@ from .models import (
 )
 from .database import get_leaderboard_data, get_model_results, get_game_replay
 from .evaluation_endpoints import router as evaluation_router
+from .play_endpoints import router as play_router
+
+# Initialize logging
+setup_logging(
+    log_level=settings.log_level if hasattr(settings, 'log_level') else "INFO",
+    log_file="data/logs/minesweeper_api.log",
+    enable_console=True,
+    enable_file=True,
+    structured=True
+)
 
 app = FastAPI(
     title="Minesweeper AI Benchmark",
@@ -38,8 +49,9 @@ static_dir = Path(__file__).parent / "static"
 static_dir.mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
-# Include evaluation endpoints
+# Include routers
 app.include_router(evaluation_router)
+app.include_router(play_router)
 
 
 @app.get("/health")

@@ -34,16 +34,10 @@ function setupEventListeners() {
         loadLeaderboard();
     });
 
-    // Task generation form
-    const taskForm = document.getElementById('task-form');
-    if (taskForm) {
-        taskForm.addEventListener('submit', handleTaskGeneration);
-    }
-
-    // Evaluation form
-    const evalForm = document.getElementById('eval-form');
-    if (evalForm) {
-        evalForm.addEventListener('submit', handleEvaluation);
+    // Play form
+    const playForm = document.getElementById('play-form');
+    if (playForm) {
+        playForm.addEventListener('submit', handlePlay);
     }
 }
 
@@ -186,69 +180,28 @@ function updateModelList() {
     });
 }
 
-// Handle task generation
-async function handleTaskGeneration(e) {
+// Handle play (combined game generation and evaluation)
+async function handlePlay(e) {
     e.preventDefault();
     
     const button = e.target.querySelector('button[type="submit"]');
-    const statusDiv = document.getElementById('task-status');
+    const statusDiv = document.getElementById('play-status');
     
     button.disabled = true;
     statusDiv.className = 'status-message info';
-    statusDiv.textContent = 'Generating tasks...';
-    
-    const data = {
-        num_tasks: parseInt(document.getElementById('num-tasks').value),
-        difficulty: document.getElementById('task-difficulty').value || null,
-        task_type: document.getElementById('task-type').value || null
-    };
-    
-    try {
-        const response = await fetch('/api/evaluation/generate-tasks', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        });
-        
-        const result = await response.json();
-        
-        if (response.ok) {
-            statusDiv.className = 'status-message success';
-            statusDiv.textContent = `✅ ${result.message}`;
-            pollJobStatus(result.job_id);
-            updateJobsList();
-        } else {
-            statusDiv.className = 'status-message error';
-            statusDiv.textContent = `❌ Error: ${result.detail}`;
-        }
-    } catch (error) {
-        statusDiv.className = 'status-message error';
-        statusDiv.textContent = `❌ Error: ${error.message}`;
-    } finally {
-        button.disabled = false;
-    }
-}
-
-// Handle evaluation
-async function handleEvaluation(e) {
-    e.preventDefault();
-    
-    const button = e.target.querySelector('button[type="submit"]');
-    const statusDiv = document.getElementById('eval-status');
-    
-    button.disabled = true;
-    statusDiv.className = 'status-message info';
-    statusDiv.textContent = 'Starting evaluation...';
+    statusDiv.textContent = 'Starting games...';
     
     const data = {
         model_name: document.getElementById('model-name').value,
         model_provider: document.getElementById('model-provider').value,
         num_games: parseInt(document.getElementById('num-games').value),
+        difficulty: document.getElementById('game-difficulty').value || null,
+        game_type: document.getElementById('game-type').value || null,
         api_key: document.getElementById('api-key').value || null
     };
     
     try {
-        const response = await fetch('/api/evaluation/start', {
+        const response = await fetch('/api/play', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(data)
@@ -260,7 +213,7 @@ async function handleEvaluation(e) {
             statusDiv.className = 'status-message success';
             statusDiv.textContent = `✅ ${result.message}`;
             pollJobStatus(result.job_id);
-            updateJobsList();
+            updateGamesList();
         } else {
             statusDiv.className = 'status-message error';
             statusDiv.textContent = `❌ Error: ${result.detail}`;
@@ -277,10 +230,10 @@ async function handleEvaluation(e) {
 async function pollJobStatus(jobId) {
     const interval = setInterval(async () => {
         try {
-            const response = await fetch(`/api/evaluation/jobs/${jobId}/status`);
+            const response = await fetch(`/api/play/games/${jobId}`);
             const job = await response.json();
             
-            updateJobsList();
+            updateGamesList();
             
             if (job.status === 'completed' || job.status === 'failed') {
                 clearInterval(interval);
@@ -295,39 +248,39 @@ async function pollJobStatus(jobId) {
     }, 2000);
 }
 
-// Update jobs list
-async function updateJobsList() {
+// Update games list
+async function updateGamesList() {
     try {
-        const response = await fetch('/api/evaluation/jobs');
-        const jobs = await response.json();
+        const response = await fetch('/api/play/games');
+        const games = await response.json();
         
-        const jobsList = document.getElementById('jobs-list');
-        if (!jobsList) return;
+        const gamesList = document.getElementById('games-list');
+        if (!gamesList) return;
         
-        if (jobs.length === 0) {
-            jobsList.innerHTML = '<p class="empty-state">No active jobs</p>';
+        if (games.length === 0) {
+            gamesList.innerHTML = '<p class="empty-state">No active games</p>';
         } else {
-            jobsList.innerHTML = jobs.map(job => `
-                <div class="job-item ${job.status}">
-                    <div class="job-header">
-                        <strong>${job.job_id}</strong>
-                        <span class="job-status ${job.status}">${job.status.toUpperCase()}</span>
+            gamesList.innerHTML = games.map(game => `
+                <div class="game-item ${game.status}">
+                    <div class="game-header">
+                        <strong>${game.model_name}</strong>
+                        <span class="game-status ${game.status}">${game.status.toUpperCase()}</span>
                     </div>
                     <div class="progress-bar">
-                        <div class="progress-fill" style="width: ${job.progress * 100}%"></div>
+                        <div class="progress-fill" style="width: ${game.progress * 100}%"></div>
                     </div>
-                    <p class="job-message">${job.message}</p>
+                    <p class="game-message">${game.message}</p>
                 </div>
             `).join('');
         }
     } catch (error) {
-        console.error('Error loading jobs:', error);
+        console.error('Error loading games:', error);
     }
 }
 
-// Auto-refresh jobs when on evaluate page
+// Auto-refresh games when on play page
 setInterval(() => {
-    if (document.querySelector('nav a[href="#evaluate"]')?.classList.contains('active')) {
-        updateJobsList();
+    if (document.querySelector('nav a[href="#play"]')?.classList.contains('active')) {
+        updateGamesList();
     }
 }, 5000);

@@ -6,14 +6,27 @@ from pathlib import Path
 from typing import Dict, List, Optional
 from uuid import uuid4
 import json
+import time
+import traceback
 
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
 from pydantic import BaseModel
 
 from src.core.config import settings
+from src.core.logging_config import (
+    get_logger, 
+    log_evaluation_start, 
+    log_evaluation_progress,
+    log_evaluation_complete, 
+    log_evaluation_error,
+    LogContext
+)
 from src.evaluation import EvaluationEngine
 from src.tasks import TaskRepository, TaskGenerator
 from src.models import create_model, ModelConfig
+
+# Initialize logger
+logger = get_logger("api.evaluation")
 
 
 router = APIRouter(prefix="/api/evaluation", tags=["evaluation"])
@@ -76,6 +89,16 @@ async def generate_tasks(
     """Generate new benchmark tasks."""
     job_id = f"task_gen_{uuid4().hex[:8]}"
     
+    logger.info(
+        f"Task generation requested",
+        extra={
+            "job_id": job_id,
+            "num_tasks": request.num_tasks,
+            "difficulty": request.difficulty,
+            "task_type": request.task_type
+        }
+    )
+    
     # Create job status
     jobs[job_id] = JobStatus(
         job_id=job_id,
@@ -112,10 +135,30 @@ async def start_evaluation(
     
     # Validate model
     if request.model_provider not in ["openai", "anthropic"]:
+        logger.warning(
+            f"Invalid model provider requested",
+            extra={
+                "provider": request.model_provider,
+                "job_id": job_id
+            }
+        )
         raise HTTPException(
             status_code=400,
             detail="Invalid model provider. Must be 'openai' or 'anthropic'"
         )
+    
+    logger.info(
+        f"Evaluation job requested",
+        extra={
+            "job_id": job_id,
+            "model": request.model_name,
+            "provider": request.model_provider,
+            "num_games": request.num_games,
+            "task_type": request.task_type,
+            "difficulty": request.difficulty,
+            "has_api_key": bool(request.api_key)
+        }
+    )
     
     # Create job status
     jobs[job_id] = JobStatus(
@@ -181,40 +224,87 @@ async def run_task_generation(
     task_type: Optional[str]
 ):
     """Background task to generate benchmark tasks."""
-    try:
-        jobs[job_id].status = "running"
-        jobs[job_id].message = "Generating tasks..."
-        
-        # Create task generator
-        generator = TaskGenerator()
-        repository = TaskRepository()
-        
-        # Generate tasks
-        generated = 0
-        for i in range(num_tasks):
-            # Update progress
-            jobs[job_id].progress = i / num_tasks
+    start_time = time.time()
+    
+    with LogContext(logger, job_id=job_id):
+        try:
+            logger.info(f"Starting task generation")
+            jobs[job_id].status = "running"
+            jobs[job_id].message = "Generating tasks..."
             
-            # Generate task
-            if task_type == "static":
-                task = generator.generate_static_task(difficulty=difficulty)
-            else:
-                task = generator.generate_interactive_task(difficulty=difficulty)
+            # Create task generator
+            generator = TaskGenerator()
+            repository = TaskRepository()
             
-            # Save task
-            repository.save_task(task)
-            generated += 1
-        
-        # Complete
-        jobs[job_id].status = "completed"
-        jobs[job_id].progress = 1.0
-        jobs[job_id].message = f"Successfully generated {generated} tasks"
-        jobs[job_id].completed_at = datetime.utcnow()
-        
-    except Exception as e:
-        jobs[job_id].status = "failed"
-        jobs[job_id].message = f"Error: {str(e)}"
-        jobs[job_id].completed_at = datetime.utcnow()
+            # Generate tasks
+            generated = 0
+            errors = 0
+            
+            for i in range(num_tasks):
+                try:
+                    # Update progress
+                    jobs[job_id].progress = i / num_tasks
+                    
+                    # Generate task
+                    if task_type == "static":
+                        task = generator.generate_static_task(difficulty=difficulty)
+                    else:
+                        task = generator.generate_interactive_task(difficulty=difficulty)
+                    
+                    # Save task
+                    repository.save_task(task)
+                    generated += 1
+                    
+                    # Log progress every 10%
+                    if i % max(1, num_tasks // 10) == 0:
+                        logger.debug(
+                            f"Task generation progress",
+                            extra={
+                                "progress": i / num_tasks,
+                                "generated": generated,
+                                "errors": errors
+                            }
+                        )
+                        
+                except Exception as task_error:
+                    errors += 1
+                    logger.warning(
+                        f"Failed to generate task {i}",
+                        extra={"error": str(task_error)},
+                        exc_info=True
+                    )
+            
+            # Complete
+            duration = time.time() - start_time
+            jobs[job_id].status = "completed"
+            jobs[job_id].progress = 1.0
+            jobs[job_id].message = f"Successfully generated {generated} tasks"
+            jobs[job_id].completed_at = datetime.utcnow()
+            
+            logger.info(
+                f"Task generation completed",
+                extra={
+                    "duration": duration,
+                    "generated": generated,
+                    "errors": errors,
+                    "success_rate": generated / num_tasks if num_tasks > 0 else 0
+                }
+            )
+            
+        except Exception as e:
+            duration = time.time() - start_time
+            jobs[job_id].status = "failed"
+            jobs[job_id].message = f"Error: {str(e)}"
+            jobs[job_id].completed_at = datetime.utcnow()
+            
+            logger.error(
+                f"Task generation failed",
+                extra={
+                    "duration": duration,
+                    "error_type": type(e).__name__
+                },
+                exc_info=True
+            )
 
 
 async def run_evaluation_job(
@@ -227,63 +317,123 @@ async def run_evaluation_job(
     api_key: Optional[str]
 ):
     """Background task to run evaluation."""
-    try:
-        jobs[job_id].status = "running"
-        jobs[job_id].message = f"Evaluating {model_name}..."
-        
-        # Create model config
-        model_config = ModelConfig(
-            name=model_name,
-            provider=model_provider,
-            model_id=model_name,
-            temperature=0.7,
-            max_tokens=1000,
-            additional_params={}
-        )
-        
-        # Add API key if provided
-        if api_key:
-            model_config.additional_params["api_key"] = api_key
-        
-        # Create model
-        model = create_model(model_config)
-        
-        # Create evaluation engine
-        engine = EvaluationEngine()
-        
-        # Run evaluation with progress updates
-        async def progress_callback(current: int, total: int):
-            jobs[job_id].progress = current / total
-            jobs[job_id].message = f"Completed {current}/{total} games"
-        
-        # Run evaluation
-        results = await engine.evaluate_model(
-            model,
-            num_tasks=num_games,
-            task_type=task_type,
-            difficulty=difficulty,
-            progress_callback=progress_callback
-        )
-        
-        # Save results
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-        results_file = f"{model_name}_{timestamp}_summary.json"
-        results_path = Path("data/results") / results_file
-        
-        with open(results_path, "w") as f:
-            json.dump(results, f, indent=2, default=str)
-        
-        # Complete
-        jobs[job_id].status = "completed"
-        jobs[job_id].progress = 1.0
-        jobs[job_id].message = f"Evaluation completed successfully"
-        jobs[job_id].completed_at = datetime.utcnow()
-        jobs[job_id].results_file = results_file
-        
-    except Exception as e:
-        jobs[job_id].status = "failed"
-        jobs[job_id].message = f"Error: {str(e)}"
-        jobs[job_id].completed_at = datetime.utcnow()
+    start_time = time.time()
+    
+    with LogContext(logger, job_id=job_id, model=model_name):
+        try:
+            log_evaluation_start(logger, job_id, model_name, num_games)
+            jobs[job_id].status = "running"
+            jobs[job_id].message = f"Evaluating {model_name}..."
+            
+            # Create model config
+            logger.debug(
+                f"Creating model configuration",
+                extra={
+                    "provider": model_provider,
+                    "model_id": model_name,
+                    "has_custom_key": bool(api_key)
+                }
+            )
+            
+            model_config = ModelConfig(
+                name=model_name,
+                provider=model_provider,
+                model_id=model_name,
+                temperature=0.7,
+                max_tokens=1000,
+                additional_params={}
+            )
+            
+            # Add API key if provided
+            if api_key:
+                model_config.additional_params["api_key"] = api_key
+            
+            # Create model
+            try:
+                model = create_model(model_config)
+                logger.debug(f"Model created successfully")
+            except Exception as model_error:
+                logger.error(
+                    f"Failed to create model",
+                    extra={"error_type": type(model_error).__name__},
+                    exc_info=True
+                )
+                raise
+            
+            # Create evaluation engine
+            engine = EvaluationEngine()
+            
+            # Run evaluation with progress updates
+            async def progress_callback(current: int, total: int):
+                jobs[job_id].progress = current / total
+                jobs[job_id].message = f"Completed {current}/{total} games"
+                
+                # Log progress every 10%
+                if current % max(1, total // 10) == 0:
+                    log_evaluation_progress(logger, job_id, current, total)
+            
+            # Run evaluation
+            logger.info(f"Starting evaluation run")
+            results = await engine.evaluate_model(
+                model,
+                num_tasks=num_games,
+                task_type=task_type,
+                difficulty=difficulty,
+                progress_callback=progress_callback
+            )
+            
+            # Log evaluation metrics
+            metrics = results.get("metrics", {})
+            logger.info(
+                f"Evaluation metrics computed",
+                extra={
+                    "win_rate": metrics.get("win_rate"),
+                    "accuracy": metrics.get("accuracy"),
+                    "valid_move_rate": metrics.get("valid_move_rate"),
+                    "global_score": metrics.get("global_score")
+                }
+            )
+            
+            # Save results
+            timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+            results_file = f"{model_name}_{timestamp}_summary.json"
+            results_path = Path("data/results") / results_file
+            
+            # Ensure results directory exists
+            results_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            with open(results_path, "w") as f:
+                json.dump(results, f, indent=2, default=str)
+                
+            logger.debug(f"Results saved to {results_file}")
+            
+            # Complete
+            duration = time.time() - start_time
+            jobs[job_id].status = "completed"
+            jobs[job_id].progress = 1.0
+            jobs[job_id].message = f"Evaluation completed successfully"
+            jobs[job_id].completed_at = datetime.utcnow()
+            jobs[job_id].results_file = results_file
+            
+            log_evaluation_complete(logger, job_id, duration, results)
+            
+        except Exception as e:
+            duration = time.time() - start_time
+            jobs[job_id].status = "failed"
+            jobs[job_id].message = f"Error: {str(e)}"
+            jobs[job_id].completed_at = datetime.utcnow()
+            
+            log_evaluation_error(logger, job_id, e)
+            
+            # Add additional debugging info
+            logger.error(
+                f"Evaluation job failed after {duration:.2f} seconds",
+                extra={
+                    "duration": duration,
+                    "error_type": type(e).__name__,
+                    "error_details": traceback.format_exc()
+                }
+            )
 
 
 @router.get("/available-models")
