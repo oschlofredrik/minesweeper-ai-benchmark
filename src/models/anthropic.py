@@ -8,7 +8,11 @@ from anthropic import AsyncAnthropic
 
 from src.core.config import settings
 from src.core.exceptions import ModelAPIError, ModelTimeoutError
+from src.core.logging_config import get_logger
 from .base import BaseModel, ModelResponse
+
+# Initialize logger
+logger = get_logger("models.anthropic")
 
 
 class AnthropicModel(BaseModel):
@@ -47,6 +51,17 @@ class AnthropicModel(BaseModel):
         temperature = kwargs.get("temperature", self.temperature)
         max_tokens = kwargs.get("max_tokens", self.max_tokens)
         
+        # Log the API call
+        logger.info(
+            f"Calling Anthropic API",
+            extra={
+                "model_id": self.model_id,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+                "prompt_length": len(prompt)
+            }
+        )
+        
         try:
             # Create completion with timeout
             response = await asyncio.wait_for(
@@ -73,6 +88,27 @@ class AnthropicModel(BaseModel):
             if hasattr(response, 'usage'):
                 tokens_used = response.usage.input_tokens + response.usage.output_tokens
             
+            # Log successful response
+            logger.info(
+                f"Anthropic API response received",
+                extra={
+                    "model_id": self.model_id,
+                    "response_length": len(content) if content else 0,
+                    "tokens_used": tokens_used,
+                    "input_tokens": response.usage.input_tokens if hasattr(response, 'usage') else None,
+                    "output_tokens": response.usage.output_tokens if hasattr(response, 'usage') else None
+                }
+            )
+            
+            # Log the full prompt and response for debugging
+            logger.debug(
+                f"Anthropic API interaction details",
+                extra={
+                    "prompt": prompt[:500] + "..." if len(prompt) > 500 else prompt,
+                    "response": content[:500] + "..." if content and len(content) > 500 else content
+                }
+            )
+            
             return ModelResponse(
                 content=content,
                 raw_response=response,
@@ -82,42 +118,24 @@ class AnthropicModel(BaseModel):
             )
             
         except asyncio.TimeoutError:
+            logger.error(
+                f"Anthropic API timeout",
+                extra={"model_id": self.model_id, "timeout": self.timeout}
+            )
             raise ModelTimeoutError(
                 f"Anthropic API call timed out after {self.timeout} seconds"
             )
         except anthropic.APIError as e:
+            logger.error(
+                f"Anthropic API error",
+                extra={"model_id": self.model_id, "error": str(e)},
+                exc_info=True
+            )
             raise ModelAPIError(f"Anthropic API error: {str(e)}")
         except Exception as e:
+            logger.error(
+                f"Unexpected Anthropic error",
+                extra={"model_id": self.model_id, "error": str(e)},
+                exc_info=True
+            )
             raise ModelAPIError(f"Unexpected error calling Anthropic API: {str(e)}")
-    
-    async def generate_with_retry(
-        self,
-        prompt: str,
-        max_retries: int = 3,
-        **kwargs
-    ) -> ModelResponse:
-        """
-        Generate response with retry logic.
-        
-        Args:
-            prompt: The prompt to send
-            max_retries: Maximum number of retries
-            **kwargs: Additional parameters
-        
-        Returns:
-            ModelResponse object
-        """
-        last_error = None
-        
-        for attempt in range(max_retries):
-            try:
-                return await self.generate(prompt, **kwargs)
-            except ModelAPIError as e:
-                last_error = e
-                if attempt < max_retries - 1:
-                    # Exponential backoff
-                    wait_time = 2 ** attempt
-                    await asyncio.sleep(wait_time)
-                continue
-        
-        raise last_error

@@ -58,12 +58,13 @@ class MinesweeperGame:
         self.flags_placed = 0
         self.correct_flags = 0
     
-    def make_move(self, action: Action) -> Tuple[bool, str, Dict[str, Any]]:
+    def make_move(self, action: Action, ai_details: Optional[Dict[str, Any]] = None) -> Tuple[bool, str, Dict[str, Any]]:
         """
         Execute a move in the game.
         
         Args:
             action: The action to perform
+            ai_details: Optional dict with AI interaction details (prompt, response, etc.)
         
         Returns:
             Tuple of (success, message, game_info)
@@ -97,7 +98,7 @@ class MinesweeperGame:
             # Get board state after move
             board_after = self.board.to_ascii()
             
-            # Record move
+            # Record move with AI details if provided
             move = Move(
                 action=action,
                 timestamp=timestamp,
@@ -105,6 +106,10 @@ class MinesweeperGame:
                 board_state_after=board_after,
                 was_valid=success,
                 error_message=None if success else message,
+                prompt_sent=ai_details.get('prompt_sent') if ai_details else None,
+                full_response=ai_details.get('full_response') if ai_details else None,
+                model_reasoning=ai_details.get('model_reasoning') if ai_details else None,
+                tokens_used=ai_details.get('tokens_used') if ai_details else None,
             )
             self.moves.append(move)
             
@@ -118,7 +123,7 @@ class MinesweeperGame:
             return success, message, info
             
         except Exception as e:
-            # Record failed move
+            # Record failed move with AI details
             move = Move(
                 action=action,
                 timestamp=timestamp,
@@ -126,6 +131,10 @@ class MinesweeperGame:
                 board_state_after=None,
                 was_valid=False,
                 error_message=str(e),
+                prompt_sent=ai_details.get('prompt_sent') if ai_details else None,
+                full_response=ai_details.get('full_response') if ai_details else None,
+                model_reasoning=ai_details.get('model_reasoning') if ai_details else None,
+                tokens_used=ai_details.get('tokens_used') if ai_details else None,
             )
             self.moves.append(move)
             raise

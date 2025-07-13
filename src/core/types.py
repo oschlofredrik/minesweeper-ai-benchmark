@@ -96,6 +96,10 @@ class Move:
     model_reasoning: Optional[str] = None
     was_valid: bool = True
     error_message: Optional[str] = None
+    # AI interaction details
+    prompt_sent: Optional[str] = None
+    full_response: Optional[str] = None
+    tokens_used: Optional[int] = None
 
 
 @dataclass

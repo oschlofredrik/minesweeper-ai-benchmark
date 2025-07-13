@@ -5,7 +5,7 @@ from typing import Optional, Dict, Any
 from datetime import datetime
 
 from src.core.types import (
-    Action, ActionType, GameTranscript, ModelConfig, Task, Position
+    Action, ActionType, GameTranscript, ModelConfig, Task, Position, Move
 )
 from src.core.exceptions import (
     InvalidModelResponseError, GameAlreadyFinishedError,
@@ -13,6 +13,10 @@ from src.core.exceptions import (
 )
 from src.games.minesweeper import MinesweeperGame
 from src.models import create_model, BaseModel
+from src.core.logging_config import get_logger
+
+# Initialize logger
+logger = get_logger("evaluation.runner")
 
 
 class GameRunner:
@@ -82,8 +86,34 @@ class GameRunner:
             board_state = game.get_board_representation("ascii")
             
             try:
+                # Get the prompt that will be sent
+                prompt = self.model.format_prompt(board_state, prompt_format)
+                
+                # Log the move attempt
+                logger.info(
+                    f"Move {move_count} - Sending prompt to model",
+                    extra={
+                        "game_id": game.game_id,
+                        "move_count": move_count,
+                        "model": self.model_config.name,
+                        "prompt_format": prompt_format
+                    }
+                )
+                
                 # Get model's move
                 response = await self.model.play_move(board_state, prompt_format)
+                
+                # Log the model response
+                logger.info(
+                    f"Move {move_count} - Model response received",
+                    extra={
+                        "game_id": game.game_id,
+                        "move_count": move_count,
+                        "has_action": response.action is not None,
+                        "has_reasoning": response.reasoning is not None,
+                        "tokens_used": response.tokens_used
+                    }
+                )
                 
                 if verbose:
                     print(f"\nMove {move_count}:")
@@ -96,12 +126,29 @@ class GameRunner:
                 
                 action = response.action
                 
-                # Update move with reasoning
-                if game.moves:
-                    game.moves[-1].model_reasoning = response.reasoning
+                # Store AI interaction details for the move
+                ai_details = {
+                    'prompt_sent': prompt,
+                    'full_response': response.content,
+                    'model_reasoning': response.reasoning,
+                    'tokens_used': response.tokens_used
+                }
                 
                 # Make the move
-                success, message, info = game.make_move(action)
+                success, message, info = game.make_move(action, ai_details=ai_details)
+                
+                # Log the move result
+                logger.info(
+                    f"Move {move_count} - Action executed",
+                    extra={
+                        "game_id": game.game_id,
+                        "move_count": move_count,
+                        "action": action.to_string(),
+                        "success": success,
+                        "message": message,
+                        "game_status": info.get("game_status")
+                    }
+                )
                 
                 if verbose:
                     print(f"Action: {action.to_string()}")
@@ -112,13 +159,34 @@ class GameRunner:
                 
             except InvalidModelResponseError as e:
                 consecutive_errors += 1
+                
+                logger.warning(
+                    f"Move {move_count} - Failed to parse model response",
+                    extra={
+                        "game_id": game.game_id,
+                        "move_count": move_count,
+                        "error": str(e),
+                        "consecutive_errors": consecutive_errors
+                    }
+                )
+                
                 if verbose:
                     print(f"Error parsing model response: {e}")
                 
-                # Add failed move to transcript
-                if game.moves:
-                    game.moves[-1].was_valid = False
-                    game.moves[-1].error_message = str(e)
+                # Create a dummy action for the failed move
+                dummy_action = Action(ActionType.REVEAL, Position(0, 0))
+                ai_details = {
+                    'prompt_sent': prompt if 'prompt' in locals() else None,
+                    'full_response': response.content if 'response' in locals() else None,
+                    'model_reasoning': response.reasoning if 'response' in locals() else None,
+                    'tokens_used': response.tokens_used if 'response' in locals() else None
+                }
+                
+                # Record the failed attempt
+                try:
+                    game.make_move(dummy_action, ai_details=ai_details)
+                except:
+                    pass  # Ignore errors when recording failed moves
                 
                 if consecutive_errors >= 3:
                     if verbose:
@@ -144,8 +212,20 @@ class GameRunner:
         
         transcript = game.get_transcript()
         
+        # Log game completion
+        stats = game.get_statistics()
+        logger.info(
+            f"Game completed",
+            extra={
+                "game_id": game.game_id,
+                "status": stats['status'],
+                "moves_made": stats['moves_made'],
+                "board_coverage": stats['board_coverage'],
+                "duration": (game.end_time - game.start_time).total_seconds() if game.end_time else None
+            }
+        )
+        
         if verbose:
-            stats = game.get_statistics()
             print(f"\nGame finished: {stats['status']}")
             print(f"Moves: {stats['moves_made']}")
             print(f"Board coverage: {stats['board_coverage']:.1%}")

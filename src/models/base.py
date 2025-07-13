@@ -2,12 +2,13 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 import re
 from datetime import datetime
+import asyncio
 
 from src.core.types import Action, ActionType, Position
-from src.core.exceptions import InvalidModelResponseError
+from src.core.exceptions import InvalidModelResponseError, ModelAPIError
 
 
 @dataclass
@@ -55,6 +56,38 @@ class BaseModel(ABC):
         """
         pass
     
+    async def generate_with_retry(
+        self,
+        prompt: str,
+        max_retries: int = 3,
+        **kwargs
+    ) -> ModelResponse:
+        """
+        Generate response with retry logic.
+        
+        Args:
+            prompt: The prompt to send
+            max_retries: Maximum number of retries
+            **kwargs: Additional parameters
+        
+        Returns:
+            ModelResponse object
+        """
+        last_error = None
+        
+        for attempt in range(max_retries):
+            try:
+                return await self.generate(prompt, **kwargs)
+            except ModelAPIError as e:
+                last_error = e
+                if attempt < max_retries - 1:
+                    # Exponential backoff
+                    wait_time = 2 ** attempt
+                    await asyncio.sleep(wait_time)
+                continue
+        
+        raise last_error
+
     def parse_action(self, response: str) -> Action:
         """
         Parse an action from model response.

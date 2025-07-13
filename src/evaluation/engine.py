@@ -111,13 +111,17 @@ class EvaluationEngine:
                     "total_mines": len(transcripts[i].final_state.mine_positions) if i < len(transcripts) else 0,
                     "valid_move_rate": game["valid_move_rate"],
                     "duration": game["duration_seconds"],
-                    "moves": [  # Add move-by-move data
+                    "moves": [  # Add move-by-move data with full AI interaction
                         {
                             "move_number": j + 1,
                             "action": move.action.to_string(),
                             "was_valid": move.was_valid,
                             "reasoning": move.model_reasoning,
-                            "error": move.error_message
+                            "error": move.error_message,
+                            "prompt_sent": move.prompt_sent,
+                            "full_response": move.full_response,
+                            "tokens_used": move.tokens_used,
+                            "timestamp": move.timestamp.isoformat() if move.timestamp else None
                         }
                         for j, move in enumerate(transcripts[i].moves)
                     ] if i < len(transcripts) else []

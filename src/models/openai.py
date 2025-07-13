@@ -8,7 +8,11 @@ from openai import AsyncOpenAI
 
 from src.core.config import settings
 from src.core.exceptions import ModelAPIError, ModelTimeoutError
+from src.core.logging_config import get_logger
 from .base import BaseModel, ModelResponse
+
+# Initialize logger
+logger = get_logger("models.openai")
 
 
 class OpenAIModel(BaseModel):
@@ -47,6 +51,17 @@ class OpenAIModel(BaseModel):
         temperature = kwargs.get("temperature", self.temperature)
         max_tokens = kwargs.get("max_tokens", self.max_tokens)
         
+        # Log the API call
+        logger.info(
+            f"Calling OpenAI API",
+            extra={
+                "model_id": self.model_id,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+                "prompt_length": len(prompt)
+            }
+        )
+        
         try:
             # Create completion with timeout
             response = await asyncio.wait_for(
@@ -73,6 +88,27 @@ class OpenAIModel(BaseModel):
             content = response.choices[0].message.content
             tokens_used = response.usage.total_tokens if response.usage else None
             
+            # Log successful response
+            logger.info(
+                f"OpenAI API response received",
+                extra={
+                    "model_id": self.model_id,
+                    "response_length": len(content) if content else 0,
+                    "tokens_used": tokens_used,
+                    "completion_tokens": response.usage.completion_tokens if response.usage else None,
+                    "prompt_tokens": response.usage.prompt_tokens if response.usage else None
+                }
+            )
+            
+            # Log the full prompt and response for debugging
+            logger.debug(
+                f"OpenAI API interaction details",
+                extra={
+                    "prompt": prompt[:500] + "..." if len(prompt) > 500 else prompt,
+                    "response": content[:500] + "..." if content and len(content) > 500 else content
+                }
+            )
+            
             return ModelResponse(
                 content=content,
                 raw_response=response,
@@ -82,42 +118,24 @@ class OpenAIModel(BaseModel):
             )
             
         except asyncio.TimeoutError:
+            logger.error(
+                f"OpenAI API timeout",
+                extra={"model_id": self.model_id, "timeout": self.timeout}
+            )
             raise ModelTimeoutError(
                 f"OpenAI API call timed out after {self.timeout} seconds"
             )
         except openai.APIError as e:
+            logger.error(
+                f"OpenAI API error",
+                extra={"model_id": self.model_id, "error": str(e)},
+                exc_info=True
+            )
             raise ModelAPIError(f"OpenAI API error: {str(e)}")
         except Exception as e:
+            logger.error(
+                f"Unexpected OpenAI error",
+                extra={"model_id": self.model_id, "error": str(e)},
+                exc_info=True
+            )
             raise ModelAPIError(f"Unexpected error calling OpenAI API: {str(e)}")
-    
-    async def generate_with_retry(
-        self,
-        prompt: str,
-        max_retries: int = 3,
-        **kwargs
-    ) -> ModelResponse:
-        """
-        Generate response with retry logic.
-        
-        Args:
-            prompt: The prompt to send
-            max_retries: Maximum number of retries
-            **kwargs: Additional parameters
-        
-        Returns:
-            ModelResponse object
-        """
-        last_error = None
-        
-        for attempt in range(max_retries):
-            try:
-                return await self.generate(prompt, **kwargs)
-            except ModelAPIError as e:
-                last_error = e
-                if attempt < max_retries - 1:
-                    # Exponential backoff
-                    wait_time = 2 ** attempt
-                    await asyncio.sleep(wait_time)
-                continue
-        
-        raise last_error

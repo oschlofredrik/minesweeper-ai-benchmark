@@ -160,29 +160,6 @@ def get_logger(name: str) -> logging.Logger:
     return logging.getLogger(name)
 
 
-class LogContext:
-    """Context manager for adding context to logs."""
-    
-    def __init__(self, logger: logging.Logger, **kwargs):
-        self.logger = logger
-        self.context = kwargs
-        self.old_factory = None
-        
-    def __enter__(self):
-        def factory(*args, **kw):
-            record = self.old_factory(*args, **kw)
-            for key, value in self.context.items():
-                setattr(record, key, value)
-            return record
-            
-        self.old_factory = logging.getLogRecordFactory()
-        logging.setLogRecordFactory(factory)
-        return self
-        
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        logging.setLogRecordFactory(self.old_factory)
-
-
 def log_evaluation_start(logger: logging.Logger, job_id: str, model: str, num_games: int):
     """Log evaluation start."""
     logger.info(
