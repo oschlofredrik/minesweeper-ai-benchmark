@@ -14,6 +14,7 @@ from pydantic import BaseModel
 
 from src.core.config import settings
 from src.core.logging_config import get_logger, LogContext
+from src.core.types import Difficulty
 from src.evaluation import EvaluationEngine
 from src.tasks import TaskRepository, TaskGenerator
 from src.models import create_model, ModelConfig
@@ -184,16 +185,27 @@ async def run_play_session(
                     # Update progress
                     games[job_id].progress = (i / num_games) * 0.3  # First 30% for generation
                     
+                    # Convert string difficulty to enum if provided
+                    diff_enum = None
+                    if difficulty:
+                        try:
+                            diff_enum = Difficulty(difficulty.lower())
+                        except ValueError:
+                            logger.warning(f"Invalid difficulty '{difficulty}', using default")
+                            diff_enum = Difficulty.EXPERT
+                    else:
+                        diff_enum = Difficulty.EXPERT
+                    
                     # Generate task based on type
                     if game_type == "static":
-                        task = generator.generate_static_task(difficulty=difficulty)
+                        task = generator.generate_static_task(difficulty=diff_enum)
                     elif game_type == "interactive":
-                        task = generator.generate_interactive_task(difficulty=difficulty)
+                        task = generator.generate_interactive_task(difficulty=diff_enum)
                     else:
                         # Mix of both
-                        task = (generator.generate_static_task(difficulty=difficulty) 
+                        task = (generator.generate_static_task(difficulty=diff_enum) 
                                 if i % 2 == 0 else 
-                                generator.generate_interactive_task(difficulty=difficulty))
+                                generator.generate_interactive_task(difficulty=diff_enum))
                     
                     # Save task
                     repository.save_task(task)

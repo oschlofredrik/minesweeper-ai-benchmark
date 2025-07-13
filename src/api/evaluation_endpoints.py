@@ -21,6 +21,7 @@ from src.core.logging_config import (
     log_evaluation_error,
     LogContext
 )
+from src.core.types import Difficulty
 from src.evaluation import EvaluationEngine
 from src.tasks import TaskRepository, TaskGenerator
 from src.models import create_model, ModelConfig
@@ -245,11 +246,19 @@ async def run_task_generation(
                     # Update progress
                     jobs[job_id].progress = i / num_tasks
                     
+                    # Convert string difficulty to enum if provided
+                    diff_enum = Difficulty.EXPERT  # default
+                    if difficulty:
+                        try:
+                            diff_enum = Difficulty(difficulty.lower())
+                        except ValueError:
+                            logger.warning(f"Invalid difficulty '{difficulty}', using EXPERT")
+                    
                     # Generate task
                     if task_type == "static":
-                        task = generator.generate_static_task(difficulty=difficulty)
+                        task = generator.generate_static_task(difficulty=diff_enum)
                     else:
-                        task = generator.generate_interactive_task(difficulty=difficulty)
+                        task = generator.generate_interactive_task(difficulty=diff_enum)
                     
                     # Save task
                     repository.save_task(task)
