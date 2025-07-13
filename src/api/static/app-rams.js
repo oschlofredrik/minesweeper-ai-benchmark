@@ -9,6 +9,7 @@ const API_BASE = '';
 let activeGames = new Map();
 let selectedGameId = null;
 let updateInterval = null;
+let pauseUpdates = false;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -17,6 +18,23 @@ document.addEventListener('DOMContentLoaded', () => {
     loadOverviewStats();
     loadLeaderboard();
     startGameUpdates();
+    
+    // Pause updates when hovering over event log
+    const eventsContainer = document.getElementById('events-container');
+    if (eventsContainer) {
+        eventsContainer.addEventListener('mouseenter', () => {
+            pauseUpdates = true;
+            // Add visual indicator
+            const indicator = document.getElementById('pause-indicator');
+            if (indicator) indicator.style.display = 'block';
+        });
+        eventsContainer.addEventListener('mouseleave', () => {
+            pauseUpdates = false;
+            // Remove visual indicator
+            const indicator = document.getElementById('pause-indicator');
+            if (indicator) indicator.style.display = 'none';
+        });
+    }
 });
 
 // Navigation
@@ -220,6 +238,16 @@ async function updateEventLog() {
     
     const container = document.getElementById('events-container');
     
+    // Store which details elements are open before update
+    const openDetails = new Set();
+    container.querySelectorAll('details[open]').forEach(detail => {
+        // Create a unique identifier for each detail element
+        const summary = detail.querySelector('summary');
+        if (summary) {
+            openDetails.add(summary.textContent.trim());
+        }
+    });
+    
     try {
         const response = await fetch(`${API_BASE}/api/play/games/${selectedGameId}`);
         const game = await response.json();
@@ -373,6 +401,14 @@ async function updateEventLog() {
         html += '</div>';
         container.innerHTML = html;
         
+        // Restore open state of details elements
+        container.querySelectorAll('details').forEach(detail => {
+            const summary = detail.querySelector('summary');
+            if (summary && openDetails.has(summary.textContent.trim())) {
+                detail.open = true;
+            }
+        });
+        
     } catch (error) {
         container.innerHTML = '<p class="text-sm text-muted">Failed to load events</p>';
     }
@@ -389,10 +425,10 @@ function escapeHtml(text) {
 function startGameUpdates() {
     updateInterval = setInterval(() => {
         updateGamesList();
-        if (selectedGameId) {
+        if (selectedGameId && !pauseUpdates) {
             updateEventLog();
         }
-    }, 2000);
+    }, 3000); // 3 seconds, but pauses on hover
 }
 
 // Utility functions
