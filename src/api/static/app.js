@@ -153,17 +153,17 @@ async function updateGameEvents() {
         // Build events HTML
         let eventsHtml = `
             <div class="event-item">
-                <div class="event-timestamp">${new Date(game.created_at).toLocaleTimeString()}</div>
-                <div class="event-content">Game started - ${game.num_games} games</div>
+                <div class="event-timestamp">${game.started_at ? new Date(game.started_at).toLocaleTimeString() : 'Now'}</div>
+                <div class="event-content">Game started - ${game.games_total || 0} games</div>
             </div>
         `;
         
         // Add progress events
-        if (game.current_game) {
+        if (game.games_completed !== undefined && game.games_total > 0) {
             eventsHtml += `
                 <div class="event-item">
                     <div class="event-timestamp">Current</div>
-                    <div class="event-content">Playing game ${game.current_game}/${game.num_games}</div>
+                    <div class="event-content">Playing game ${game.games_completed + 1}/${game.games_total}</div>
                 </div>
             `;
         }
