@@ -100,6 +100,20 @@ class EvaluationEngine:
             },
             "metrics": metrics.to_dict(),
             "per_game_metrics": per_game_metrics,
+            "game_results": [  # Add detailed game results for summaries
+                {
+                    "game_id": game["game_id"],
+                    "won": game["won"],
+                    "final_status": game["status"],
+                    "num_moves": game["moves"],
+                    "board_coverage": game["board_coverage"],
+                    "mines_correctly_flagged": int(game["flag_recall"] * len(transcripts[i].final_state.mine_positions)) if i < len(transcripts) else 0,
+                    "total_mines": len(transcripts[i].final_state.mine_positions) if i < len(transcripts) else 0,
+                    "valid_move_rate": game["valid_move_rate"],
+                    "duration": game["duration_seconds"]
+                }
+                for i, game in enumerate(per_game_metrics)
+            ],
         }
         
         if save_results:

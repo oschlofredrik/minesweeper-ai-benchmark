@@ -12,7 +12,10 @@ This is a comprehensive benchmark platform for evaluating Large Language Models 
 6. **Web Interface**: Leaderboard and API with FastAPI
 7. **Prompt Engineering**: A/B testing and optimization tools
 8. **Plugin System**: Extensible architecture for custom components
-9. **Deployment**: Render configuration with one-click deploy
+9. **Deployment**: Successfully deployed to Render
+10. **UI/UX**: Minimalist black terminal-style interface
+11. **Logging**: Comprehensive structured logging system
+12. **Monitoring**: Real-time log streaming via Render API
 
 ## Key Technical Details
 
@@ -62,21 +65,27 @@ python -m src.cli.main plugin list
 ```
 
 ### Deployment
-- **Platform**: Render (configured)
+- **Platform**: Render (live at https://minesweeper-ai-benchmark.onrender.com)
+- **Service ID**: srv-d1prptqdbo4c73bs9jkg
 - **Config**: render.yaml ready
 - **Requirements**: requirements-render.txt
 - **Health Check**: /health endpoint
 - **CORS**: Enabled for API access
+- **HTTPS**: Enforced with automatic upgrades
 
 ### API Keys Required
 - OPENAI_API_KEY
 - ANTHROPIC_API_KEY
+- RENDER_API_KEY (for log streaming)
 
 ### Important Files
 - `render.yaml` - Render deployment config
 - `requirements-render.txt` - Production dependencies
 - `DEPLOY_CHECKLIST.md` - Quick deployment guide
 - `.env.example` - Environment variable template
+- `render-api-logs.sh` - API-based log streaming script
+- `stream-render-logs.sh` - CLI-based log viewer (requires workspace setup)
+- `view-logs-browser.sh` - Quick browser log viewer
 
 ### Evaluation Metrics
 - Win rate, valid move rate
@@ -142,5 +151,39 @@ python -m src.cli.main plugin list
 - GitHub issues for bug reports
 - Render community for deployment help
 
+## Recent Updates (July 2025)
+
+### UI/UX Improvements
+- Redesigned interface with minimalist black terminal aesthetic
+- Removed rounded corners and shadows for clean, straight lines
+- Combined game generation and evaluation into single "Play" workflow
+- Renamed "Tasks" to "Games" throughout the interface
+
+### Logging & Monitoring
+- Implemented structured JSON logging with rotation
+- Added comprehensive logging throughout the application
+- Created real-time log streaming solution using Render API
+- Log viewer scripts for easy debugging and monitoring
+
+### Deployment Fixes
+- Fixed ModelConfig import issues
+- Resolved HTTPS mixed content errors
+- Fixed difficulty enum conversion bugs
+- Corrected evaluate_model() API signature mismatches
+
+### Monitoring Tools
+```bash
+# Stream logs using Render API (recommended)
+export RENDER_API_KEY='rnd_your_key'
+./render-api-logs.sh
+
+# View logs in browser
+./view-logs-browser.sh
+
+# Use Render CLI (requires workspace setup)
+render workspace set
+render logs --resources srv-d1prptqdbo4c73bs9jkg --tail
+```
+
 ## Final State
-The Minesweeper AI Benchmark is production-ready with all planned features implemented. It provides a robust platform for evaluating LLM reasoning capabilities through strategic gameplay, with tools for researchers and developers to extend and customize the benchmarks.
+The Minesweeper AI Benchmark is production-ready and actively deployed. It provides a robust platform for evaluating LLM reasoning capabilities through strategic gameplay, with comprehensive monitoring, logging, and a clean terminal-inspired interface.

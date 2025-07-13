@@ -1,143 +1,180 @@
 # Minesweeper AI Benchmark
 
+[![Live Demo](https://img.shields.io/badge/Live-Demo-green)](https://minesweeper-ai-benchmark.onrender.com)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A comprehensive benchmark platform for evaluating Large Language Models (LLMs) on logic-based reasoning tasks through expert-level Minesweeper gameplay.
 
-## Overview
+## 🚀 Live Deployment
 
-The Minesweeper AI Benchmark tests LLMs' ability to:
-- Apply logical deduction to identify safe moves
-- Maintain spatial awareness of game state
-- Make strategic decisions under uncertainty
-- Explain reasoning behind each move
+The platform is live at: https://minesweeper-ai-benchmark.onrender.com
 
-## Features
+## 🎯 Features
 
-- 🎮 **Complete Minesweeper Implementation** - Full game engine with multiple difficulty levels
-- 🤖 **Multi-Model Support** - Integrated support for OpenAI and Anthropic models
-- 📊 **Comprehensive Metrics** - Win rate, move accuracy, reasoning quality, and more
-- 🔄 **Reproducible Benchmarks** - Deterministic task generation with seeding
-- 💻 **Easy-to-Use CLI** - Simple commands for evaluation, comparison, and analysis
-- 🧪 **Prompt Engineering** - A/B testing, optimization, and interactive prompt development
-- 🌐 **Web Interface** - Interactive leaderboard and visualization tools
-- 📈 **Extensible Architecture** - Modular design for adding new models and metrics
+- **Comprehensive LLM Evaluation**: Test reasoning capabilities of OpenAI and Anthropic models
+- **Advanced Metrics**: Win rate, mine detection precision/recall, board coverage analysis
+- **MineBench Compliant**: Full implementation of the MineBench specification
+- **Web Interface**: Clean, terminal-style UI for running evaluations
+- **Real-time Monitoring**: Stream logs and track evaluation progress
+- **Extensible Architecture**: Plugin system for custom models and metrics
+- **Statistical Analysis**: Wilson confidence intervals and significance testing
 
-## Quick Start
+## 🛠️ Quick Start
 
-### Option 1: Use Hosted Version
-Visit the deployed platform at: [Coming Soon - Deploy with button below]
+### Prerequisites
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/oschlofredrik/minesweeper-ai-benchmark)
+- Python 3.11+
+- OpenAI API key
+- Anthropic API key (optional)
 
-### Option 2: Run Locally
+### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/oschlofredrik/minesweeper-ai-benchmark.git
+git clone https://github.com/yourusername/minesweeper-benchmark.git
 cd minesweeper-benchmark
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Set up environment variables
+# Copy environment variables
 cp .env.example .env
-# Edit .env and add your API keys
+# Edit .env with your API keys
 ```
 
-### Basic Usage
+### Running Locally
 
 ```bash
-# Generate benchmark tasks
-python -m src.cli.main generate-tasks --num-tasks 50
-
-# Evaluate GPT-4
-python -m src.cli.main evaluate --model gpt-4 --num-games 10
-
-# Compare multiple models
-python -m src.cli.main compare --models gpt-4 --models claude-3-opus-20240229
-
-# View results
-python -m src.cli.main show-results results/gpt4_results.json
-
-# Start web interface
+# Start the web server
 python -m src.cli.main serve --open-browser
 
-# Test prompts interactively
-python -m src.cli.main prompt test --model gpt-4
+# Or run evaluations from CLI
+python -m src.cli.main evaluate --model gpt-4 --num-games 10
 ```
 
-## Evaluation Metrics
+## 📊 Monitoring & Logs
 
-- **Win Rate**: Percentage of games successfully completed
-- **Valid Move Rate**: Percentage of legal moves made
-- **Mine Identification**: Precision and recall of mine flagging
-- **Board Coverage**: How much of the board was revealed
-- **Reasoning Quality**: Coherence and correctness of explanations
+### Stream Deployment Logs
 
-## Documentation
+```bash
+# Using Render API (recommended)
+export RENDER_API_KEY='your-render-api-key'
+./render-api-logs.sh
 
-- [Quick Start Guide](docs/quickstart.md) - Detailed usage instructions
-- [Architecture Overview](docs/architecture.md) - System design and components
-- [Project Status](docs/project-status.md) - Current capabilities and roadmap
-- [Web Interface](docs/web-interface.md) - Using the web dashboard
-- [Prompt Engineering](docs/prompt-engineering.md) - Optimizing prompts for better performance
-
-## Project Structure
-
-```
-minesweeper-benchmark/
-├── src/
-│   ├── core/              # Core types and configuration
-│   ├── games/             # Minesweeper game implementation
-│   ├── models/            # LLM interfaces (OpenAI, Anthropic)
-│   ├── evaluation/        # Evaluation engine and metrics
-│   ├── tasks/             # Task generation and management
-│   ├── prompt_engineering/# Prompt optimization tools
-│   ├── api/               # Web interface and API
-│   └── cli/               # Command-line interface
-├── data/
-│   ├── tasks/             # Generated benchmark tasks
-│   ├── results/           # Evaluation results
-│   └── prompts/           # Prompt templates
-├── tests/                 # Test suite
-└── docs/                  # Documentation
-
+# View in browser
+./view-logs-browser.sh
 ```
 
-## Example Results
+See [Log Streaming Guide](docs/log-streaming.md) for detailed instructions.
 
+## 🎮 How It Works
+
+1. **Game Generation**: Creates Minesweeper puzzles with known solutions
+2. **LLM Evaluation**: Models play games using strategic reasoning
+3. **Metrics Collection**: Tracks performance across multiple dimensions
+4. **Statistical Analysis**: Provides confidence intervals and significance tests
+
+## 📚 Documentation
+
+- [Quick Start Guide](docs/quickstart.md)
+- [Architecture Overview](docs/architecture.md)
+- [Deployment Guide](docs/deployment-render.md)
+- [Plugin Development](docs/plugin-development.md)
+- [Prompt Engineering](docs/prompt-engineering.md)
+- [Web Interface Guide](docs/web-interface.md)
+- [Log Streaming Guide](docs/log-streaming.md)
+
+## 🧩 Extending the Platform
+
+### Adding a New Model
+
+```python
+from src.models.base import BaseModel
+
+class MyCustomModel(BaseModel):
+    async def get_action(self, game_state: GameState) -> Action:
+        # Your implementation here
+        pass
 ```
-Model Comparison
-┏━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┓
-┃ Model                 ┃ Win Rate ┃ Valid Moves ┃ Mine Precision ┃ Board Coverage ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━┩
-│ openai/gpt-4          │ 32.0%    │ 94.5%       │ 78.3%          │ 68.2%          │
-│ anthropic/claude-3    │ 28.0%    │ 92.1%       │ 75.6%          │ 65.4%          │
-└───────────────────────┴──────────┴─────────────┴────────────────┴────────────────┘
+
+### Creating Custom Metrics
+
+```python
+from src.evaluation.metrics.base import BaseMetric
+
+class MyMetric(BaseMetric):
+    def calculate(self, games: List[Game]) -> float:
+        # Your metric logic here
+        pass
 ```
 
-## Contributing
+## 🔧 Configuration
 
-Contributions are welcome! Areas of interest:
-- Adding support for more LLM providers
-- Implementing new evaluation metrics
-- Creating harder benchmark tasks
-- Building visualization tools
+Key environment variables:
 
-## License
+```bash
+# API Keys
+OPENAI_API_KEY=your-key
+ANTHROPIC_API_KEY=your-key
+RENDER_API_KEY=your-key
 
-[License information to be added]
+# Game Settings
+DEFAULT_BOARD_ROWS=16
+DEFAULT_BOARD_COLS=30
+DEFAULT_MINE_COUNT=99
 
-## Citation
-
-If you use this benchmark in your research, please cite:
+# Evaluation Settings
+EVALUATION_BATCH_SIZE=10
+EVALUATION_TIMEOUT=300
 ```
-[Citation to be added]
-```
 
-## Acknowledgments
+## 📈 Metrics
 
-This benchmark draws inspiration from:
-- BIG-bench for comprehensive LLM evaluation
-- ARC for reasoning-focused benchmarking
-- SWE-bench for complex task evaluation
-- Various Minesweeper AI research papers
+The platform tracks:
+
+- **Win Rate**: Percentage of games won
+- **Valid Move Rate**: Percentage of legal moves
+- **Mine Detection**: Precision and recall for mine identification
+- **Board Coverage**: Average percentage explored before loss
+- **Move Efficiency**: Strategic quality of moves
+- **Reasoning Quality**: LLM-judged explanation quality
+
+## 🚀 Deployment
+
+The platform is deployed on Render with:
+
+- Automatic builds from GitHub
+- PostgreSQL database (optional)
+- HTTPS enforcement
+- Health monitoring
+- Auto-scaling capabilities
+
+## 🤝 Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch
+3. Add tests for new functionality
+4. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🙏 Acknowledgments
+
+- MineBench specification creators
+- OpenAI and Anthropic for LLM APIs
+- Render for hosting platform
+
+## 📞 Support
+
+- [GitHub Issues](https://github.com/yourusername/minesweeper-benchmark/issues)
+- [Documentation](docs/)
+- Email: your-email@example.com

@@ -56,6 +56,7 @@ class GameStatus(BaseModel):
     current_metrics: Optional[Dict[str, float]] = None
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
+    results_file: Optional[str] = None  # Path to results JSON
 
 
 # In-memory game tracking
@@ -154,6 +155,87 @@ async def get_game_status(job_id: str):
         raise HTTPException(status_code=404, detail="Game session not found")
     
     return games[job_id]
+
+
+class PlaySummary(BaseModel):
+    """Detailed summary of a play session."""
+    job_id: str
+    model_name: str
+    status: str
+    num_games: int
+    metrics: Dict[str, float]
+    game_results: List[Dict[str, Any]]
+    aggregate_stats: Dict[str, Any]
+    timestamp: str
+
+
+@router.get("/games/{job_id}/summary")
+async def get_game_summary(job_id: str):
+    """Get detailed summary and results of a completed game session."""
+    if job_id not in games:
+        raise HTTPException(status_code=404, detail="Game session not found")
+    
+    game_status = games[job_id]
+    
+    # Check if game is completed
+    if game_status.status != "completed":
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Game session is {game_status.status}. Summary only available for completed sessions."
+        )
+    
+    # Check if results file exists
+    if not game_status.results_file:
+        raise HTTPException(status_code=404, detail="Results file not found")
+    
+    results_path = Path("data/results") / game_status.results_file
+    
+    if not results_path.exists():
+        raise HTTPException(status_code=404, detail="Results file not found on disk")
+    
+    # Load results
+    try:
+        with open(results_path, "r") as f:
+            results = json.load(f)
+    except Exception as e:
+        logger.error(f"Failed to load results file", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to load results")
+    
+    # Extract game-by-game results if available
+    game_results = []
+    if "game_results" in results:
+        for game in results["game_results"]:
+            game_results.append({
+                "game_id": game.get("game_id"),
+                "won": game.get("won", False),
+                "num_moves": game.get("num_moves", 0),
+                "final_status": game.get("final_status"),
+                "board_coverage": game.get("board_coverage", 0),
+                "mines_correctly_flagged": game.get("mines_correctly_flagged", 0),
+                "total_mines": game.get("total_mines", 0)
+            })
+    
+    # Create summary response
+    summary = {
+        "job_id": job_id,
+        "model_name": game_status.model_name,
+        "status": game_status.status,
+        "num_games": results.get("num_games", game_status.games_total),
+        "metrics": results.get("metrics", game_status.current_metrics or {}),
+        "game_results": game_results,
+        "aggregate_stats": {
+            "total_games": len(game_results),
+            "games_won": sum(1 for g in game_results if g.get("won")),
+            "average_moves": sum(g.get("num_moves", 0) for g in game_results) / len(game_results) if game_results else 0,
+            "average_coverage": sum(g.get("board_coverage", 0) for g in game_results) / len(game_results) if game_results else 0,
+        },
+        "timestamp": results.get("timestamp", ""),
+        "started_at": game_status.started_at.isoformat() if game_status.started_at else None,
+        "completed_at": game_status.completed_at.isoformat() if game_status.completed_at else None,
+        "duration": (game_status.completed_at - game_status.started_at).total_seconds() if game_status.completed_at and game_status.started_at else None
+    }
+    
+    return summary
 
 
 async def run_play_session(
@@ -277,11 +359,17 @@ async def run_play_session(
                 "coverage": metrics.get("board_coverage_on_loss", 0.0)
             }
             
-            # Save results
+            # Save results with job_id in filename for easy lookup
             timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-            results_file = f"{model_name}_{timestamp}_play_results.json"
+            results_file = f"play_{job_id}_{model_name}_{timestamp}.json"
             results_path = Path("data/results") / results_file
             results_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Add job_id to results for reference
+            results["job_id"] = job_id
+            results["model_name"] = model_name
+            results["num_games"] = len(generated_tasks)
+            results["timestamp"] = timestamp
             
             with open(results_path, "w") as f:
                 json.dump(results, f, indent=2, default=str)
@@ -293,6 +381,7 @@ async def run_play_session(
             games[job_id].games_completed = len(generated_tasks)
             games[job_id].message = f"Completed {len(generated_tasks)} games successfully!"
             games[job_id].completed_at = datetime.utcnow()
+            games[job_id].results_file = str(results_file)  # Store the filename
             
             logger.info(
                 f"Play session completed",

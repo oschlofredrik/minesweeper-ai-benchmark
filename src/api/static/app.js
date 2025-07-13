@@ -273,6 +273,13 @@ async function updateGamesList() {
                         <div class="progress-fill" style="width: ${game.progress * 100}%"></div>
                     </div>
                     <p class="game-message">${game.message}</p>
+                    ${game.status === 'completed' && game.current_metrics ? `
+                        <div class="game-metrics">
+                            <span>Win Rate: ${(game.current_metrics.win_rate * 100).toFixed(1)}%</span>
+                            <span>Valid Moves: ${(game.current_metrics.valid_move_rate * 100).toFixed(1)}%</span>
+                        </div>
+                        <a href="/summary/${game.job_id}" class="view-summary">View Detailed Summary →</a>
+                    ` : ''}
                 </div>
             `).join('');
         }

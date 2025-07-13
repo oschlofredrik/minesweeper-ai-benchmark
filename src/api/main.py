@@ -112,6 +112,16 @@ async def root():
         """
 
 
+@app.get("/summary/{job_id}", response_class=HTMLResponse)
+async def game_summary_page(job_id: str):
+    """Serve the game summary page."""
+    summary_file = static_dir / "summary.html"
+    if summary_file.exists():
+        return FileResponse(summary_file)
+    else:
+        return RedirectResponse(url="/")
+
+
 @app.get("/api/leaderboard", response_model=List[LeaderboardEntry])
 async def get_leaderboard(
     task_type: Optional[str] = Query(None, description="Filter by task type (static/interactive)"),
