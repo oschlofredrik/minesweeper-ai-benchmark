@@ -13,9 +13,11 @@ The platform is live at: https://minesweeper-ai-benchmark.onrender.com
 ## 🎯 Features
 
 - **Comprehensive LLM Evaluation**: Test reasoning capabilities of OpenAI and Anthropic models
+- **Function Calling Integration**: Native support for OpenAI function calling and Anthropic tool use
 - **Advanced Metrics**: Win rate, mine detection precision/recall, board coverage analysis
 - **MineBench Compliant**: Full implementation of the MineBench specification
-- **Web Interface**: Clean, terminal-style UI for running evaluations
+- **Web Interface**: Clean, Dieter Rams-inspired UI for running evaluations
+- **Complete Event Tracking**: Capture and display all prompts, responses, and reasoning
 - **Real-time Monitoring**: Stream logs and track evaluation progress
 - **Extensible Architecture**: Plugin system for custom models and metrics
 - **Statistical Analysis**: Wilson confidence intervals and significance testing
@@ -76,13 +78,26 @@ See [Log Streaming Guide](docs/log-streaming.md) for detailed instructions.
 
 1. **Game Generation**: Creates Minesweeper puzzles with known solutions
 2. **LLM Evaluation**: Models play games using strategic reasoning
-3. **Metrics Collection**: Tracks performance across multiple dimensions
-4. **Statistical Analysis**: Provides confidence intervals and significance tests
+3. **Function Calling**: Uses native OpenAI/Anthropic APIs for structured moves
+4. **Metrics Collection**: Tracks performance across multiple dimensions
+5. **Statistical Analysis**: Provides confidence intervals and significance tests
+
+### 🤖 Function Calling Integration
+
+The platform uses **function calling** (OpenAI) and **tool use** (Anthropic) for reliable, structured communication:
+
+- **No Parsing Errors**: Moves come as structured JSON, not text
+- **Complete Games**: Games run to completion without stopping
+- **Rich Reasoning**: Every move includes detailed reasoning
+- **Full Compatibility**: Works with GPT-4, GPT-3.5, Claude-3, and more
+
+See [Function Calling Documentation](docs/function-calling.md) for details.
 
 ## 📚 Documentation
 
 - [Quick Start Guide](docs/quickstart.md)
 - [Architecture Overview](docs/architecture.md)
+- [Function Calling Integration](docs/function-calling.md)
 - [Deployment Guide](docs/deployment-render.md)
 - [Plugin Development](docs/plugin-development.md)
 - [Prompt Engineering](docs/prompt-engineering.md)

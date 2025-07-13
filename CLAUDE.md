@@ -5,7 +5,7 @@ This is a comprehensive benchmark platform for evaluating Large Language Models 
 
 ## Current Status (Completed ✅)
 1. **Core Game Engine**: Full Minesweeper implementation with solver
-2. **Model Interfaces**: OpenAI and Anthropic integrations
+2. **Model Interfaces**: OpenAI and Anthropic integrations with function calling
 3. **Evaluation System**: Advanced metrics with statistical testing
 4. **Task Management**: Generation and storage of benchmark scenarios
 5. **CLI Tools**: Comprehensive command-line interface
@@ -13,9 +13,11 @@ This is a comprehensive benchmark platform for evaluating Large Language Models 
 7. **Prompt Engineering**: A/B testing and optimization tools
 8. **Plugin System**: Extensible architecture for custom components
 9. **Deployment**: Successfully deployed to Render
-10. **UI/UX**: Minimalist black terminal-style interface
+10. **UI/UX**: Minimalist Dieter Rams-inspired interface
 11. **Logging**: Comprehensive structured logging system
 12. **Monitoring**: Real-time log streaming via Render API
+13. **Function Calling**: Native OpenAI and Anthropic function/tool use
+14. **Event Tracking**: Full prompt/response/reasoning capture and display
 
 ## Key Technical Details
 
@@ -153,23 +155,36 @@ python -m src.cli.main plugin list
 
 ## Recent Updates (July 2025)
 
+### Function Calling Integration (NEW)
+- **OpenAI Function Calling**: Uses native `tools` API for structured responses
+- **Anthropic Tool Use**: Implements Claude's tool use for reliable move formatting
+- **No More Parsing**: Eliminates regex parsing errors that caused games to stop
+- **Structured Actions**: Moves come as JSON with action, row, col, and reasoning
+- **Reasoning Models**: Special handling for o1 and Claude with thinking
+
+### Enhanced Event Tracking
+- **Full AI Interaction Capture**: Stores prompts, responses, reasoning, tokens
+- **Event Log UI**: Collapsible details with pause-on-hover functionality
+- **Persistent Storage**: All move data saved in results JSON files
+- **Move-by-Move Details**: Complete interaction history for analysis
+
 ### UI/UX Improvements
-- Redesigned interface with minimalist black terminal aesthetic
-- Removed rounded corners and shadows for clean, straight lines
+- Redesigned interface with minimalist Dieter Rams aesthetic
+- Clean, functional design with optimal typography and spacing
 - Combined game generation and evaluation into single "Play" workflow
-- Renamed "Tasks" to "Games" throughout the interface
+- Event Log preserves open state during auto-refresh
 
 ### Logging & Monitoring
 - Implemented structured JSON logging with rotation
 - Added comprehensive logging throughout the application
 - Created real-time log streaming solution using Render API
-- Log viewer scripts for easy debugging and monitoring
+- Debug logging for game loop investigation
 
-### Deployment Fixes
-- Fixed ModelConfig import issues
-- Resolved HTTPS mixed content errors
-- Fixed difficulty enum conversion bugs
-- Corrected evaluate_model() API signature mismatches
+### API Integration Updates
+- **Prompt Handling**: Automatic format selection based on model type
+- **Reasoning Extraction**: Captures reasoning that comes before actions
+- **Token Tracking**: Accurate token usage for both providers
+- **Error Handling**: Robust error handling with detailed logging
 
 ### Monitoring Tools
 ```bash
@@ -180,10 +195,45 @@ export RENDER_API_KEY='rnd_your_key'
 # View logs in browser
 ./view-logs-browser.sh
 
-# Use Render CLI (requires workspace setup)
-render workspace set
-render logs --resources srv-d1prptqdbo4c73bs9jkg --tail
+# Test function calling
+python test_function_calling.py
+
+# Test evaluation flow
+python test_evaluation.py
+```
+
+## Key Features Added
+
+### Function Calling Benefits
+1. **Reliability**: No parsing errors - moves always in correct format
+2. **Consistency**: Structured responses with guaranteed fields
+3. **Full Games**: Games run to completion instead of stopping after 1 move
+4. **Rich Data**: Reasoning included with every move automatically
+
+### Data Captured Per Move
+- `prompt_sent`: Exact prompt sent to the AI
+- `full_response`: Complete AI response
+- `reasoning`: Extracted reasoning/thinking
+- `action`: The move made (reveal/flag/unflag)
+- `position`: Row and column
+- `tokens_used`: Token count for the request
+- `timestamp`: When the move was made
+- `was_valid`: Whether the move was valid
+- `error`: Any error message
+
+## Technical Implementation
+
+### OpenAI Function Calling
+```python
+# Automatically uses tools API for structured responses
+tools = [{"type": "function", "function": {"name": "make_move", ...}}]
+```
+
+### Anthropic Tool Use  
+```python
+# Uses Claude's native tool use feature
+tools = [{"name": "make_move", "input_schema": {...}}]
 ```
 
 ## Final State
-The Minesweeper AI Benchmark is production-ready and actively deployed. It provides a robust platform for evaluating LLM reasoning capabilities through strategic gameplay, with comprehensive monitoring, logging, and a clean terminal-inspired interface.
+The Minesweeper AI Benchmark is production-ready with robust function calling integration. It provides reliable evaluation of LLM reasoning through strategic gameplay, capturing complete interaction data with every move. The platform features comprehensive monitoring, structured logging, and an elegant Dieter Rams-inspired interface.
