@@ -108,9 +108,16 @@ class StorageBackend:
     # Leaderboard Methods
     def update_leaderboard(self, model_config: ModelConfig, metrics: Dict[str, float]) -> bool:
         """Update leaderboard entry for a model."""
+        logger.info(f"🏆 update_leaderboard called for {model_config.provider}:{model_config.name}")
+        logger.info(f"   use_database: {self.use_database}")
+        
         if self.use_database:
-            return self._update_leaderboard_db(model_config, metrics)
+            logger.info("💾 Using database backend for leaderboard update")
+            result = self._update_leaderboard_db(model_config, metrics)
+            logger.info(f"🎯 Database update result: {result}")
+            return result
         else:
+            logger.info("📁 Using file-based backend (leaderboard computed on-demand)")
             # File-based leaderboard is computed on-demand
             return True
     
@@ -398,17 +405,25 @@ class StorageBackend:
     
     def _update_leaderboard_db(self, model_config: ModelConfig, metrics: Dict[str, float]) -> bool:
         """Update leaderboard entry in database."""
+        logger.info(f"📊 Starting database leaderboard update for {model_config.provider}:{model_config.name}")
+        logger.info(f"   Metrics to save: {json.dumps(metrics, indent=2)}")
+        
         try:
             db = next(get_db())
+            logger.info("✅ Got database session")
             
             # Check if entry exists
+            logger.info(f"🔍 Checking for existing entry: provider={model_config.provider}, name={model_config.name}")
             entry = db.query(LeaderboardEntry).filter_by(
                 model_provider=model_config.provider,
                 model_name=model_config.name
             ).first()
+            logger.info(f"   Existing entry found: {entry is not None}")
             
             if entry:
                 # Update existing entry
+                logger.info(f"📝 Updating existing entry (ID: {entry.id})")
+                old_games = entry.total_games
                 entry.total_games += metrics.get('num_games', 1)
                 entry.win_rate = metrics.get('win_rate', 0.0)
                 entry.valid_move_rate = metrics.get('valid_move_rate', 0.0)
@@ -420,8 +435,12 @@ class StorageBackend:
                 entry.reasoning_score = metrics.get('reasoning_score', 0.0)
                 entry.global_score = metrics.get('composite_score', 0.0)
                 entry.updated_at = datetime.now(timezone.utc)
+                logger.info(f"   Games: {old_games} → {entry.total_games} (+{metrics.get('num_games', 1)})")
+                logger.info(f"   Win rate: {entry.win_rate:.2%}")
+                logger.info(f"   Global score: {entry.global_score:.4f}")
             else:
                 # Create new entry
+                logger.info(f"✨ Creating new leaderboard entry")
                 entry = LeaderboardEntry(
                     model_provider=model_config.provider,
                     model_name=model_config.name,
@@ -437,16 +456,34 @@ class StorageBackend:
                     global_score=metrics.get('composite_score', 0.0)
                 )
                 db.add(entry)
+                logger.info(f"   New entry prepared for: {model_config.provider}:{model_config.name}")
+                logger.info(f"   Games: {entry.total_games}")
+                logger.info(f"   Win rate: {entry.win_rate:.2%}")
+                logger.info(f"   Global score: {entry.global_score:.4f}")
             
+            logger.info("💾 Committing to database...")
             db.commit()
+            logger.info("✅ Database commit successful!")
+            
+            # Verify the save
+            verify_count = db.query(LeaderboardEntry).count()
+            logger.info(f"📊 Total leaderboard entries after save: {verify_count}")
+            
             return True
             
         except SQLAlchemyError as e:
-            logger.error(f"Database error updating leaderboard: {e}")
+            logger.error(f"❌ Database error updating leaderboard: {type(e).__name__}: {str(e)}")
+            logger.error(f"   Full error details: {repr(e)}")
             db.rollback()
+            logger.error("🔙 Database rollback performed")
+            return False
+        except Exception as e:
+            logger.error(f"❌ Unexpected error updating leaderboard: {type(e).__name__}: {str(e)}")
+            logger.error(f"   Full traceback:", exc_info=True)
             return False
         finally:
             db.close()
+            logger.info("🔒 Database session closed")
     
     def _compute_leaderboard_from_files(self) -> List[Dict[str, Any]]:
         """Compute leaderboard from files (existing logic)."""

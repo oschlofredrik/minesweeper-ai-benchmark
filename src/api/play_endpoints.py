@@ -281,6 +281,14 @@ async def run_play_session(
     """Background task to run a play session (generate games and evaluate)."""
     start_time = time.time()
     
+    logger.info(f"🎮 =================  PLAY SESSION START  ==================")
+    logger.info(f"   Job ID: {job_id}")
+    logger.info(f"   Model: {model_provider}:{model_name}")
+    logger.info(f"   Games to play: {num_games}")
+    logger.info(f"   Game type: {game_type or 'mixed'}")
+    logger.info(f"   Difficulty: {difficulty or 'expert'}")
+    logger.info(f"=========================================================")
+    
     try:
         logger.info(f"Starting play session", extra={"job_id": job_id, "model": model_name})
         games[job_id].status = "running"
@@ -404,10 +412,17 @@ async def run_play_session(
             json.dump(results, f, indent=2, default=str)
         
         # Update database/storage backend
+        logger.info(f"📊 Starting database update for completed games")
+        logger.info(f"   Model: {model_provider}:{model_name}")
+        logger.info(f"   Games played: {len(generated_tasks)}")
+        logger.info(f"   Win rate: {metrics.get('win_rate', 0.0):.2%}")
+        
+        update_result = False  # Track if database update succeeded
         try:
             from src.core.storage import get_storage
             
             storage = get_storage()
+            logger.info(f"💾 Got storage backend: use_database={storage.use_database}")
             
             # Update leaderboard with aggregate metrics
             model_config = ModelConfig(
@@ -415,6 +430,7 @@ async def run_play_session(
                 name=model_name,
                 api_key=api_key or ""
             )
+            logger.info(f"🔧 Created ModelConfig: {model_config}")
             
             # Add all metrics for database storage
             metrics_with_games = metrics.copy()
@@ -425,8 +441,21 @@ async def run_play_session(
             metrics_with_games['ms_i_score'] = metrics.get('ms_i_score', 0.0)
             metrics_with_games['reasoning_score'] = metrics.get('reasoning_score', 0.0)
             
-            storage.update_leaderboard(model_config, metrics_with_games)
-            logger.info(f"Updated leaderboard for {model_name}")
+            logger.info(f"📊 Metrics prepared for storage:")
+            logger.info(f"   num_games: {metrics_with_games['num_games']}")
+            logger.info(f"   win_rate: {metrics_with_games.get('win_rate', 0.0):.2%}")
+            logger.info(f"   composite_score: {metrics_with_games['composite_score']:.4f}")
+            logger.info(f"   ms_s_score: {metrics_with_games['ms_s_score']:.4f}")
+            logger.info(f"   ms_i_score: {metrics_with_games['ms_i_score']:.4f}")
+            logger.info(f"   reasoning_score: {metrics_with_games['reasoning_score']:.4f}")
+            
+            logger.info(f"🚀 Calling storage.update_leaderboard...")
+            update_result = storage.update_leaderboard(model_config, metrics_with_games)
+            
+            if update_result:
+                logger.info(f"✅ Successfully updated leaderboard for {model_name}")
+            else:
+                logger.error(f"❌ Failed to update leaderboard for {model_name}")
             
             # Save individual game results if database is enabled
             if storage.use_database and "game_results" in results:
@@ -439,7 +468,8 @@ async def run_play_session(
                         logger.warning(f"Failed to save game to database: {e}")
                         
         except Exception as e:
-            logger.error(f"Failed to update storage backend: {e}")
+            logger.error(f"❌ Failed to update storage backend: {type(e).__name__}: {str(e)}")
+            logger.error("   Full error details:", exc_info=True)
             # Don't fail the whole operation if storage update fails
         
         # Complete
@@ -450,6 +480,15 @@ async def run_play_session(
         games[job_id].message = f"Completed {len(generated_tasks)} games successfully!"
         games[job_id].completed_at = datetime.utcnow()
         games[job_id].results_file = str(results_file)  # Store the filename
+        
+        logger.info(f"🏁 =================  PLAY SESSION COMPLETE  ==================")
+        logger.info(f"   Job ID: {job_id}")
+        logger.info(f"   Duration: {duration:.2f} seconds")
+        logger.info(f"   Games played: {len(generated_tasks)}")
+        logger.info(f"   Win rate: {metrics.get('win_rate', 0.0):.2%}")
+        logger.info(f"   Results file: {results_file}")
+        logger.info(f"   Database update: {'Success' if 'update_result' in locals() and update_result else 'Failed' if 'update_result' in locals() else 'Not attempted'}")
+        logger.info(f"=============================================================")
         
         logger.info(
             f"Play session completed",
