@@ -16,58 +16,43 @@ async def get_leaderboard_data(
     limit: int = 50,
 ) -> List[LeaderboardEntry]:
     """
-    Get leaderboard data from stored results.
-    
-    This is a file-based implementation. In production, this would
-    query a PostgreSQL database.
+    Get leaderboard data from storage backend.
     """
-    results_dir = Path("data/results")
+    storage = get_storage()
+    
+    # Get leaderboard data from storage
+    leaderboard_data = storage.get_leaderboard()
+    
+    # Convert to LeaderboardEntry objects
     leaderboard_entries = []
+    for data in leaderboard_data:
+        entry = LeaderboardEntry(
+            rank=data.get("rank", 0),
+            model_id=data.get("model_name", "unknown"),
+            model_name=data.get("model_name", "unknown"),
+            global_score=data.get("global_score", 0.0),
+            ms_s_score=data.get("global_score", 0.0),  # Using global_score as proxy
+            ms_i_score=data.get("global_score", 0.0),  # Using global_score as proxy
+            win_rate=data.get("win_rate", 0.0),
+            accuracy=data.get("accuracy", 0.0),
+            coverage=data.get("board_coverage", 0.0),
+            reasoning_score=data.get("reasoning_score", 0.0),
+            num_games=data.get("total_games", 0),
+            last_updated=datetime.fromisoformat(data["updated_at"]) if data.get("updated_at") else datetime.now(timezone.utc),
+            valid_move_rate=data.get("valid_move_rate", 0.0),
+            total_games=data.get("total_games", 0)
+        )
+        leaderboard_entries.append(entry)
     
-    # Load all result files
-    for file in results_dir.glob("*_summary.json"):
-        try:
-            with open(file) as f:
-                data = json.load(f)
-                
-            # Extract metrics
-            metrics = data.get("metrics", {})
-            model_info = data.get("model", {})
-            eval_info = data.get("evaluation", {})
-            
-            # Create leaderboard entry
-            entry = LeaderboardEntry(
-                rank=0,  # Will be set after sorting
-                model_id=model_info.get("name", "unknown"),
-                model_name=model_info.get("name", "unknown"),
-                global_score=metrics.get("global_score", 0.0),
-                ms_s_score=metrics.get("ms_s_score", 0.0),
-                ms_i_score=metrics.get("ms_i_score", 0.0),
-                win_rate=metrics.get("win_rate", 0.0),
-                accuracy=metrics.get("accuracy", 0.0),
-                coverage=metrics.get("board_coverage_on_loss", 0.0),
-                reasoning_score=metrics.get("reasoning_quality_score", 0.0),
-                num_games=eval_info.get("num_tasks", 0),
-                last_updated=datetime.fromisoformat(
-                    eval_info.get("end_time", datetime.utcnow().isoformat())
-                ),
-            )
-            
-            leaderboard_entries.append(entry)
-            
-        except Exception as e:
-            print(f"Error loading {file}: {e}")
-            continue
-    
-    # Sort by metric
-    leaderboard_entries.sort(
-        key=lambda x: getattr(x, metric, 0.0),
-        reverse=True
-    )
-    
-    # Assign ranks
-    for i, entry in enumerate(leaderboard_entries):
-        entry.rank = i + 1
+    # Sort by metric if needed
+    if metric != "global_score":
+        leaderboard_entries.sort(
+            key=lambda x: getattr(x, metric, 0.0),
+            reverse=True
+        )
+        # Re-assign ranks
+        for i, entry in enumerate(leaderboard_entries):
+            entry.rank = i + 1
     
     return leaderboard_entries[:limit]
 

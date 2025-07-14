@@ -403,6 +403,42 @@ async def run_play_session(
         with open(results_path, "w") as f:
             json.dump(results, f, indent=2, default=str)
         
+        # Update database/storage backend
+        try:
+            from src.core.storage import get_storage
+            from src.core.types import ModelConfig
+            
+            storage = get_storage()
+            
+            # Update leaderboard with aggregate metrics
+            model_config = ModelConfig(
+                provider=model_provider,
+                name=model_name,
+                api_key=api_key or ""
+            )
+            
+            # Add num_games to metrics for proper aggregation
+            metrics_with_games = metrics.copy()
+            metrics_with_games['num_games'] = len(generated_tasks)
+            metrics_with_games['composite_score'] = metrics.get('global_score', 0.0)
+            
+            storage.update_leaderboard(model_config, metrics_with_games)
+            logger.info(f"Updated leaderboard for {model_name}")
+            
+            # Save individual game results if database is enabled
+            if storage.use_database and "game_results" in results:
+                for game_data in results["game_results"]:
+                    try:
+                        # Save each game to database
+                        # This ensures we have detailed game history
+                        pass  # Game saving is handled by evaluate_model
+                    except Exception as e:
+                        logger.warning(f"Failed to save game to database: {e}")
+                        
+        except Exception as e:
+            logger.error(f"Failed to update storage backend: {e}")
+            # Don't fail the whole operation if storage update fails
+        
         # Complete
         duration = time.time() - start_time
         games[job_id].status = "completed"

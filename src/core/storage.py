@@ -3,7 +3,7 @@
 import os
 import json
 from typing import Dict, Any, List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 import logging
 
@@ -128,7 +128,7 @@ class StorageBackend:
                 invalid_moves=game_result.invalid_moves,
                 flags_placed=game_result.flags_placed,
                 cells_revealed=game_result.cells_revealed,
-                completed_at=datetime.utcnow()
+                completed_at=datetime.now(timezone.utc)
             )
             
             db.add(game)
@@ -339,6 +339,98 @@ class StorageBackend:
                 logger.error(f"Error reading task file {file_path}: {e}")
         
         return tasks
+    
+    def _get_leaderboard_from_db(self) -> List[Dict[str, Any]]:
+        """Get leaderboard entries from database."""
+        try:
+            db = next(get_db())
+            
+            # Query for leaderboard entries
+            entries = db.query(LeaderboardEntry).order_by(
+                LeaderboardEntry.global_score.desc()
+            ).all()
+            
+            # Convert to dictionaries
+            result = []
+            for entry in entries:
+                result.append({
+                    'rank': len(result) + 1,
+                    'model_name': entry.model_name,
+                    'model_provider': entry.model_provider,
+                    'global_score': entry.global_score,
+                    'win_rate': entry.win_rate,
+                    'valid_move_rate': entry.valid_move_rate,
+                    'accuracy': entry.valid_move_rate,  # For compatibility
+                    'board_coverage': entry.board_coverage,
+                    'mine_precision': entry.mine_precision,
+                    'mine_recall': entry.mine_recall,
+                    'efficiency_score': entry.efficiency_score,
+                    'strategic_score': entry.strategic_score,
+                    'reasoning_score': entry.reasoning_score,
+                    'total_games': entry.total_games,
+                    'num_games': entry.total_games,  # For compatibility
+                    'updated_at': entry.updated_at.isoformat() if entry.updated_at else None
+                })
+            
+            return result
+            
+        except SQLAlchemyError as e:
+            logger.error(f"Database error getting leaderboard: {e}")
+            return []
+        finally:
+            db.close()
+    
+    def _update_leaderboard_db(self, model_config: ModelConfig, metrics: Dict[str, float]) -> bool:
+        """Update leaderboard entry in database."""
+        try:
+            db = next(get_db())
+            
+            # Check if entry exists
+            entry = db.query(LeaderboardEntry).filter_by(
+                model_provider=model_config.provider,
+                model_name=model_config.name
+            ).first()
+            
+            if entry:
+                # Update existing entry
+                entry.total_games += metrics.get('num_games', 1)
+                entry.win_rate = metrics.get('win_rate', 0.0)
+                entry.valid_move_rate = metrics.get('valid_move_rate', 0.0)
+                entry.mine_precision = metrics.get('mine_identification_precision', 0.0)
+                entry.mine_recall = metrics.get('mine_identification_recall', 0.0)
+                entry.board_coverage = metrics.get('board_coverage', 0.0)
+                entry.efficiency_score = metrics.get('efficiency_score', 0.0)
+                entry.strategic_score = metrics.get('strategic_score', 0.0)
+                entry.reasoning_score = metrics.get('reasoning_score', 0.0)
+                entry.global_score = metrics.get('composite_score', 0.0)
+                entry.updated_at = datetime.now(timezone.utc)
+            else:
+                # Create new entry
+                entry = LeaderboardEntry(
+                    model_provider=model_config.provider,
+                    model_name=model_config.name,
+                    total_games=metrics.get('num_games', 1),
+                    win_rate=metrics.get('win_rate', 0.0),
+                    valid_move_rate=metrics.get('valid_move_rate', 0.0),
+                    mine_precision=metrics.get('mine_identification_precision', 0.0),
+                    mine_recall=metrics.get('mine_identification_recall', 0.0),
+                    board_coverage=metrics.get('board_coverage', 0.0),
+                    efficiency_score=metrics.get('efficiency_score', 0.0),
+                    strategic_score=metrics.get('strategic_score', 0.0),
+                    reasoning_score=metrics.get('reasoning_score', 0.0),
+                    global_score=metrics.get('composite_score', 0.0)
+                )
+                db.add(entry)
+            
+            db.commit()
+            return True
+            
+        except SQLAlchemyError as e:
+            logger.error(f"Database error updating leaderboard: {e}")
+            db.rollback()
+            return False
+        finally:
+            db.close()
     
     def _compute_leaderboard_from_files(self) -> List[Dict[str, Any]]:
         """Compute leaderboard from files (existing logic)."""
