@@ -28,12 +28,22 @@ class StructuredFormatter(logging.Formatter):
         # Add extra fields if present
         if hasattr(record, "job_id"):
             log_data["job_id"] = record.job_id
+        if hasattr(record, "game_id"):
+            log_data["game_id"] = record.game_id
         if hasattr(record, "model"):
             log_data["model"] = record.model
+        if hasattr(record, "model_name"):
+            log_data["model_name"] = record.model_name
+        if hasattr(record, "model_provider"):
+            log_data["model_provider"] = record.model_provider
         if hasattr(record, "error_type"):
             log_data["error_type"] = record.error_type
         if hasattr(record, "duration"):
             log_data["duration"] = record.duration
+        if hasattr(record, "game_num"):
+            log_data["game_num"] = record.game_num
+        if hasattr(record, "move_num"):
+            log_data["move_num"] = record.move_num
             
         # Add exception info if present
         if record.exc_info:

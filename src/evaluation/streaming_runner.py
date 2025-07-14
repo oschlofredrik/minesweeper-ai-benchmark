@@ -73,7 +73,10 @@ class StreamingGameRunner:
             game.make_move(first_action)
         
         # Publish game started event
-        logger.info(f"Publishing GAME_STARTED event for job {job_id}, game {game_num}")
+        logger.info(f"Publishing GAME_STARTED event for job {job_id}, game {game_num}", extra={
+            "model_name": self.model_config.name,
+            "model_provider": self.model_config.provider
+        })
         await publish_event(job_id, EventType.GAME_STARTED, {
             "game_num": game_num,
             "task_id": task.task_id,
@@ -88,14 +91,29 @@ class StreamingGameRunner:
         
         while game.status.value == "in_progress" and move_count < max_moves:
             move_count += 1
-            logger.info(f"Game {game_num} - Starting move {move_count}, status: {game.status.value}")
+            logger.info(f"Game {game_num} - Starting move {move_count}, status: {game.status.value}", extra={
+                "model_name": self.model_config.name,
+                "model_provider": self.model_config.provider,
+                "game_num": game_num,
+                "move_num": move_count
+            })
             
             # Get current board state
             board_state = game.get_board_representation("ascii")
-            logger.debug(f"Game {game_num} - Board state length: {len(board_state)}")
+            logger.debug(f"Game {game_num} - Board state length: {len(board_state)}", extra={
+                "model_name": self.model_config.name,
+                "model_provider": self.model_config.provider,
+                "game_num": game_num,
+                "move_num": move_count
+            })
             
             # Publish thinking event
-            logger.info(f"Publishing MOVE_THINKING event for game {game_num}, move {move_count}")
+            logger.info(f"Publishing MOVE_THINKING event for game {game_num}, move {move_count}", extra={
+                "model_name": self.model_config.name,
+                "model_provider": self.model_config.provider,
+                "game_num": game_num,
+                "move_num": move_count
+            })
             await publish_move_thinking(job_id, game_num, move_count, board_state)
             
             try:
@@ -108,7 +126,12 @@ class StreamingGameRunner:
                     )
                 
                 # Get model's move with function calling
-                logger.info(f"Game {game_num} - Calling model.play_move with prompt_format={prompt_format}")
+                logger.info(f"Game {game_num} - Calling model.play_move with prompt_format={prompt_format}", extra={
+                    "model_name": self.model_config.name,
+                    "model_provider": self.model_config.provider,
+                    "game_num": game_num,
+                    "move_num": move_count
+                })
                 
                 # Set up kwargs based on model capabilities
                 kwargs = {}
@@ -129,27 +152,52 @@ class StreamingGameRunner:
                     prompt_format, 
                     **kwargs
                 )
-                logger.info(f"Game {game_num} - Got response from model: has_action={response.action is not None}, has_reasoning={bool(response.reasoning)}")
+                logger.info(f"Game {game_num} - Got response from model: has_action={response.action is not None}, has_reasoning={bool(response.reasoning)}", extra={
+                    "model_name": self.model_config.name,
+                    "model_provider": self.model_config.provider,
+                    "game_num": game_num,
+                    "move_num": move_count
+                })
                 
                 # Stream reasoning if available
                 if response.reasoning:
-                    logger.info(f"Publishing MOVE_REASONING event for game {game_num}, move {move_count}")
+                    logger.info(f"Publishing MOVE_REASONING event for game {game_num}, move {move_count}", extra={
+                        "model_name": self.model_config.name,
+                        "model_provider": self.model_config.provider,
+                        "game_num": game_num,
+                        "move_num": move_count
+                    })
                     await publish_move_reasoning(
                         job_id, game_num, move_count, 
                         response.reasoning, partial=False
                     )
                 else:
-                    logger.warning(f"Game {game_num} - No reasoning in response")
+                    logger.warning(f"Game {game_num} - No reasoning in response", extra={
+                        "model_name": self.model_config.name,
+                        "model_provider": self.model_config.provider,
+                        "game_num": game_num,
+                        "move_num": move_count
+                    })
                 
                 # Parse action
                 if not response.action:
-                    logger.error(f"Game {game_num} - No action found in response. Content preview: {response.content[:200] if response.content else 'No content'}")
+                    logger.error(f"Game {game_num} - No action found in response. Content preview: {response.content[:200] if response.content else 'No content'}", extra={
+                        "model_name": self.model_config.name,
+                        "model_provider": self.model_config.provider,
+                        "game_num": game_num,
+                        "move_num": move_count
+                    })
                     # Try to help by showing what patterns we're looking for
                     logger.info("Expected action format examples: 'reveal (2, 3)', 'flag 1,2', 'Action: reveal Position: (2,3)'")
                     raise InvalidModelResponseError("No action found in response")
                 
                 action = response.action
-                logger.info(f"Game {game_num} - Parsed action: {action.to_string()}")
+                logger.info(f"Game {game_num} - Parsed action: {action.to_string()}", extra={
+                    "model_name": self.model_config.name,
+                    "model_provider": self.model_config.provider,
+                    "game_num": game_num,
+                    "move_num": move_count
+                })
                 
                 # Store AI details
                 ai_details = {
@@ -164,12 +212,27 @@ class StreamingGameRunner:
                 }
                 
                 # Make the move
-                logger.info(f"Game {game_num} - Executing move: {action.to_string()}")
+                logger.info(f"Game {game_num} - Executing move: {action.to_string()}", extra={
+                    "model_name": self.model_config.name,
+                    "model_provider": self.model_config.provider,
+                    "game_num": game_num,
+                    "move_num": move_count
+                })
                 success, message, info = game.make_move(action, ai_details=ai_details)
-                logger.info(f"Game {game_num} - Move result: success={success}, message={message}, new_status={info.get('game_status', 'unknown')}")
+                logger.info(f"Game {game_num} - Move result: success={success}, message={message}, new_status={info.get('game_status', 'unknown')}", extra={
+                    "model_name": self.model_config.name,
+                    "model_provider": self.model_config.provider,
+                    "game_num": game_num,
+                    "move_num": move_count
+                })
                 
                 # Publish move completed
-                logger.info(f"Publishing MOVE_COMPLETED event for game {game_num}, move {move_count}")
+                logger.info(f"Publishing MOVE_COMPLETED event for game {game_num}, move {move_count}", extra={
+                    "model_name": self.model_config.name,
+                    "model_provider": self.model_config.provider,
+                    "game_num": game_num,
+                    "move_num": move_count
+                })
                 await publish_move_completed(
                     job_id, game_num, move_count,
                     action.to_string(), success,
@@ -181,11 +244,22 @@ class StreamingGameRunner:
                 
                 # Reset error counter on successful move
                 consecutive_errors = 0
-                logger.debug(f"Game {game_num} - Move {move_count} completed successfully")
+                logger.debug(f"Game {game_num} - Move {move_count} completed successfully", extra={
+                    "model_name": self.model_config.name,
+                    "model_provider": self.model_config.provider,
+                    "game_num": game_num,
+                    "move_num": move_count
+                })
                 
             except InvalidModelResponseError as e:
                 consecutive_errors += 1
-                logger.error(f"Game {game_num} - Invalid model response: {str(e)}")
+                logger.error(f"Game {game_num} - Invalid model response: {str(e)}", extra={
+                    "model_name": self.model_config.name,
+                    "model_provider": self.model_config.provider,
+                    "game_num": game_num,
+                    "move_num": move_count,
+                    "error_type": "InvalidModelResponseError"
+                })
                 
                 # Publish failed move
                 await publish_event(job_id, EventType.MOVE_FAILED, {
@@ -197,11 +271,22 @@ class StreamingGameRunner:
                 })
                 
                 if consecutive_errors >= 3:
-                    logger.error(f"Game {game_num} - Too many consecutive errors, ending game")
+                    logger.error(f"Game {game_num} - Too many consecutive errors, ending game", extra={
+                        "model_name": self.model_config.name,
+                        "model_provider": self.model_config.provider,
+                        "game_num": game_num,
+                        "move_num": move_count
+                    })
                     break
                     
             except ModelTimeoutError as e:
-                logger.error(f"Game {game_num} - Model timeout: {str(e)}")
+                logger.error(f"Game {game_num} - Model timeout: {str(e)}", extra={
+                    "model_name": self.model_config.name,
+                    "model_provider": self.model_config.provider,
+                    "game_num": game_num,
+                    "move_num": move_count,
+                    "error_type": "ModelTimeoutError"
+                })
                 await publish_event(job_id, EventType.ERROR, {
                     "game_num": game_num,
                     "move_num": move_count,
@@ -211,11 +296,22 @@ class StreamingGameRunner:
                 break
                 
             except GameAlreadyFinishedError:
-                logger.info(f"Game {game_num} - Game already finished")
+                logger.info(f"Game {game_num} - Game already finished", extra={
+                    "model_name": self.model_config.name,
+                    "model_provider": self.model_config.provider,
+                    "game_num": game_num,
+                    "move_num": move_count
+                })
                 break
                 
             except Exception as e:
-                logger.error(f"Unexpected error in game {game_num}: {type(e).__name__}: {str(e)}", exc_info=True)
+                logger.error(f"Unexpected error in game {game_num}: {type(e).__name__}: {str(e)}", exc_info=True, extra={
+                    "model_name": self.model_config.name,
+                    "model_provider": self.model_config.provider,
+                    "game_num": game_num,
+                    "move_num": move_count,
+                    "error_type": type(e).__name__
+                })
                 # Mark game as technical failure
                 game.mark_as_error(f"{type(e).__name__}: {str(e)}")
                 await publish_event(job_id, EventType.ERROR, {
@@ -231,15 +327,29 @@ class StreamingGameRunner:
             game.end_time = datetime.now(timezone.utc)
             logger.debug(f"Game {game_num} - Set end time")
         
-        logger.info(f"Game {game_num} - Game loop ended, status: {game.status.value}, moves: {move_count}")
+        logger.info(f"Game {game_num} - Game loop ended, status: {game.status.value}, moves: {move_count}", extra={
+            "model_name": self.model_config.name,
+            "model_provider": self.model_config.provider,
+            "game_num": game_num,
+            "move_num": move_count
+        })
         
         # Get game statistics
         try:
             stats = game.get_statistics()
             duration = (game.end_time - game.start_time).total_seconds() if game.end_time else 0
-            logger.info(f"Game {game_num} - Stats: status={stats['status']}, moves={stats['moves_made']}, coverage={stats['board_coverage']:.2%}")
+            logger.info(f"Game {game_num} - Stats: status={stats['status']}, moves={stats['moves_made']}, coverage={stats['board_coverage']:.2%}", extra={
+                "model_name": self.model_config.name,
+                "model_provider": self.model_config.provider,
+                "game_num": game_num
+            })
         except Exception as e:
-            logger.error(f"Game {game_num} - Error getting statistics: {type(e).__name__}: {str(e)}", exc_info=True)
+            logger.error(f"Game {game_num} - Error getting statistics: {type(e).__name__}: {str(e)}", exc_info=True, extra={
+                "model_name": self.model_config.name,
+                "model_provider": self.model_config.provider,
+                "game_num": game_num,
+                "error_type": type(e).__name__
+            })
             # Provide default stats if error
             stats = {
                 'status': game.status.value,
@@ -249,7 +359,11 @@ class StreamingGameRunner:
             duration = 0
         
         # Publish game completed
-        logger.info(f"Publishing GAME_COMPLETED event for game {game_num}")
+        logger.info(f"Publishing GAME_COMPLETED event for game {game_num}", extra={
+            "model_name": self.model_config.name,
+            "model_provider": self.model_config.provider,
+            "game_num": game_num
+        })
         await publish_game_completed(
             job_id, game_num,
             stats['status'] == 'won',
@@ -320,7 +434,11 @@ class StreamingGameRunner:
                 )
                 
             except Exception as e:
-                logger.error(f"Failed to complete game {game_num}", exc_info=True)
+                logger.error(f"Failed to complete game {game_num}", exc_info=True, extra={
+                    "model_name": self.model_config.name,
+                    "model_provider": self.model_config.provider,
+                    "game_num": game_num
+                })
                 await publish_event(job_id, EventType.ERROR, {
                     "game_num": game_num,
                     "error": "Game failed",

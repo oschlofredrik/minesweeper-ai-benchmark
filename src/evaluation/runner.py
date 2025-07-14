@@ -89,7 +89,10 @@ class GameRunner:
                     "game_id": game.game_id,
                     "game_status": game.status.value,
                     "move_count": move_count,
-                    "max_moves": max_moves
+                    "max_moves": max_moves,
+                    "model_name": self.model_config.name,
+                    "model_provider": self.model_config.provider,
+                    "move_num": move_count
                 }
             )
             
@@ -104,7 +107,10 @@ class GameRunner:
                     "move_count": move_count,
                     "board_preview": board_state[:200] + "..." if len(board_state) > 200 else board_state,
                     "cells_revealed": game.cells_revealed,
-                    "flags_placed": game.flags_placed
+                    "flags_placed": game.flags_placed,
+                    "model_name": self.model_config.name,
+                    "model_provider": self.model_config.provider,
+                    "move_num": move_count
                 }
             )
             
@@ -116,7 +122,10 @@ class GameRunner:
                         "game_id": game.game_id,
                         "move_count": move_count,
                         "model": self.model_config.name,
-                        "prompt_format": prompt_format
+                        "prompt_format": prompt_format,
+                        "model_name": self.model_config.name,
+                        "model_provider": self.model_config.provider,
+                        "move_num": move_count
                     }
                 )
                 
@@ -131,6 +140,9 @@ class GameRunner:
                         "game_id": game.game_id,
                         "move_count": move_count,
                         "has_action": response.action is not None,
+                        "model_name": self.model_config.name,
+                        "model_provider": self.model_config.provider,
+                        "move_num": move_count,
                         "has_reasoning": response.reasoning is not None,
                         "tokens_used": response.tokens_used
                     }
@@ -165,6 +177,9 @@ class GameRunner:
                     extra={
                         "game_id": game.game_id,
                         "move_count": move_count,
+                        "model_name": self.model_config.name,
+                        "model_provider": self.model_config.provider,
+                        "move_num": move_count,
                         "has_prompt": bool(ai_details['prompt_sent']),
                         "prompt_length": len(ai_details['prompt_sent']) if ai_details['prompt_sent'] else 0,
                         "has_response": bool(ai_details['full_response']),
@@ -187,7 +202,10 @@ class GameRunner:
                         "action": action.to_string(),
                         "success": success,
                         "message": message,
-                        "game_status": info.get("game_status")
+                        "game_status": info.get("game_status"),
+                        "model_name": self.model_config.name,
+                        "model_provider": self.model_config.provider,
+                        "move_num": move_count
                     }
                 )
                 
@@ -206,7 +224,10 @@ class GameRunner:
                         "game_status_after_move": game.status.value,
                         "will_continue": game.status.value == "in_progress" and move_count < max_moves,
                         "total_cells_revealed": game.cells_revealed,
-                        "total_flags_placed": game.flags_placed
+                        "total_flags_placed": game.flags_placed,
+                        "model_name": self.model_config.name,
+                        "model_provider": self.model_config.provider,
+                        "move_num": move_count
                     }
                 )
                 
@@ -219,7 +240,11 @@ class GameRunner:
                         "game_id": game.game_id,
                         "move_count": move_count,
                         "error": str(e),
-                        "consecutive_errors": consecutive_errors
+                        "consecutive_errors": consecutive_errors,
+                        "model_name": self.model_config.name,
+                        "model_provider": self.model_config.provider,
+                        "move_num": move_count,
+                        "error_type": "InvalidModelResponseError"
                     }
                 )
                 
@@ -274,7 +299,9 @@ class GameRunner:
                 "final_status": game.status.value,
                 "total_moves": move_count,
                 "max_moves": max_moves,
-                "loop_condition": game.status.value == "in_progress" and move_count < max_moves
+                "loop_condition": game.status.value == "in_progress" and move_count < max_moves,
+                "model_name": self.model_config.name,
+                "model_provider": self.model_config.provider
             }
         )
         
@@ -290,6 +317,8 @@ class GameRunner:
             f"Game completed",
             extra={
                 "game_id": game.game_id,
+                "model_name": self.model_config.name,
+                "model_provider": self.model_config.provider,
                 "status": stats['status'],
                 "moves_made": stats['moves_made'],
                 "board_coverage": stats['board_coverage'],
