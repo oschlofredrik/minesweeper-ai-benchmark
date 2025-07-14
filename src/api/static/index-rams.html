@@ -92,54 +92,40 @@
             class="grid"
             style="grid-template-columns: 1fr 380px; gap: calc(var(--unit) * 4)"
           >
-            <!-- Visual Minesweeper Game -->
+            <!-- Visual Minesweeper Display -->
             <div class="minesweeper-container">
-              <div class="minesweeper-controls">
-                <div class="difficulty-buttons">
-                  <button id="diff-easy" class="button button-secondary active">Easy</button>
-                  <button id="diff-medium" class="button button-secondary">Medium</button>
-                  <button id="diff-hard" class="button button-secondary">Hard</button>
-                </div>
-                
-                <div class="game-info">
-                  <div class="game-info-item">
-                    <span class="game-info-label">Time</span>
-                    <span id="game-time">000</span>
-                  </div>
-                  <div class="game-info-item">
-                    <span class="game-info-label">Mines</span>
-                    <span id="mines-count">010</span>
-                  </div>
-                  <div class="game-info-item">
-                    <span class="game-info-label">Flags</span>
-                    <span id="flags-count">000</span>
-                  </div>
-                </div>
-                
-                <div>
-                  <button id="new-game-btn" class="button button-secondary">New Game</button>
-                  <button id="start-eval-btn" class="button">Start AI Evaluation</button>
-                </div>
+              <div class="minesweeper-header">
+                <h3>AI Game Visualization</h3>
+                <button id="start-eval-btn" class="button">Start AI Evaluation</button>
               </div>
               
               <div class="game-board-container">
                 <table id="minesweeper-board"></table>
-              </div>
-              
-              <div class="text-center text-sm text-muted">
-                <em>Right-click or Shift+Click to flag cells</em>
+                <div class="board-placeholder">
+                  <p class="text-muted">Start an AI evaluation to see the game board</p>
+                </div>
               </div>
             </div>
 
-            <!-- Modal for Evaluation Form -->
-            <div id="eval-modal" class="modal-overlay">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h2>New AI Evaluation</h2>
-                  <button class="modal-close" onclick="document.getElementById('eval-modal').classList.remove('active')">&times;</button>
-                </div>
-                
-                <form id="play-form">
+            <!-- Game Events -->
+            <div
+              class="card game-feed-container"
+            >
+              <div id="event-stream-ui" style="flex: 1;">
+                <!-- Event stream UI will be initialized here -->
+              </div>
+            </div>
+          </div>
+          
+          <!-- Modal for Evaluation Form -->
+          <div id="eval-modal" class="modal-overlay">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h2>New AI Evaluation</h2>
+                <button class="modal-close" onclick="document.getElementById('eval-modal').classList.remove('active')">&times;</button>
+              </div>
+              
+              <form id="play-form">
                 <div class="form-group">
                   <label class="label" for="model-provider"
                     >Model Provider</label
@@ -186,16 +172,6 @@
               </form>
 
               <div id="play-status" class="mt-3"></div>
-              </div>
-            </div>
-
-            <!-- Game Events -->
-            <div
-              class="card game-feed-container"
-            >
-              <div id="event-stream-ui" style="flex: 1;">
-                <!-- Event stream UI will be initialized here -->
-              </div>
             </div>
           </div>
         </section>
@@ -286,7 +262,7 @@ played by this model">Games</span>
     </div>
 
     <script src="/static/event-stream.js"></script>
-    <script src="/static/minesweeper.js"></script>
+    <script src="/static/minesweeper-viz.js"></script>
     <script src="/static/app-rams.js"></script>
   </body>
 </html>

@@ -113,6 +113,11 @@ class EventStreamUI {
     }
     
     handleEvent(type, data) {
+        // Dispatch event for visualization
+        window.dispatchEvent(new CustomEvent('event-stream-update', {
+            detail: { type, data }
+        }));
+        
         switch (type) {
             case 'connected':
                 // Already handled in onopen

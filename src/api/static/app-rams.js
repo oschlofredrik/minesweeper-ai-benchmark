@@ -76,6 +76,38 @@ function initializePlayForm() {
         e.preventDefault();
         await startEvaluation();
     });
+    
+    // Modal handling
+    const evalModal = document.getElementById('eval-modal');
+    const modalClose = document.querySelector('.modal-close');
+    
+    // Close modal on successful submission
+    window.closeEvalModal = function() {
+        if (evalModal) evalModal.classList.remove('active');
+    };
+    
+    // Close modal when clicking the X button
+    if (modalClose) {
+        modalClose.addEventListener('click', () => {
+            if (evalModal) evalModal.classList.remove('active');
+        });
+    }
+    
+    // Close modal when clicking outside
+    if (evalModal) {
+        evalModal.addEventListener('click', (e) => {
+            if (e.target === evalModal) {
+                evalModal.classList.remove('active');
+            }
+        });
+    }
+    
+    // Close modal on ESC key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && evalModal && evalModal.classList.contains('active')) {
+            evalModal.classList.remove('active');
+        }
+    });
 }
 
 // Update model dropdown based on provider
@@ -169,6 +201,9 @@ async function startEvaluation() {
             activeGames.set(result.job_id, result);
             selectedGameId = result.job_id;
             updateGamesList();
+            
+            // Close modal after successful start
+            window.closeEvalModal();
             
             // Connect event stream
             if (eventStreamUI) {
