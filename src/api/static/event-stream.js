@@ -167,7 +167,7 @@ class EventStreamUI {
         event.className = `event-item system-event ${type}`;
         event.innerHTML = `
             <div class="event-icon">
-                ${type === 'error' ? '⚠️' : 'ℹ️'}
+                ${type === 'error' ? 'ERROR' : 'INFO'}
             </div>
             <div class="event-content">
                 <div class="event-message">${message}</div>
@@ -182,7 +182,7 @@ class EventStreamUI {
         const event = document.createElement('div');
         event.className = 'event-item game-start';
         event.innerHTML = `
-            <div class="event-icon">🎮</div>
+            <div class="event-icon">START</div>
             <div class="event-content">
                 <div class="event-title">Game ${this.currentGameNum} Started</div>
                 <div class="event-details">
@@ -279,7 +279,7 @@ class EventStreamUI {
             <div class="event-icon">${this.getActionIcon(data.action)}</div>
             <div class="event-content">
                 <div class="event-title">Move ${data.move_num}: ${data.action}</div>
-                <div class="event-status">${data.success ? '✓ Valid move' : '✗ Invalid move'}</div>
+                <div class="event-status">${data.success ? 'Valid move' : 'Invalid move'}</div>
                 <div class="event-time">${this.formatTime()}</div>
             </div>
         `;
@@ -290,7 +290,7 @@ class EventStreamUI {
         const event = document.createElement('div');
         event.className = 'event-item move-failed';
         event.innerHTML = `
-            <div class="event-icon">❌</div>
+            <div class="event-icon">FAIL</div>
             <div class="event-content">
                 <div class="event-title">Failed to parse move ${data.move_num}</div>
                 <div class="event-error">${data.error}</div>
@@ -305,7 +305,7 @@ class EventStreamUI {
         const event = document.createElement('div');
         event.className = `event-item game-end ${won ? 'won' : 'lost'}`;
         event.innerHTML = `
-            <div class="event-icon">${won ? '🏆' : '💥'}</div>
+            <div class="event-icon">${won ? 'WON' : 'LOST'}</div>
             <div class="event-content">
                 <div class="event-title">Game ${data.game_num} ${won ? 'Won!' : 'Lost'}</div>
                 <div class="event-stats">
@@ -335,7 +335,7 @@ class EventStreamUI {
         const event = document.createElement('div');
         event.className = 'event-item status';
         event.innerHTML = `
-            <div class="event-icon">📊</div>
+            <div class="event-icon">DONE</div>
             <div class="event-content">
                 <div class="event-message">${data.message}</div>
                 <div class="event-time">${this.formatTime()}</div>
@@ -363,10 +363,10 @@ class EventStreamUI {
     }
     
     getActionIcon(action) {
-        if (action.toLowerCase().includes('reveal')) return '👁️';
-        if (action.toLowerCase().includes('flag')) return '🚩';
-        if (action.toLowerCase().includes('unflag')) return '🏳️';
-        return '▶️';
+        if (action.toLowerCase().includes('reveal')) return 'REVEAL';
+        if (action.toLowerCase().includes('flag')) return 'FLAG';
+        if (action.toLowerCase().includes('unflag')) return 'UNFLAG';
+        return 'MOVE';
     }
     
     formatReasoning(text) {
