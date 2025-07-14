@@ -97,6 +97,8 @@ See [Function Calling Documentation](docs/function-calling.md) for details.
 
 - [Quick Start Guide](docs/quickstart.md)
 - [Architecture Overview](docs/architecture.md)
+- [Evaluation Guide](docs/evaluation.md) - Comprehensive evaluation methodology
+- [Evaluation Plan](docs/evaluation-plan.md) - Detailed implementation plan
 - [Function Calling Integration](docs/function-calling.md)
 - [Deployment Guide](docs/deployment-render.md)
 - [Plugin Development](docs/plugin-development.md)
