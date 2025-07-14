@@ -33,19 +33,19 @@ MODEL_CAPABILITIES: Dict[str, Dict[str, Any]] = {
         "api_type": "chat_completions",
         "max_tokens": 4096,
     },
-    # o1 series - older reasoning models
+    # o1 series - now supports function calling!
     "o1-preview": {
-        "supports_function_calling": False,
+        "supports_function_calling": True,
         "supports_streaming": False,
-        "supports_system_messages": False,  # o1 models don't support system messages
+        "supports_system_messages": True,
         "api_type": "chat_completions",
         "max_tokens": 4096,
         "is_reasoning_model": True,
     },
     "o1-mini": {
-        "supports_function_calling": False,
+        "supports_function_calling": True,
         "supports_streaming": False,
-        "supports_system_messages": False,  # o1 models don't support system messages
+        "supports_system_messages": True,
         "api_type": "chat_completions",
         "max_tokens": 4096,
         "is_reasoning_model": True,

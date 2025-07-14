@@ -144,16 +144,16 @@ class StreamingGameRunner:
                 # Set up kwargs based on model capabilities
                 kwargs = {}
                 
-                # Check if model is a reasoning model (o1 series)
-                if hasattr(self.model, 'is_reasoning_model') and self.model.is_reasoning_model:
-                    # o1 models don't support function calling
-                    kwargs["use_functions"] = False
-                    # Only add stream_callback if the model supports it (not for o1)
-                    if hasattr(self.model, 'supports_streaming') and self.model.supports_streaming:
-                        kwargs["stream_callback"] = stream_reasoning
+                # Check if model supports function calling
+                if hasattr(self.model, 'supports_function_calling'):
+                    kwargs["use_functions"] = self.model.supports_function_calling
                 else:
-                    # Regular models use function calling
+                    # Default to True for backward compatibility
                     kwargs["use_functions"] = True
+                
+                # Add stream callback if model supports streaming
+                if hasattr(self.model, 'supports_streaming') and self.model.supports_streaming:
+                    kwargs["stream_callback"] = stream_reasoning
                 
                 response = await self.model.play_move(
                     board_state, 
