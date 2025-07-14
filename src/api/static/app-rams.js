@@ -69,6 +69,9 @@ function initializePlayForm() {
     // Update model options when provider changes
     modelProvider.addEventListener('change', updateModelOptions);
     
+    // Initialize model options on page load
+    updateModelOptions();
+    
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         await startEvaluation();
