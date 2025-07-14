@@ -48,6 +48,7 @@ class MinesweeperGame:
         
         # Game state
         self.status = GameStatus.IN_PROGRESS
+        self.error_message: Optional[str] = None
         self.start_time = datetime.now(timezone.utc)
         self.end_time: Optional[datetime] = None
         self.moves: List[Move] = []
@@ -317,6 +318,7 @@ class MinesweeperGame:
             final_state=self.get_current_state(),
             start_time=self.start_time,
             end_time=self.end_time or datetime.now(timezone.utc),
+            error_message=self.error_message,
         )
     
     def get_statistics(self) -> Dict[str, Any]:
@@ -338,3 +340,9 @@ class MinesweeperGame:
                 (self.end_time or datetime.now(timezone.utc)) - self.start_time
             ).total_seconds(),
         }
+    
+    def mark_as_error(self, error_message: str) -> None:
+        """Mark game as failed due to technical error."""
+        self.status = GameStatus.ERROR
+        self.error_message = error_message
+        self.end_time = datetime.now(timezone.utc)

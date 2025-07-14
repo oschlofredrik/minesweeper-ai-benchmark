@@ -59,12 +59,17 @@ class MetricsCalculator:
         )
     
     def _calculate_win_rate(self, transcripts: List[GameTranscript]) -> float:
-        """Calculate percentage of games won."""
+        """Calculate percentage of games won (excluding technical failures)."""
         if not transcripts:
             return 0.0
         
-        wins = sum(1 for t in transcripts if t.final_state.status == GameStatus.WON)
-        return wins / len(transcripts)
+        # Exclude games that failed due to technical errors
+        valid_games = [t for t in transcripts if t.final_state.status != GameStatus.ERROR]
+        if not valid_games:
+            return 0.0
+            
+        wins = sum(1 for t in valid_games if t.final_state.status == GameStatus.WON)
+        return wins / len(valid_games)
     
     def _calculate_valid_move_rate(self, transcripts: List[GameTranscript]) -> float:
         """Calculate percentage of valid moves across all games."""

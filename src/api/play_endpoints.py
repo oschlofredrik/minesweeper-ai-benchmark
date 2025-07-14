@@ -405,8 +405,25 @@ async def run_play_session(
         # Add job_id to results for reference
         results["job_id"] = job_id
         results["model_name"] = model_name
-        results["num_games"] = len(generated_tasks)
+        # Count valid games (excluding technical errors)
+        transcripts = results.get('transcripts', [])
+        valid_games = sum(1 for t in transcripts if hasattr(t, 'final_state') and t.final_state.status.value != 'error')
+        results["num_games"] = valid_games
+        results["total_attempted"] = len(generated_tasks)
         results["timestamp"] = timestamp
+        
+        # Add individual game results for summary
+        game_results = []
+        for t in transcripts:
+            game_results.append({
+                "game_id": t.game_id,
+                "won": t.final_state.status.value == "won",
+                "final_status": t.final_state.status.value,
+                "num_moves": len(t.moves),
+                "board_coverage": getattr(t.final_state, 'board_coverage', 0.0),
+                "error_message": t.error_message if hasattr(t, 'error_message') else None
+            })
+        results["game_results"] = game_results
         
         with open(results_path, "w") as f:
             json.dump(results, f, indent=2, default=str)
@@ -414,7 +431,7 @@ async def run_play_session(
         # Update database/storage backend
         logger.info(f"📊 Starting database update for completed games")
         logger.info(f"   Model: {model_provider}:{model_name}")
-        logger.info(f"   Games played: {len(generated_tasks)}")
+        logger.info(f"   Valid games played: {valid_games} (attempted: {len(generated_tasks)})")
         logger.info(f"   Win rate: {metrics.get('win_rate', 0.0):.2%}")
         
         update_result = False  # Track if database update succeeded
@@ -437,7 +454,10 @@ async def run_play_session(
             
             # Add all metrics for database storage
             metrics_with_games = metrics.copy()
-            metrics_with_games['num_games'] = len(generated_tasks)
+            # Count only non-error games for leaderboard
+            transcripts = results.get('transcripts', [])
+            valid_games = sum(1 for t in transcripts if hasattr(t, 'final_state') and t.final_state.status.value != 'error')
+            metrics_with_games['num_games'] = valid_games
             metrics_with_games['composite_score'] = metrics.get('global_score', 0.0)
             # Ensure MineBench scores are included
             metrics_with_games['ms_s_score'] = metrics.get('ms_s_score', 0.0)
@@ -445,7 +465,7 @@ async def run_play_session(
             metrics_with_games['reasoning_score'] = metrics.get('reasoning_score', 0.0)
             
             logger.info(f"📊 Metrics prepared for storage:")
-            logger.info(f"   num_games: {metrics_with_games['num_games']}")
+            logger.info(f"   num_games: {metrics_with_games['num_games']} (valid games, excluding {len(generated_tasks) - valid_games} errors)")
             logger.info(f"   win_rate: {metrics_with_games.get('win_rate', 0.0):.2%}")
             logger.info(f"   composite_score: {metrics_with_games['composite_score']:.4f}")
             logger.info(f"   ms_s_score: {metrics_with_games['ms_s_score']:.4f}")

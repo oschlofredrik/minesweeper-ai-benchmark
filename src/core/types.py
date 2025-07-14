@@ -19,6 +19,7 @@ class GameStatus(Enum):
     IN_PROGRESS = "in_progress"
     WON = "won"
     LOST = "lost"
+    ERROR = "error"  # Technical failure (API error, timeout, etc.)
 
 
 class ActionType(Enum):
@@ -112,6 +113,7 @@ class GameTranscript:
     final_state: GameState
     start_time: datetime
     end_time: datetime
+    error_message: Optional[str] = None  # Technical error that caused game to fail
     
     @property
     def duration_seconds(self) -> float:

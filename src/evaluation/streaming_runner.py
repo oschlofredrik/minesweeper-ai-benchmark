@@ -216,6 +216,8 @@ class StreamingGameRunner:
                 
             except Exception as e:
                 logger.error(f"Unexpected error in game {game_num}: {type(e).__name__}: {str(e)}", exc_info=True)
+                # Mark game as technical failure
+                game.mark_as_error(f"{type(e).__name__}: {str(e)}")
                 await publish_event(job_id, EventType.ERROR, {
                     "game_num": game_num,
                     "move_num": move_count,
