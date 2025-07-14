@@ -82,16 +82,51 @@ function updateModelOptions() {
     
     const models = {
         openai: [
-            { value: 'gpt-4o', text: 'GPT-4o' },
+            // Reasoning models (o1 series)
+            { value: 'o1-preview', text: 'o1-preview (Reasoning)' },
+            { value: 'o1-preview-2024-09-12', text: 'o1-preview-2024-09-12' },
+            { value: 'o1-mini', text: 'o1-mini (Reasoning)' },
+            { value: 'o1-mini-2024-09-12', text: 'o1-mini-2024-09-12' },
+            
+            // GPT-4o series
+            { value: 'gpt-4o', text: 'GPT-4o (Latest)' },
+            { value: 'gpt-4o-2024-11-20', text: 'GPT-4o (2024-11-20)' },
+            { value: 'gpt-4o-2024-08-06', text: 'GPT-4o (2024-08-06)' },
+            { value: 'gpt-4o-2024-05-13', text: 'GPT-4o (2024-05-13)' },
             { value: 'gpt-4o-mini', text: 'GPT-4o Mini' },
+            { value: 'gpt-4o-mini-2024-07-18', text: 'GPT-4o Mini (2024-07-18)' },
+            
+            // GPT-4 Turbo series
             { value: 'gpt-4-turbo', text: 'GPT-4 Turbo' },
+            { value: 'gpt-4-turbo-2024-04-09', text: 'GPT-4 Turbo (2024-04-09)' },
+            { value: 'gpt-4-turbo-preview', text: 'GPT-4 Turbo Preview' },
+            { value: 'gpt-4-0125-preview', text: 'GPT-4 Turbo (2024-01-25)' },
+            { value: 'gpt-4-1106-preview', text: 'GPT-4 Turbo (2023-11-06)' },
+            
+            // Classic GPT-4
             { value: 'gpt-4', text: 'GPT-4' },
-            { value: 'gpt-3.5-turbo', text: 'GPT-3.5 Turbo' }
+            { value: 'gpt-4-0613', text: 'GPT-4 (2023-06-13)' },
+            
+            // GPT-3.5
+            { value: 'gpt-3.5-turbo', text: 'GPT-3.5 Turbo' },
+            { value: 'gpt-3.5-turbo-0125', text: 'GPT-3.5 Turbo (2024-01-25)' },
+            { value: 'gpt-3.5-turbo-1106', text: 'GPT-3.5 Turbo (2023-11-06)' }
         ],
         anthropic: [
+            // Claude 3.5 series
+            { value: 'claude-3-5-sonnet-20241022', text: 'Claude 3.5 Sonnet (Latest)' },
+            { value: 'claude-3-5-sonnet-20240620', text: 'Claude 3.5 Sonnet (2024-06-20)' },
+            { value: 'claude-3-5-haiku-20241022', text: 'Claude 3.5 Haiku' },
+            
+            // Claude 3 series
             { value: 'claude-3-opus-20240229', text: 'Claude 3 Opus' },
-            { value: 'claude-3-5-sonnet-20241022', text: 'Claude 3.5 Sonnet' },
-            { value: 'claude-3-5-haiku-20241022', text: 'Claude 3.5 Haiku' }
+            { value: 'claude-3-sonnet-20240229', text: 'Claude 3 Sonnet' },
+            { value: 'claude-3-haiku-20240307', text: 'Claude 3 Haiku' },
+            
+            // Legacy models
+            { value: 'claude-2.1', text: 'Claude 2.1' },
+            { value: 'claude-2.0', text: 'Claude 2.0' },
+            { value: 'claude-instant-1.2', text: 'Claude Instant 1.2' }
         ]
     };
     

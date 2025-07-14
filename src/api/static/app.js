@@ -311,14 +311,51 @@ setInterval(() => {
 // Model configurations
 const modelConfigs = {
     openai: [
+        // Reasoning models (o1 series)
+        {id: 'o1-preview', name: 'o1-preview (Reasoning)'},
+        {id: 'o1-preview-2024-09-12', name: 'o1-preview-2024-09-12'},
+        {id: 'o1-mini', name: 'o1-mini (Reasoning)'},
+        {id: 'o1-mini-2024-09-12', name: 'o1-mini-2024-09-12'},
+        
+        // GPT-4o series
+        {id: 'gpt-4o', name: 'GPT-4o (Latest)'},
+        {id: 'gpt-4o-2024-11-20', name: 'GPT-4o (2024-11-20)'},
+        {id: 'gpt-4o-2024-08-06', name: 'GPT-4o (2024-08-06)'},
+        {id: 'gpt-4o-2024-05-13', name: 'GPT-4o (2024-05-13)'},
+        {id: 'gpt-4o-mini', name: 'GPT-4o Mini'},
+        {id: 'gpt-4o-mini-2024-07-18', name: 'GPT-4o Mini (2024-07-18)'},
+        
+        // GPT-4 Turbo series
+        {id: 'gpt-4-turbo', name: 'GPT-4 Turbo'},
+        {id: 'gpt-4-turbo-2024-04-09', name: 'GPT-4 Turbo (2024-04-09)'},
+        {id: 'gpt-4-turbo-preview', name: 'GPT-4 Turbo Preview'},
+        {id: 'gpt-4-0125-preview', name: 'GPT-4 Turbo (2024-01-25)'},
+        {id: 'gpt-4-1106-preview', name: 'GPT-4 Turbo (2023-11-06)'},
+        
+        // Classic GPT-4
         {id: 'gpt-4', name: 'GPT-4'},
-        {id: 'gpt-4-turbo-preview', name: 'GPT-4 Turbo'},
-        {id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo'}
+        {id: 'gpt-4-0613', name: 'GPT-4 (2023-06-13)'},
+        
+        // GPT-3.5
+        {id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo'},
+        {id: 'gpt-3.5-turbo-0125', name: 'GPT-3.5 Turbo (2024-01-25)'},
+        {id: 'gpt-3.5-turbo-1106', name: 'GPT-3.5 Turbo (2023-11-06)'}
     ],
     anthropic: [
+        // Claude 3.5 series
+        {id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet (Latest)'},
+        {id: 'claude-3-5-sonnet-20240620', name: 'Claude 3.5 Sonnet (2024-06-20)'},
+        {id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku'},
+        
+        // Claude 3 series
         {id: 'claude-3-opus-20240229', name: 'Claude 3 Opus'},
         {id: 'claude-3-sonnet-20240229', name: 'Claude 3 Sonnet'},
-        {id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku'}
+        {id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku'},
+        
+        // Legacy models
+        {id: 'claude-2.1', name: 'Claude 2.1'},
+        {id: 'claude-2.0', name: 'Claude 2.0'},
+        {id: 'claude-instant-1.2', name: 'Claude Instant 1.2'}
     ]
 };
 
