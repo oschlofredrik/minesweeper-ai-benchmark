@@ -350,7 +350,7 @@ async def run_play_session(
             name=model_name,
             provider=model_provider,
             model_id=model_name,
-            temperature=0.7,
+            temperature=0,
             max_tokens=1000,
             additional_params={}
         )
@@ -446,7 +446,7 @@ async def run_play_session(
                 provider=model_provider,
                 name=model_name,
                 model_id=model_name,
-                temperature=0.7,
+                temperature=0,
                 max_tokens=1000,
                 additional_params={"api_key": api_key} if api_key else {}
             )

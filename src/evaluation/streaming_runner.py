@@ -86,6 +86,14 @@ class StreamingGameRunner:
             "message": f"Starting game {game_num}"
         })
         
+        # Send initial board state
+        board_data = game.board.to_coordinate_list()
+        await publish_event(job_id, EventType.BOARD_UPDATE, {
+            "game_num": game_num,
+            "board_data": board_data,
+            "message": "Initial board state"
+        })
+        
         move_count = 0
         consecutive_errors = 0
         
@@ -238,6 +246,21 @@ class StreamingGameRunner:
                     action.to_string(), success,
                     game.get_board_representation("ascii") if success else None
                 )
+                
+                # Send board update with coordinate data
+                if success:
+                    board_data = game.board.to_coordinate_list()
+                    await publish_event(job_id, EventType.BOARD_UPDATE, {
+                        "game_num": game_num,
+                        "move_num": move_count,
+                        "board_data": board_data,
+                        "last_move": {
+                            "action": action.action.value,
+                            "row": action.position.row,
+                            "col": action.position.col
+                        },
+                        "message": f"Board after move {move_count}"
+                    })
                 
                 if verbose:
                     print(f"Move {move_count}: {action.to_string()} - {message}")

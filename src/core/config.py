@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     secret_key: str = Field(default="change-me-in-production", description="Secret key for sessions")
     
     # Model Settings
-    default_model_temperature: float = Field(default=0.7, description="Default temperature for model generation")
+    default_model_temperature: float = Field(default=0, description="Default temperature for model generation")
     default_max_tokens: int = Field(default=1000, description="Default max tokens for model generation")
     model_timeout: int = Field(default=30, description="Timeout for model API calls in seconds")
     

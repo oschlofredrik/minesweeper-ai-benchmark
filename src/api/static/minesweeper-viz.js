@@ -70,10 +70,29 @@ class MinesweeperVisualization {
         this.render();
     }
 
-    updateBoard(boardData) {
-        if (!boardData || !this.board) return;
+    updateBoard(eventData) {
+        if (!eventData || !eventData.board_data) return;
         
-        // Update board state from server data
+        const boardData = eventData.board_data;
+        
+        // Initialize board if needed
+        if (!this.board && boardData.board_size) {
+            this.size = boardData.board_size;
+            this.initializeEmptyBoard();
+        }
+        
+        // Reset all cells to hidden first
+        for (let r = 0; r < this.size.rows; r++) {
+            for (let c = 0; c < this.size.cols; c++) {
+                this.board[r][c] = {
+                    state: 'hidden',
+                    value: null,
+                    flagged: false
+                };
+            }
+        }
+        
+        // Update revealed cells
         if (boardData.revealed) {
             boardData.revealed.forEach(cell => {
                 if (this.board[cell.row] && this.board[cell.row][cell.col]) {
@@ -83,15 +102,8 @@ class MinesweeperVisualization {
             });
         }
         
+        // Update flagged cells
         if (boardData.flagged) {
-            // Clear all flags first
-            for (let r = 0; r < this.size.rows; r++) {
-                for (let c = 0; c < this.size.cols; c++) {
-                    this.board[r][c].flagged = false;
-                }
-            }
-            
-            // Set current flags
             boardData.flagged.forEach(cell => {
                 if (this.board[cell.row] && this.board[cell.row][cell.col]) {
                     this.board[cell.row][cell.col].flagged = true;
@@ -99,7 +111,26 @@ class MinesweeperVisualization {
             });
         }
         
+        // Highlight last move if provided
+        if (eventData.last_move) {
+            this.highlightLastMove(eventData.last_move);
+        }
+        
         this.render();
+    }
+    
+    initializeEmptyBoard() {
+        this.board = [];
+        for (let r = 0; r < this.size.rows; r++) {
+            this.board[r] = [];
+            for (let c = 0; c < this.size.cols; c++) {
+                this.board[r][c] = {
+                    state: 'hidden',
+                    value: null,
+                    flagged: false
+                };
+            }
+        }
     }
 
     highlightLastMove(moveData) {

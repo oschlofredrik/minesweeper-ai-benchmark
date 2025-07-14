@@ -357,7 +357,7 @@ async def run_evaluation_job(
                 name=model_name,
                 provider=model_provider,
                 model_id=model_name,
-                temperature=0.7,
+                temperature=0,
                 max_tokens=1000,
                 additional_params={}
             )

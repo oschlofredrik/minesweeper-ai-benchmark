@@ -23,7 +23,7 @@ async def test_database_save():
             provider="openai",
             name="test-model",
             model_id="test-model",
-            temperature=0.7,
+            temperature=0,
             max_tokens=1000,
             additional_params={}
         )

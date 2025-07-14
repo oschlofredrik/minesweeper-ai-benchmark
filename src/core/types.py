@@ -190,7 +190,7 @@ class ModelConfig:
     name: str
     provider: str  # "openai", "anthropic", "local"
     model_id: str  # e.g., "gpt-4", "claude-3"
-    temperature: float = 0.7
+    temperature: float = 0
     max_tokens: int = 1000
     additional_params: Optional[Dict[str, Any]] = None
     
