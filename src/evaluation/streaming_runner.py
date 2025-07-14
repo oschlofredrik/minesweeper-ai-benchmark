@@ -364,25 +364,61 @@ class StreamingGameRunner:
         
         # If reasoning judge is disabled, calculate simple reasoning score
         if not use_reasoning_judge:
-            # Simple heuristic: score based on presence and quality of reasoning
-            total_moves_with_reasoning = 0
+            # More realistic heuristic: score based on reasoning quality indicators
             total_moves = 0
+            quality_scores = []
             
             for transcript in transcripts:
                 for move in transcript.moves:
                     if move.was_valid:
                         total_moves += 1
-                        if move.model_reasoning and len(move.model_reasoning) > 20:
-                            total_moves_with_reasoning += 1
+                        
+                        if move.model_reasoning:
+                            reasoning = move.model_reasoning.lower()
+                            score = 0.0
+                            
+                            # Length-based scoring (0-0.3)
+                            if len(reasoning) > 50:
+                                score += 0.1
+                            if len(reasoning) > 100:
+                                score += 0.1
+                            if len(reasoning) > 200:
+                                score += 0.1
+                            
+                            # Quality indicators (0-0.7)
+                            # Check for logical reasoning keywords
+                            logic_keywords = ['because', 'therefore', 'since', 'must be', 'cannot be', 
+                                            'adjacent', 'surrounding', 'deduce', 'conclude', 'implies']
+                            logic_count = sum(1 for word in logic_keywords if word in reasoning)
+                            score += min(0.3, logic_count * 0.05)
+                            
+                            # Check for specific Minesweeper reasoning
+                            game_keywords = ['mine', 'flag', 'safe', 'revealed', 'number', 'cell', 
+                                           'hidden', 'adjacent mines', 'count']
+                            game_count = sum(1 for word in game_keywords if word in reasoning)
+                            score += min(0.2, game_count * 0.04)
+                            
+                            # Check for analytical structure
+                            if any(pattern in reasoning for pattern in ['first,', 'second,', 'step 1', '1.', '2.']):
+                                score += 0.1
+                            
+                            # Check for uncertainty/probability mentions
+                            if any(word in reasoning for word in ['probability', 'likely', 'risk', 'chance', 'guess']):
+                                score += 0.1
+                            
+                            quality_scores.append(min(1.0, score))
+                        else:
+                            quality_scores.append(0.0)
             
-            # Simple scoring: 0.5 base + 0.5 based on reasoning presence
-            if total_moves > 0:
-                reasoning_ratio = total_moves_with_reasoning / total_moves
-                adv_metrics.reasoning_score = 0.5 + (0.5 * reasoning_ratio)
+            # Calculate average quality score
+            if quality_scores:
+                adv_metrics.reasoning_score = sum(quality_scores) / len(quality_scores)
             else:
                 adv_metrics.reasoning_score = 0.0
             
-            logger.info(f"📊 Simple reasoning score: {adv_metrics.reasoning_score:.2f} ({total_moves_with_reasoning}/{total_moves} moves with reasoning)")
+            moves_with_reasoning = sum(1 for s in quality_scores if s > 0)
+            avg_quality = adv_metrics.reasoning_score
+            logger.info(f"📊 Simple reasoning score: {avg_quality:.2f} ({moves_with_reasoning}/{total_moves} moves with reasoning, avg quality: {avg_quality:.2f})")
         
         # Convert to dict for backward compatibility
         metrics = {
