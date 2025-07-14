@@ -4,7 +4,7 @@ import asyncio
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 
-from src.core.types import ModelConfig, Task, GameTranscript, Action
+from src.core.types import ModelConfig, Task, GameTranscript, Action, ActionType, Position
 from src.core.exceptions import (
     InvalidModelResponseError, ModelTimeoutError, 
     GameAlreadyFinishedError
@@ -53,7 +53,24 @@ class StreamingGameRunner:
             GameTranscript of the completed game
         """
         # Create game from task
-        game = MinesweeperGame.from_task(task)
+        board_config = task.board_config
+        game = MinesweeperGame(
+            rows=board_config.get("rows", 16),
+            cols=board_config.get("cols", 30),
+            mines=board_config.get("mines", 99),
+            seed=board_config.get("seed"),
+            task_id=task.task_id,
+            model_name=self.model_config.name,
+        )
+        
+        # Make first move if specified
+        if "first_move" in board_config:
+            first_pos = board_config["first_move"]
+            first_action = Action(
+                ActionType.REVEAL,
+                Position(first_pos["row"], first_pos["col"])
+            )
+            game.make_move(first_action)
         
         # Publish game started event
         await publish_event(job_id, EventType.GAME_STARTED, {
@@ -102,8 +119,7 @@ class StreamingGameRunner:
                 ai_details = {
                     'prompt_sent': self.model.format_prompt(
                         board_state, 
-                        prompt_format if prompt_format != "auto" else self.model.get_optimal_prompt_format(),
-                        use_functions=True
+                        prompt_format if prompt_format != "auto" else self.model.get_optimal_prompt_format()
                     ),
                     'full_response': response.content,
                     'model_reasoning': response.reasoning,
@@ -251,8 +267,21 @@ class StreamingGameRunner:
                 })
         
         # Calculate final metrics
-        from src.evaluation.metrics import calculate_metrics
-        metrics = calculate_metrics(transcripts)
+        from src.evaluation.metrics import MetricsCalculator
+        calculator = MetricsCalculator()
+        metrics_obj = calculator.calculate_metrics(transcripts)
+        
+        # Convert to dict for backward compatibility
+        metrics = {
+            "win_rate": metrics_obj.win_rate,
+            "valid_move_rate": metrics_obj.valid_move_rate,
+            "mine_identification_precision": metrics_obj.mine_identification_precision,
+            "mine_identification_recall": metrics_obj.mine_identification_recall,
+            "average_moves_to_win": metrics_obj.average_moves_to_win,
+            "average_moves_to_loss": metrics_obj.average_moves_to_loss,
+            "board_coverage_on_loss": metrics_obj.board_coverage_on_loss,
+            "reasoning_quality_score": metrics_obj.reasoning_quality_score,
+        }
         
         # Publish session completed
         await publish_event(job_id, EventType.STATUS_UPDATE, {
