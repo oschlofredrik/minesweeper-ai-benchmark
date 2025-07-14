@@ -237,6 +237,15 @@ tools = [{"name": "make_move", "input_schema": {...}}]
 
 ### Recent Fixes and Improvements (Latest)
 
+#### Logging and Debugging Improvements (July 14, 2025)
+- **Enhanced Structured Logging**: Added model_name, model_provider, game_num, and move_num to all log entries
+- **Better Render Debugging**: Can now filter logs by model to identify model-specific issues
+- **Invalid Move Handling**: Fixed infinite loop when AI repeatedly tries invalid moves
+  - Tracks consecutive invalid moves (e.g., revealing already-revealed cells)
+  - Stops game after 3 consecutive invalid moves
+  - Marks game as ERROR status (not counted as loss)
+  - Prevents fairness issues from technical failures
+
 #### Database Administration
 - **Admin Panel Database Tab**: Complete database management interface
 - **Safe SQL Endpoints**: Handle missing columns gracefully before migration
