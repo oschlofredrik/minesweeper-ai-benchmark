@@ -211,7 +211,7 @@ async function loadLeaderboard() {
         const data = await response.json();
         
         if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No results yet</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No results yet</td></tr>';
             return;
         }
         
@@ -219,14 +219,16 @@ async function loadLeaderboard() {
             <tr>
                 <td>${entry.rank}</td>
                 <td>${entry.model_name}</td>
-                <td>${entry.global_score.toFixed(3)}</td>
+                <td class="text-strong">${entry.global_score.toFixed(3)}</td>
+                <td>${entry.ms_s_score.toFixed(3)}</td>
+                <td>${entry.ms_i_score.toFixed(3)}</td>
                 <td>${(entry.win_rate * 100).toFixed(1)}%</td>
-                <td>${(entry.valid_move_rate * 100).toFixed(1)}%</td>
-                <td>${entry.total_games}</td>
+                <td>${entry.reasoning_score ? entry.reasoning_score.toFixed(2) : '-'}</td>
+                <td>${entry.total_games || entry.num_games}</td>
             </tr>
         `).join('');
     } catch (error) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Failed to load</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Failed to load</td></tr>';
     }
 }
 

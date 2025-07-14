@@ -416,10 +416,14 @@ async def run_play_session(
                 api_key=api_key or ""
             )
             
-            # Add num_games to metrics for proper aggregation
+            # Add all metrics for database storage
             metrics_with_games = metrics.copy()
             metrics_with_games['num_games'] = len(generated_tasks)
             metrics_with_games['composite_score'] = metrics.get('global_score', 0.0)
+            # Ensure MineBench scores are included
+            metrics_with_games['ms_s_score'] = metrics.get('ms_s_score', 0.0)
+            metrics_with_games['ms_i_score'] = metrics.get('ms_i_score', 0.0)
+            metrics_with_games['reasoning_score'] = metrics.get('reasoning_score', 0.0)
             
             storage.update_leaderboard(model_config, metrics_with_games)
             logger.info(f"Updated leaderboard for {model_name}")

@@ -327,8 +327,17 @@ class StreamingGameRunner:
         
         # Calculate final metrics
         from src.evaluation.metrics import MetricsCalculator
+        from src.evaluation.advanced_metrics import AdvancedMetricsCalculator
+        from src.core.types import TaskType
+        
+        # Basic metrics
         calculator = MetricsCalculator()
         metrics_obj = calculator.calculate_metrics(transcripts)
+        
+        # Advanced metrics (MineBench scores)
+        adv_calculator = AdvancedMetricsCalculator()
+        # For now, treat all as interactive tasks
+        adv_metrics = adv_calculator.calculate_interactive_metrics(transcripts)
         
         # Convert to dict for backward compatibility
         metrics = {
@@ -339,6 +348,13 @@ class StreamingGameRunner:
             "average_moves_to_win": metrics_obj.average_moves_to_win,
             "average_moves_to_loss": metrics_obj.average_moves_to_loss,
             "board_coverage_on_loss": metrics_obj.board_coverage_on_loss,
+            # MineBench scores
+            "ms_s_score": adv_metrics.ms_s_score,
+            "ms_i_score": adv_metrics.ms_i_score,
+            "global_score": adv_metrics.global_score,
+            "reasoning_score": adv_metrics.reasoning_score,
+            "flag_precision": adv_metrics.flag_precision,
+            "flag_recall": adv_metrics.flag_recall,
             "reasoning_quality_score": metrics_obj.reasoning_quality_score,
         }
         
