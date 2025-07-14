@@ -382,9 +382,10 @@ class EventStreamUI {
     }
     
     scrollToBottom() {
-        if (this.autoScroll) {
+        // Always scroll to bottom for new events
+        requestAnimationFrame(() => {
             this.streamList.scrollTop = this.streamList.scrollHeight;
-        }
+        });
     }
     
     disconnect() {

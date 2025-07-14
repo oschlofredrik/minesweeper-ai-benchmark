@@ -382,6 +382,13 @@ details pre {
 .ml-3 { margin-left: calc(var(--unit) * 3); }
 .ml-4 { margin-left: calc(var(--unit) * 4); }
 
+/* Button States */
+.button.active,
+.button-secondary.active {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+}
+
 /* Utility Classes */
 .text-xs { font-size: var(--text-xs); }
 .text-sm { font-size: var(--text-sm); }

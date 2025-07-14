@@ -1,0 +1,175 @@
+/* Minesweeper Game - Dieter Rams Style */
+
+.minesweeper-container {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--unit) * 3);
+    height: 100%;
+}
+
+.minesweeper-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: calc(var(--unit) * 2);
+    border: 1px solid var(--border);
+}
+
+.difficulty-buttons {
+    display: flex;
+    gap: var(--unit);
+}
+
+.game-info {
+    display: flex;
+    gap: calc(var(--unit) * 4);
+    font-family: monospace;
+    font-size: var(--text-lg);
+}
+
+.game-info-item {
+    display: flex;
+    align-items: center;
+    gap: var(--unit);
+}
+
+.game-info-label {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.game-board-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: calc(var(--unit) * 3);
+}
+
+#minesweeper-board {
+    border: 1px solid var(--border);
+    background: var(--bg-primary);
+    border-spacing: 0;
+}
+
+#minesweeper-board td {
+    width: calc(var(--unit) * 4);
+    height: calc(var(--unit) * 4);
+    border: 1px solid var(--border);
+    text-align: center;
+    cursor: pointer;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    transition: all var(--transition);
+    background: var(--bg-primary);
+}
+
+#minesweeper-board td:hover:not(.revealed) {
+    background: var(--bg-secondary);
+}
+
+#minesweeper-board td.revealed {
+    background: var(--gray-100);
+    cursor: default;
+}
+
+#minesweeper-board td.bomb {
+    background: var(--gray-800);
+    color: var(--white);
+}
+
+#minesweeper-board td.flagged {
+    background: var(--gray-200);
+    color: var(--gray-600);
+}
+
+#minesweeper-board td.flagged::after {
+    content: "F";
+    font-weight: 700;
+}
+
+/* Number colors */
+#minesweeper-board td.revealed[data-adj-bombs="1"] { color: var(--gray-600); }
+#minesweeper-board td.revealed[data-adj-bombs="2"] { color: var(--gray-700); }
+#minesweeper-board td.revealed[data-adj-bombs="3"] { color: var(--gray-800); }
+#minesweeper-board td.revealed[data-adj-bombs="4"] { color: var(--gray-900); }
+#minesweeper-board td.revealed[data-adj-bombs="5"] { color: var(--gray-900); }
+#minesweeper-board td.revealed[data-adj-bombs="6"] { color: var(--gray-900); }
+#minesweeper-board td.revealed[data-adj-bombs="7"] { color: var(--gray-900); }
+#minesweeper-board td.revealed[data-adj-bombs="8"] { color: var(--black); }
+
+/* Modal styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+.modal-content {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    padding: calc(var(--unit) * 4);
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: calc(var(--unit) * 3);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: var(--text-xl);
+    cursor: pointer;
+    padding: var(--unit);
+    color: var(--text-muted);
+}
+
+.modal-close:hover {
+    color: var(--text-primary);
+}
+
+/* Game state */
+.game-over-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: calc(var(--unit) * 2);
+}
+
+.game-over-overlay.active {
+    display: flex;
+}
+
+.game-status {
+    font-size: var(--text-2xl);
+    font-weight: 300;
+    margin-bottom: var(--unit);
+}
