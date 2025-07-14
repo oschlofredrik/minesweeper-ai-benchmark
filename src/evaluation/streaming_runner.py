@@ -255,7 +255,7 @@ class StreamingGameRunner:
                         "move_num": move_count,
                         "board_data": board_data,
                         "last_move": {
-                            "action": action.action.value,
+                            "action": action.action_type.value,
                             "row": action.position.row,
                             "col": action.position.col
                         },
