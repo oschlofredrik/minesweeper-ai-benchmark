@@ -37,7 +37,7 @@ MODEL_CAPABILITIES: Dict[str, Dict[str, Any]] = {
     "o1-preview": {
         "supports_function_calling": False,
         "supports_streaming": False,
-        "supports_system_messages": True,
+        "supports_system_messages": False,  # o1 models don't support system messages
         "api_type": "chat_completions",
         "max_tokens": 4096,
         "is_reasoning_model": True,
@@ -45,7 +45,7 @@ MODEL_CAPABILITIES: Dict[str, Dict[str, Any]] = {
     "o1-mini": {
         "supports_function_calling": False,
         "supports_streaming": False,
-        "supports_system_messages": True,
+        "supports_system_messages": False,  # o1 models don't support system messages
         "api_type": "chat_completions",
         "max_tokens": 4096,
         "is_reasoning_model": True,

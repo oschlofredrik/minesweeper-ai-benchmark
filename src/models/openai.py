@@ -212,9 +212,11 @@ class OpenAIModel(BaseModel):
                 prompts = prompt_manager.get_prompt_for_model("openai", "", use_function_calling=False)
             
             # Build the request parameters
-            request_params = {
-                "model": self.model_id,
-                "messages": [
+            # Check if model supports system messages
+            supports_system = self.capabilities.get("supports_system_messages", True)
+            
+            if supports_system and prompts.get("system"):
+                messages = [
                     {
                         "role": "system",
                         "content": prompts["system"]
@@ -223,7 +225,22 @@ class OpenAIModel(BaseModel):
                         "role": "user",
                         "content": prompt
                     }
-                ],
+                ]
+            else:
+                # For models that don't support system messages, combine system and user prompts
+                combined_prompt = prompt
+                if prompts.get("system"):
+                    combined_prompt = f"{prompts['system']}\n\n{prompt}"
+                messages = [
+                    {
+                        "role": "user",
+                        "content": combined_prompt
+                    }
+                ]
+            
+            request_params = {
+                "model": self.model_id,
+                "messages": messages,
                 "temperature": temperature,
                 "max_tokens": max_tokens,
                 "n": 1,
