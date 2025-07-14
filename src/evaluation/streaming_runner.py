@@ -241,10 +241,19 @@ class StreamingGameRunner:
                     "game_num": game_num,
                     "move_num": move_count
                 })
+                # Include AI response details in the event
+                move_details = {
+                    "intended_action": action.to_string(),
+                    "position": {"row": action.position.row, "col": action.position.col},
+                    "function_call": response.function_call,
+                    "raw_response_excerpt": response.content[:200] + "..." if len(response.content) > 200 else response.content
+                }
+                
                 await publish_move_completed(
                     job_id, game_num, move_count,
                     action.to_string(), success,
-                    game.get_board_representation("ascii") if success else None
+                    game.get_board_representation("ascii") if success else None,
+                    move_details=move_details
                 )
                 
                 # Send board update with coordinate data

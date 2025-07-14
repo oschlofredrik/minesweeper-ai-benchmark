@@ -280,11 +280,30 @@ class EventStreamUI {
     addMoveEvent(data) {
         const event = document.createElement('div');
         event.className = `event-item move ${data.success ? 'success' : 'failed'}`;
+        
+        let detailsHtml = '';
+        if (data.move_details) {
+            detailsHtml = `
+                <details class="move-details">
+                    <summary class="text-xs text-muted cursor-pointer">View AI Response Details</summary>
+                    <div class="details-content text-xs">
+                        <div><strong>Intended:</strong> ${data.move_details.intended_action}</div>
+                        <div><strong>Position:</strong> Row ${data.move_details.position.row}, Col ${data.move_details.position.col}</div>
+                        ${data.move_details.function_call ? 
+                            `<div><strong>Function Call:</strong> <pre class="text-xs">${JSON.stringify(data.move_details.function_call, null, 2)}</pre></div>` : 
+                            `<div><strong>Raw Response:</strong> <pre class="text-xs">${data.move_details.raw_response_excerpt}</pre></div>`
+                        }
+                    </div>
+                </details>
+            `;
+        }
+        
         event.innerHTML = `
             <div class="event-icon">${this.getActionIcon(data.action)}</div>
             <div class="event-content">
                 <div class="event-title">Move ${data.move_num}: ${data.action}</div>
                 <div class="event-status">${data.success ? 'Valid move' : 'Invalid move'}</div>
+                ${detailsHtml}
                 <div class="event-time">${this.formatTime()}</div>
             </div>
         `;

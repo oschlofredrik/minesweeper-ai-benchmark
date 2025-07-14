@@ -1,5 +1,34 @@
 /* Event Stream Styles - Dieter Rams Design System */
 
+/* Move Details */
+.move-details {
+    margin-top: var(--unit);
+    padding: var(--unit);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+}
+
+.move-details summary {
+    cursor: pointer;
+    user-select: none;
+}
+
+.move-details .details-content {
+    margin-top: var(--unit);
+    padding-top: var(--unit);
+    border-top: 1px solid var(--border);
+}
+
+.move-details pre {
+    margin-top: calc(var(--unit) * 0.5);
+    padding: calc(var(--unit) * 0.5);
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 .toggle-switch {
     display: flex;
     align-items: center;

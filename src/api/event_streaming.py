@@ -172,16 +172,23 @@ async def publish_move_reasoning(job_id: str, game_num: int, move_num: int, reas
 
 
 async def publish_move_completed(job_id: str, game_num: int, move_num: int, action: str, 
-                               success: bool, board_state: Optional[str] = None):
+                               success: bool, board_state: Optional[str] = None,
+                               move_details: Optional[Dict] = None):
     """Publish move completed event."""
-    await publish_event(job_id, EventType.MOVE_COMPLETED, {
+    event_data = {
         "game_num": game_num,
         "move_num": move_num,
         "action": action,
         "success": success,
         "board_state": board_state,
         "message": f"{action} - {'Success' if success else 'Failed'}"
-    })
+    }
+    
+    # Add move details if provided
+    if move_details:
+        event_data["move_details"] = move_details
+    
+    await publish_event(job_id, EventType.MOVE_COMPLETED, event_data)
 
 
 async def publish_game_completed(job_id: str, game_num: int, won: bool, moves: int, 
