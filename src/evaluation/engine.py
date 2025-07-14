@@ -2,14 +2,21 @@
 
 import asyncio
 from typing import List, Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 from pathlib import Path
 
-from src.core.types import ModelConfig, Task, EvaluationMetrics
+from src.core.types import ModelConfig, Task, EvaluationMetrics, TaskType
 from src.core.config import settings
+from src.core.logging_config import get_logger
 from .runner import GameRunner
 from .metrics import MetricsCalculator
+from .advanced_metrics import AdvancedMetricsCalculator, AdvancedMetrics
+from .reasoning_judge import ReasoningJudge
+from .statistical_analysis import StatisticalAnalyzer
+from .episode_logger import EpisodeLogger, MineBenchFormatter
+
+logger = get_logger("evaluation.engine")
 
 
 class EvaluationEngine:
@@ -25,6 +32,8 @@ class EvaluationEngine:
         self.results_dir = results_dir or Path("data/results")
         self.results_dir.mkdir(parents=True, exist_ok=True)
         self.metrics_calculator = MetricsCalculator()
+        self.advanced_calculator = AdvancedMetricsCalculator()
+        self.episode_logger = EpisodeLogger()
     
     async def evaluate_model(
         self,
@@ -35,6 +44,8 @@ class EvaluationEngine:
         parallel_games: int = 1,
         save_results: bool = True,
         verbose: bool = False,
+        use_reasoning_judge: bool = False,
+        calculate_advanced_metrics: bool = True,
     ) -> Dict[str, Any]:
         """
         Evaluate a model on a set of tasks.
@@ -47,6 +58,8 @@ class EvaluationEngine:
             parallel_games: Number of games to run in parallel
             save_results: Whether to save results to disk
             verbose: Whether to print progress
+            use_reasoning_judge: Whether to use LLM judge for reasoning
+            calculate_advanced_metrics: Whether to calculate advanced metrics
         
         Returns:
             Evaluation results dictionary
@@ -55,7 +68,7 @@ class EvaluationEngine:
             print(f"\nEvaluating {model_config.name} on {len(tasks)} tasks")
             print(f"Parallel games: {parallel_games}")
         
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         
         # Create game runner
         runner = GameRunner(model_config)
@@ -69,7 +82,7 @@ class EvaluationEngine:
             verbose=verbose,
         )
         
-        end_time = datetime.utcnow()
+        end_time = datetime.now(timezone.utc)
         duration = (end_time - start_time).total_seconds()
         
         # Calculate metrics
@@ -80,6 +93,42 @@ class EvaluationEngine:
             self.metrics_calculator.calculate_per_game_metrics(t)
             for t in transcripts
         ]
+        
+        # Calculate advanced metrics if requested
+        advanced_metrics = None
+        reasoning_judgments = None
+        
+        if calculate_advanced_metrics:
+            # Separate by task type
+            interactive_transcripts = [t for t in transcripts if t.task_id.startswith("interactive")]
+            
+            # Judge reasoning if requested
+            if use_reasoning_judge and interactive_transcripts:
+                judge = ReasoningJudge()
+                reasoning_judgments = {}
+                
+                for transcript in interactive_transcripts:
+                    task_uid = self.advanced_calculator.generate_task_uid(
+                        transcript.task_id, TaskType.INTERACTIVE
+                    )
+                    judgments = await judge.judge_transcript(transcript)
+                    reasoning_judgments[transcript.game_id] = judgments
+            
+            # Calculate advanced metrics
+            advanced_metrics = self.advanced_calculator.calculate_interactive_metrics(
+                interactive_transcripts,
+                reasoning_judgments
+            )
+            
+            # Log episodes if requested
+            if save_results:
+                for transcript in interactive_transcripts:
+                    task_uid = self.advanced_calculator.generate_task_uid(
+                        transcript.task_id, TaskType.INTERACTIVE
+                    )
+                    self.episode_logger.log_episode(
+                        transcript, task_uid, model_config.name
+                    )
         
         # Create results
         results = {
@@ -129,6 +178,17 @@ class EvaluationEngine:
                 for i, game in enumerate(per_game_metrics)
             ],
         }
+        
+        # Add advanced metrics if calculated
+        if advanced_metrics:
+            results["advanced_metrics"] = {
+                "ms_i_score": advanced_metrics.ms_i_score,
+                "global_score": advanced_metrics.global_score,
+                "win_rate_ci": advanced_metrics.confidence_intervals.get("win_rate", [0, 0]),
+                "reasoning_score": advanced_metrics.reasoning_score,
+                "confidence_intervals": advanced_metrics.confidence_intervals,
+                "sample_sizes": advanced_metrics.sample_sizes
+            }
         
         if save_results:
             self._save_results(results, model_config.name, transcripts)
@@ -285,3 +345,92 @@ class EvaluationEngine:
             }
         
         return comparison
+    
+    async def compare_models_with_significance(
+        self,
+        model_configs: List[ModelConfig],
+        tasks: List[Task],
+        **kwargs
+    ) -> Dict[str, Any]:
+        """
+        Compare multiple models with statistical significance testing.
+        
+        Args:
+            model_configs: List of model configurations to compare
+            tasks: Tasks to evaluate on
+            **kwargs: Additional arguments for evaluate_model
+        
+        Returns:
+            Comparison results with significance tests
+        """
+        # Evaluate all models
+        all_results = {}
+        all_transcripts = {}
+        
+        for config in model_configs:
+            logger.info(f"Evaluating {config.name}...")
+            results = await self.evaluate_model(
+                config, tasks, 
+                calculate_advanced_metrics=True,
+                **kwargs
+            )
+            all_results[config.name] = results
+            
+            # Store transcripts for detailed analysis
+            # (In real implementation, load from saved files)
+            all_transcripts[config.name] = results.get("_transcripts", [])
+        
+        # Perform pairwise comparisons
+        comparisons = {}
+        stat_analyzer = StatisticalAnalyzer()
+        
+        model_names = list(all_results.keys())
+        for i in range(len(model_names)):
+            for j in range(i + 1, len(model_names)):
+                model1, model2 = model_names[i], model_names[j]
+                
+                # Get advanced metrics
+                metrics1 = all_results[model1].get("advanced_metrics")
+                metrics2 = all_results[model2].get("advanced_metrics")
+                
+                if metrics1 and metrics2:
+                    # Create AdvancedMetrics objects
+                    adv_metrics1 = AdvancedMetrics(
+                        win_rate=all_results[model1]["metrics"]["win_rate"],
+                        valid_move_rate=all_results[model1]["metrics"]["valid_move_rate"],
+                        coverage=all_results[model1]["metrics"]["board_coverage_on_loss"],
+                        sample_sizes=metrics1.get("sample_sizes", {})
+                    )
+                    adv_metrics2 = AdvancedMetrics(
+                        win_rate=all_results[model2]["metrics"]["win_rate"],
+                        valid_move_rate=all_results[model2]["metrics"]["valid_move_rate"],
+                        coverage=all_results[model2]["metrics"]["board_coverage_on_loss"],
+                        sample_sizes=metrics2.get("sample_sizes", {})
+                    )
+                    
+                    # Test significance
+                    comparison_key = f"{model1}_vs_{model2}"
+                    comparisons[comparison_key] = {
+                        "models": [model1, model2],
+                        "significance_tests": {}
+                    }
+                    
+                    for metric in ["win_rate", "valid_move_rate"]:
+                        try:
+                            result = self.advanced_calculator.test_significance(
+                                adv_metrics1, adv_metrics2, metric
+                            )
+                            comparisons[comparison_key]["significance_tests"][metric] = {
+                                "p_value": result.p_value,
+                                "is_significant": result.is_significant,
+                                "effect_size": result.effect_size,
+                                "values": [result.sample1_value, result.sample2_value]
+                            }
+                        except Exception as e:
+                            logger.warning(f"Could not test {metric}: {e}")
+        
+        return {
+            "individual_results": all_results,
+            "comparisons": comparisons,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }

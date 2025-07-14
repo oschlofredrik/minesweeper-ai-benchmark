@@ -1,228 +1,160 @@
-"""Episode logging for interactive tasks with proper output schemas."""
+"""Episode logging for MineBench-compliant output formats."""
 
 import json
-from typing import Dict, Any, List, Optional
-from datetime import datetime
+from typing import Dict, List, Any, Optional
 from pathlib import Path
+from datetime import datetime, timezone
 
-from src.core.types import GameTranscript, Move, TaskType
-from .advanced_metrics import generate_task_uid
+from src.core.types import GameTranscript
+from src.core.logging_config import get_logger
+
+logger = get_logger("evaluation.episode_logger")
 
 
 class EpisodeLogger:
-    """Logger for game episodes with MineBench-compliant output format."""
+    """Logs evaluation episodes in MineBench-compliant formats."""
     
-    def __init__(self, output_dir: Optional[Path] = None):
+    def __init__(self, output_dir: str = "data/episodes"):
         """
         Initialize episode logger.
         
         Args:
-            output_dir: Directory for episode logs
+            output_dir: Directory to save episode logs
         """
-        self.output_dir = output_dir or Path("data/episodes")
+        self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
     
     def log_episode(
         self,
         transcript: GameTranscript,
-        task_type: TaskType,
+        task_uid: str,
         model_id: str,
-        prompt_hash: str,
-        reasoning_scores: Optional[List[float]] = None,
-        latencies: Optional[List[float]] = None,
-    ) -> Path:
+        prompt_variant: str = "standard"
+    ) -> str:
         """
-        Log a game episode in MineBench format.
+        Log a single game episode.
         
         Args:
             transcript: Game transcript
-            task_type: Type of task
+            task_uid: MineBench task UID
             model_id: Model identifier
-            prompt_hash: Hash of prompt template
-            reasoning_scores: Per-turn reasoning scores
-            latencies: Per-turn latencies in ms
+            prompt_variant: Prompt variant used
         
         Returns:
-            Path to episode log file
+            Path to saved episode file
         """
-        task_uid = generate_task_uid(task_type, transcript.task_id)
-        
-        # Create episode log
-        episode_lines = []
+        # Create episode data
+        episode_data = []
         
         for i, move in enumerate(transcript.moves):
             turn_data = {
                 "turn": i + 1,
                 "board": move.board_state_before,
-                "action": move.action.to_string() if move.action else "Invalid",
+                "action": move.action.to_string(),
                 "rationale": move.model_reasoning or "",
+                "was_valid": move.was_valid,
+                "error": move.error_message,
+                "latency_ms": int((move.timestamp - transcript.start_time).total_seconds() * 1000) if i == 0 else 100,  # Estimate
+                "tokens_used": move.tokens_used
             }
-            
-            # Add optional fields
-            if move.board_state_after:
-                turn_data["board_after"] = move.board_state_after
-            
-            if reasoning_scores and i < len(reasoning_scores):
-                turn_data["reasoning_score"] = reasoning_scores[i]
-            
-            if latencies and i < len(latencies):
-                turn_data["latency_ms"] = latencies[i]
-            
-            episode_lines.append(json.dumps(turn_data))
+            episode_data.append(turn_data)
         
-        # Save episode log
-        filename = f"{task_uid}_{model_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.jsonl"
+        # Save as JSONL
+        filename = f"{task_uid}_{model_id}_{transcript.game_id}.jsonl"
         filepath = self.output_dir / filename
         
-        with open(filepath, "w") as f:
-            f.write("\n".join(episode_lines))
+        with open(filepath, 'w') as f:
+            for turn in episode_data:
+                f.write(json.dumps(turn) + '\n')
         
-        return filepath
+        logger.info(f"Saved episode log: {filepath}")
+        return str(filepath)
     
-    def create_item_result(
+    def save_batch_results(
         self,
-        task_id: str,
-        task_type: TaskType,
+        results: Dict[str, Any],
+        run_id: str,
+        model_id: str
+    ) -> str:
+        """
+        Save batch evaluation results.
+        
+        Args:
+            results: Evaluation results dictionary
+            run_id: Unique run identifier
+            model_id: Model identifier
+        
+        Returns:
+            Path to saved results file
+        """
+        # Add metadata
+        results["run_id"] = run_id
+        results["model_id"] = model_id
+        results["timestamp"] = datetime.now(timezone.utc).isoformat()
+        
+        # Save results
+        filename = f"results_{run_id}_{model_id}.json"
+        filepath = self.output_dir.parent / "results" / filename
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        
+        with open(filepath, 'w') as f:
+            json.dump(results, f, indent=2)
+        
+        logger.info(f"Saved batch results: {filepath}")
+        return str(filepath)
+
+
+class MineBenchFormatter:
+    """Formats evaluation data for MineBench compliance."""
+    
+    @staticmethod
+    def format_per_item_result(
+        task_uid: str,
         model_id: str,
         prompt_hash: str,
         prediction: str,
         rationale: str,
         is_correct: bool,
         reasoning_score: float,
-        latency_ms: float,
+        latency_ms: int
     ) -> Dict[str, Any]:
         """
-        Create per-item result in MineBench format.
-        
-        Args:
-            task_id: Original task ID
-            task_type: Type of task
-            model_id: Model identifier
-            prompt_hash: Hash of prompt template
-            prediction: Model's prediction
-            rationale: Model's reasoning
-            is_correct: Whether prediction was correct
-            reasoning_score: Judge score (0-1)
-            latency_ms: Response latency
+        Format a single prediction result.
         
         Returns:
-            Item result dictionary
+            MineBench-compliant result dictionary
         """
-        task_uid = generate_task_uid(task_type, task_id)
-        
         return {
             "task_uid": task_uid,
             "model_id": model_id,
-            "prompt_hash": prompt_hash,
+            "prompt_hash": prompt_hash[:6],  # First 6 chars
             "prediction": prediction,
             "rationale": rationale,
             "is_correct": is_correct,
-            "reasoning_score": reasoning_score,
-            "latency_ms": latency_ms,
-            "timestamp": datetime.utcnow().isoformat(),
+            "reasoning_score": round(reasoning_score, 2),
+            "latency_ms": latency_ms
         }
-    
-    def save_batch_results(
-        self,
-        results: List[Dict[str, Any]],
-        run_id: str,
-        model_id: str,
-        eval_spec: str = "v1.0",
-    ) -> Path:
-        """
-        Save batch results in MineBench format.
-        
-        Args:
-            results: List of item results
-            run_id: Unique run identifier
-            model_id: Model identifier
-            eval_spec: Evaluation specification version
-        
-        Returns:
-            Path to results file
-        """
-        batch_data = {
-            "run_id": run_id,
-            "model_id": model_id,
-            "eval_spec": eval_spec,
-            "start_ts": datetime.utcnow().isoformat(),
-            "results": results,
-            "summary": self._calculate_summary(results),
-        }
-        
-        filename = f"batch_{run_id}_{model_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
-        filepath = self.output_dir / filename
-        
-        with open(filepath, "w") as f:
-            json.dump(batch_data, f, indent=2)
-        
-        return filepath
-    
-    def _calculate_summary(self, results: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Calculate summary statistics for batch results."""
-        if not results:
-            return {}
-        
-        correct_count = sum(1 for r in results if r.get("is_correct", False))
-        total_count = len(results)
-        
-        reasoning_scores = [r.get("reasoning_score", 0) for r in results]
-        latencies = [r.get("latency_ms", 0) for r in results]
-        
-        return {
-            "accuracy": correct_count / total_count if total_count > 0 else 0,
-            "total_items": total_count,
-            "correct_items": correct_count,
-            "avg_reasoning_score": sum(reasoning_scores) / len(reasoning_scores) if reasoning_scores else 0,
-            "avg_latency_ms": sum(latencies) / len(latencies) if latencies else 0,
-            "max_latency_ms": max(latencies) if latencies else 0,
-        }
-
-
-class MineBenchFormatter:
-    """Format evaluation outputs for MineBench compliance."""
     
     @staticmethod
     def format_leaderboard_entry(
         model_id: str,
         metrics: Dict[str, float],
-        eval_spec: str = "v1.0",
-        prompt_variant: str = "standard",
-        hidden_split: bool = False,
+        eval_spec_version: str = "1.0"
     ) -> Dict[str, Any]:
         """
-        Format a leaderboard entry.
-        
-        Args:
-            model_id: Model identifier
-            metrics: Evaluation metrics
-            eval_spec: Evaluation specification version
-            prompt_variant: Prompt template used
-            hidden_split: Whether evaluated on hidden split
+        Format leaderboard entry.
         
         Returns:
-            Leaderboard entry
+            MineBench-compliant leaderboard entry
         """
         return {
             "model_id": model_id,
-            "eval_spec": eval_spec,
-            "prompt_variant": prompt_variant,
-            "hidden_split": hidden_split,
-            "timestamp": datetime.utcnow().isoformat(),
+            "eval_spec": eval_spec_version,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "metrics": {
-                "ms_s_score": metrics.get("ms_s_score", 0.0),
-                "ms_i_score": metrics.get("ms_i_score", 0.0),
-                "global_score": metrics.get("global_score", 0.0),
-                "win_rate": metrics.get("win_rate", 0.0),
-                "accuracy": metrics.get("accuracy", 0.0),
-                "coverage": metrics.get("coverage", 0.0),
-                "reasoning_score": metrics.get("reasoning_score", 0.0),
-            },
-            "statistical_significance": metrics.get("significance", {}),
+                "global_score": round(metrics.get("global_score", 0), 4),
+                "ms_s_score": round(metrics.get("ms_s_score", 0), 4),
+                "ms_i_score": round(metrics.get("ms_i_score", 0), 4),
+                "details": metrics
+            }
         }
-    
-    @staticmethod
-    def hash_prompt_template(template: str) -> str:
-        """Generate hash for prompt template."""
-        import hashlib
-        return hashlib.sha256(template.encode()).hexdigest()[:6]
