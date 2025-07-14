@@ -135,8 +135,12 @@ class OpenAIModel(BaseModel):
             # Add tools if requested and not using a reasoning model
             if use_functions and not self.is_reasoning_model:
                 request_params["tools"] = self._get_minesweeper_tools()
-                request_params["tool_choice"] = "auto"
-                logger.info(f"Using function calling for model {self.model_id}")
+                # Force the model to use the function
+                request_params["tool_choice"] = {
+                    "type": "function",
+                    "function": {"name": "make_move"}
+                }
+                logger.info(f"Using function calling for model {self.model_id} with forced tool_choice")
             else:
                 logger.info(f"NOT using function calling for model {self.model_id}: use_functions={use_functions}, is_reasoning_model={self.is_reasoning_model}")
             
