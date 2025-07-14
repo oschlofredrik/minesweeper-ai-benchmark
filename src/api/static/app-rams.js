@@ -10,6 +10,7 @@ let activeGames = new Map();
 let selectedGameId = null;
 let updateInterval = null;
 let pauseUpdates = false;
+let eventStreamUI = null;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -19,22 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
     loadLeaderboard();
     startGameUpdates();
     
-    // Pause updates when hovering over event log
-    const eventsContainer = document.getElementById('events-container');
-    if (eventsContainer) {
-        eventsContainer.addEventListener('mouseenter', () => {
-            pauseUpdates = true;
-            // Add visual indicator
-            const indicator = document.getElementById('pause-indicator');
-            if (indicator) indicator.style.display = 'block';
-        });
-        eventsContainer.addEventListener('mouseleave', () => {
-            pauseUpdates = false;
-            // Remove visual indicator
-            const indicator = document.getElementById('pause-indicator');
-            if (indicator) indicator.style.display = 'none';
-        });
-    }
+    // Initialize event stream UI
+    eventStreamUI = new EventStreamUI('event-stream-ui');
 });
 
 // Navigation
@@ -138,7 +125,11 @@ async function startEvaluation() {
             activeGames.set(result.job_id, result);
             selectedGameId = result.job_id;
             updateGamesList();
-            updateEventLog();
+            
+            // Connect event stream
+            if (eventStreamUI) {
+                eventStreamUI.connect(result.job_id);
+            }
         } else {
             statusDiv.innerHTML = `<div class="status status-error">Error: ${result.detail}</div>`;
         }
@@ -229,7 +220,11 @@ async function updateGamesList() {
 // Select game
 function selectGame(gameId) {
     selectedGameId = gameId;
-    updateEventLog();
+    
+    // Connect event stream to selected game
+    if (eventStreamUI) {
+        eventStreamUI.connect(gameId);
+    }
 }
 
 // Update event log
@@ -425,10 +420,8 @@ function escapeHtml(text) {
 function startGameUpdates() {
     updateInterval = setInterval(() => {
         updateGamesList();
-        if (selectedGameId && !pauseUpdates) {
-            updateEventLog();
-        }
-    }, 3000); // 3 seconds, but pauses on hover
+        // Event streaming handles real-time updates now
+    }, 3000);
 }
 
 // Utility functions

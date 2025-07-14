@@ -18,8 +18,13 @@ from src.core.logging_config import get_logger
 from src.core.types import Difficulty, ModelConfig
 from src.core.storage import get_storage
 from src.evaluation import EvaluationEngine
+from src.evaluation.streaming_runner import StreamingGameRunner
 from src.tasks import TaskRepository, TaskGenerator
 from src.models import create_model
+from .event_streaming import (
+    publish_game_started, publish_move_thinking, publish_move_reasoning,
+    publish_move_completed, publish_game_completed, publish_metrics_update
+)
 
 # Initialize logger
 logger = get_logger("api.play")
@@ -345,14 +350,12 @@ async def run_play_session(
         if api_key:
             model_config.additional_params["api_key"] = api_key
         
-        # Create evaluation engine
-        engine = EvaluationEngine()
+        # Create streaming runner
+        runner = StreamingGameRunner(model_config)
         
-        # Run evaluation on generated tasks with manual progress tracking
-        logger.info(f"Starting to play games")
+        # Run evaluation with streaming
+        logger.info(f"Starting to play games with streaming")
         
-        # Since evaluate_model doesn't support progress callbacks,
-        # we'll run the evaluation and update progress manually
         start_eval_time = time.time()
         
         # Update status before starting
@@ -360,11 +363,12 @@ async def run_play_session(
         games[job_id].progress = 0.3  # 30% done with generation
         
         try:
-            results = await engine.evaluate_model(
-                model_config=model_config,
+            # Run games with live streaming
+            results = await runner.run_multiple_games(
                 tasks=generated_tasks,
-                prompt_format="standard",
-                verbose=False  # We'll handle our own logging
+                job_id=job_id,
+                prompt_format="auto",
+                verbose=False
             )
             
             # Update to completed

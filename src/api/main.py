@@ -20,6 +20,7 @@ from .database import get_leaderboard_data, get_model_results, get_game_replay
 from .evaluation_endpoints import router as evaluation_router
 from .play_endpoints import router as play_router
 from .admin_endpoints import router as admin_router
+from .event_streaming import router as streaming_router
 
 # Initialize logging
 setup_logging(
@@ -76,6 +77,7 @@ app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 app.include_router(evaluation_router)
 app.include_router(play_router)
 app.include_router(admin_router)
+app.include_router(streaming_router)
 
 # Debug router (REMOVE IN PRODUCTION)
 from .debug_endpoint import router as debug_router

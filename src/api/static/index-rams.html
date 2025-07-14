@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Minesweeper AI Benchmark</title>
     <link rel="stylesheet" href="/static/rams-design.css" />
+    <link rel="stylesheet" href="/static/event-stream.css" />
   </head>
   <body>
     <div class="layout">
@@ -146,14 +147,8 @@
               class="card"
               style="height: 80vh; display: flex; flex-direction: column"
             >
-              <h4 style="margin-bottom: calc(var(--unit) * 2); flex-shrink: 0">
-                Event Log
-              </h4>
-              <div
-                id="events-container"
-                style="flex: 1; overflow-y: auto; overflow-x: hidden"
-              >
-                <p class="text-sm text-muted">Select a game to view events</p>
+              <div id="event-stream-ui" style="flex: 1;">
+                <!-- Event stream UI will be initialized here -->
               </div>
             </div>
           </div>
@@ -218,6 +213,7 @@
       </main>
     </div>
 
+    <script src="/static/event-stream.js"></script>
     <script src="/static/app-rams.js"></script>
   </body>
 </html>
