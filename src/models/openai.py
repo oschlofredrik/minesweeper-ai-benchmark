@@ -238,13 +238,19 @@ class OpenAIModel(BaseModel):
                     }
                 ]
             
+            # Build request parameters
             request_params = {
                 "model": self.model_id,
                 "messages": messages,
                 "temperature": temperature,
-                "max_tokens": max_tokens,
                 "n": 1,
             }
+            
+            # Use max_completion_tokens for o1 models, max_tokens for others
+            if self.model_id.startswith("o1"):
+                request_params["max_completion_tokens"] = max_tokens
+            else:
+                request_params["max_tokens"] = max_tokens
             
             # Add tools if requested and model supports it
             if use_functions and self.supports_function_calling:

@@ -141,7 +141,6 @@ a:hover {
 .sidebar-logo {
   margin-bottom: calc(var(--unit) * 4);
   padding-bottom: calc(var(--unit) * 3);
-  border-bottom: 1px solid var(--border);
 }
 
 .sidebar-logo h1 {
@@ -154,9 +153,9 @@ a:hover {
 /* Logo Text Styling */
 .logo-text {
   font-size: var(--text-2xl) !important;
-  font-weight: 300 !important;
+  font-weight: 500 !important;
   letter-spacing: -0.02em;
-  text-transform: lowercase;
+  font-family: inherit;
 }
 
 .main {
@@ -319,7 +318,7 @@ a:hover {
 
 /* Game Feed Container */
 .game-feed-container {
-  height: calc(100vh - var(--unit) * 16);
+  height: calc(100vh - var(--unit) * 12);
   display: flex;
   flex-direction: column;
   overflow: hidden;
