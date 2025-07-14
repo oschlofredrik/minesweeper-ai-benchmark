@@ -12,6 +12,8 @@ from pydantic import BaseModel
 from src.core.prompts import PromptTemplate, prompt_manager
 from src.core.config import settings
 from src.core.logging_config import get_logger
+from src.core.types import ModelConfig
+from src.models import list_providers
 
 logger = get_logger("api.admin")
 
@@ -42,6 +44,18 @@ class FeatureToggle(BaseModel):
     description: str
     enabled: bool
     updated_at: datetime
+
+
+class ModelConfigRequest(BaseModel):
+    """Request to create or update a model configuration."""
+    name: str
+    provider: str
+    model_id: str
+    temperature: float = 0.0
+    max_tokens: int = 1000
+    api_key: Optional[str] = None
+    additional_params: Optional[Dict[str, Any]] = None
+    enabled: bool = True
 
 
 # In-memory storage for settings and feature toggles
@@ -103,6 +117,50 @@ feature_toggles = {
         enabled=True,
         updated_at=datetime.now(timezone.utc)
     )
+}
+
+# Model configurations storage
+model_configs = {
+    "gpt-4": {
+        "name": "gpt-4",
+        "provider": "openai",
+        "model_id": "gpt-4",
+        "temperature": 0.0,
+        "max_tokens": 1000,
+        "enabled": True,
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc)
+    },
+    "gpt-3.5-turbo": {
+        "name": "gpt-3.5-turbo",
+        "provider": "openai",
+        "model_id": "gpt-3.5-turbo",
+        "temperature": 0.0,
+        "max_tokens": 1000,
+        "enabled": True,
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc)
+    },
+    "claude-3-opus": {
+        "name": "claude-3-opus",
+        "provider": "anthropic",
+        "model_id": "claude-3-opus-20240229",
+        "temperature": 0.0,
+        "max_tokens": 1000,
+        "enabled": True,
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc)
+    },
+    "claude-3-sonnet": {
+        "name": "claude-3-sonnet",
+        "provider": "anthropic",
+        "model_id": "claude-3-sonnet-20240229",
+        "temperature": 0.0,
+        "max_tokens": 1000,
+        "enabled": True,
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc)
+    }
 }
 
 
@@ -345,3 +403,147 @@ async def import_config(config: Dict[str, Any]):
     logger.info(f"Imported configuration: {imported}")
     
     return {"message": "Configuration imported successfully", "imported": imported}
+
+
+@router.get("/models")
+async def list_models():
+    """List all model configurations."""
+    return {
+        "models": [
+            {
+                "name": config["name"],
+                "provider": config["provider"],
+                "model_id": config["model_id"],
+                "temperature": config["temperature"],
+                "max_tokens": config["max_tokens"],
+                "enabled": config["enabled"],
+                "updated_at": config["updated_at"].isoformat()
+            }
+            for config in model_configs.values()
+        ],
+        "providers": list_providers()
+    }
+
+
+@router.get("/models/{model_name}")
+async def get_model_config(model_name: str):
+    """Get a specific model configuration."""
+    if model_name not in model_configs:
+        raise HTTPException(status_code=404, detail="Model configuration not found")
+    
+    config = model_configs[model_name]
+    return {
+        "name": config["name"],
+        "provider": config["provider"],
+        "model_id": config["model_id"],
+        "temperature": config["temperature"],
+        "max_tokens": config["max_tokens"],
+        "enabled": config["enabled"],
+        "additional_params": config.get("additional_params", {}),
+        "created_at": config["created_at"].isoformat(),
+        "updated_at": config["updated_at"].isoformat()
+    }
+
+
+@router.put("/models/{model_name}")
+async def update_model_config(model_name: str, request: ModelConfigRequest):
+    """Update a model configuration."""
+    if model_name not in model_configs:
+        raise HTTPException(status_code=404, detail="Model configuration not found")
+    
+    # Update configuration
+    config = model_configs[model_name]
+    config.update({
+        "name": request.name,
+        "provider": request.provider,
+        "model_id": request.model_id,
+        "temperature": request.temperature,
+        "max_tokens": request.max_tokens,
+        "enabled": request.enabled,
+        "updated_at": datetime.now(timezone.utc)
+    })
+    
+    if request.additional_params:
+        config["additional_params"] = request.additional_params
+    
+    # Handle API key separately (don't store in config)
+    if request.api_key:
+        # In production, this would update secure storage
+        logger.info(f"API key updated for model: {model_name}")
+    
+    logger.info(f"Updated model configuration: {model_name}")
+    
+    return {"message": "Model configuration updated successfully", "name": model_name}
+
+
+@router.post("/models")
+async def create_model_config(request: ModelConfigRequest):
+    """Create a new model configuration."""
+    model_name = request.name
+    
+    # Check if already exists
+    if model_name in model_configs:
+        raise HTTPException(status_code=400, detail="Model configuration already exists")
+    
+    # Create new configuration
+    model_configs[model_name] = {
+        "name": request.name,
+        "provider": request.provider,
+        "model_id": request.model_id,
+        "temperature": request.temperature,
+        "max_tokens": request.max_tokens,
+        "enabled": request.enabled,
+        "additional_params": request.additional_params or {},
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc)
+    }
+    
+    # Handle API key separately
+    if request.api_key:
+        # In production, this would store in secure storage
+        logger.info(f"API key stored for new model: {model_name}")
+    
+    logger.info(f"Created new model configuration: {model_name}")
+    
+    return {"message": "Model configuration created successfully", "name": model_name}
+
+
+@router.delete("/models/{model_name}")
+async def delete_model_config(model_name: str):
+    """Delete a model configuration."""
+    if model_name not in model_configs:
+        raise HTTPException(status_code=404, detail="Model configuration not found")
+    
+    del model_configs[model_name]
+    
+    logger.info(f"Deleted model configuration: {model_name}")
+    
+    return {"message": "Model configuration deleted successfully", "name": model_name}
+
+
+@router.get("/api-keys")
+async def get_api_key_status():
+    """Get status of API keys (without revealing the actual keys)."""
+    return {
+        "openai": {
+            "configured": bool(settings.openai_api_key),
+            "key_prefix": settings.openai_api_key[:8] + "..." if settings.openai_api_key else None
+        },
+        "anthropic": {
+            "configured": bool(settings.anthropic_api_key),
+            "key_prefix": settings.anthropic_api_key[:8] + "..." if settings.anthropic_api_key else None
+        }
+    }
+
+
+@router.put("/api-keys/{provider}")
+async def update_api_key(provider: str, api_key: str):
+    """Update an API key for a provider."""
+    if provider not in ["openai", "anthropic"]:
+        raise HTTPException(status_code=400, detail="Invalid provider")
+    
+    # In production, this would update secure storage
+    # For now, just log that it was updated
+    logger.info(f"API key updated for provider: {provider}")
+    
+    return {"message": f"API key updated for {provider}", "provider": provider}
