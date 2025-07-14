@@ -8,9 +8,12 @@ from pathlib import Path
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 import json
+import os
 
 from src.core.config import settings
 from src.core.logging_config import setup_logging
+from src.core.database import init_db
+from src.core.storage import StorageBackend
 from src.evaluation import MineBenchFormatter
 from .models import (
     LeaderboardEntry, ModelResult, TaskInfo, 
@@ -82,6 +85,31 @@ app.include_router(streaming_router)
 # Debug router (REMOVE IN PRODUCTION)
 from .debug_endpoint import router as debug_router
 app.include_router(debug_router)
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database and storage on startup."""
+    import logging
+    logger = logging.getLogger("api.startup")
+    
+    try:
+        # Initialize database if DATABASE_URL is set
+        if os.getenv('DATABASE_URL'):
+            logger.info("Initializing database connection...")
+            init_db()
+            logger.info("Database initialized successfully")
+        else:
+            logger.info("No DATABASE_URL found, using file storage")
+        
+        # Initialize storage backend
+        storage = StorageBackend()
+        logger.info(f"Storage backend initialized: {'database' if storage.use_database else 'file'}")
+        
+    except Exception as e:
+        logger.error(f"Error during startup: {e}")
+        # Don't fail startup, just use file storage
+        logger.info("Continuing with file storage")
 
 
 @app.get("/health")
