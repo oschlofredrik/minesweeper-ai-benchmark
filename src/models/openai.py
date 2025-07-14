@@ -136,6 +136,9 @@ class OpenAIModel(BaseModel):
             if use_functions and not self.is_reasoning_model:
                 request_params["tools"] = self._get_minesweeper_tools()
                 request_params["tool_choice"] = "auto"
+                logger.info(f"Using function calling for model {self.model_id}")
+            else:
+                logger.info(f"NOT using function calling for model {self.model_id}: use_functions={use_functions}, is_reasoning_model={self.is_reasoning_model}")
             
             # Create completion with timeout
             response = await asyncio.wait_for(

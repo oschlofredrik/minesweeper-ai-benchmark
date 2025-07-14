@@ -303,9 +303,12 @@ class BaseModel(ABC):
         
         response = await self.generate(prompt, **kwargs)
         
+        logger.debug(f"play_move response: has_function_call={response.function_call is not None}, has_content={bool(response.content)}, has_reasoning={bool(response.reasoning)}")
+        
         # Try to parse action from function call first, then from content
         if response.function_call:
             # Parse action from function call
+            logger.info(f"Parsing action from function call: {response.function_call}")
             try:
                 action_type = ActionType(response.function_call.get('action', '').lower())
                 position = Position(
@@ -313,19 +316,22 @@ class BaseModel(ABC):
                     col=response.function_call.get('col', 0)
                 )
                 response.action = Action(action_type, position)
+                logger.info(f"Successfully parsed action from function call: {response.action.to_string()}")
                 # Use reasoning from function call if not already set
                 if not response.reasoning and 'reasoning' in response.function_call:
                     response.reasoning = response.function_call['reasoning']
             except (ValueError, KeyError) as e:
                 # Function call parsing failed
-                logger.warning(f"Failed to parse function call: {e}")
+                logger.warning(f"Failed to parse function call: {e}, function_call={response.function_call}")
         else:
             # Try to parse action from content
+            logger.debug(f"No function call, trying to parse action from content")
             try:
                 response.action = self.parse_action(response.content)
-            except InvalidModelResponseError:
+                logger.info(f"Successfully parsed action from content: {response.action.to_string()}")
+            except InvalidModelResponseError as e:
                 # Action parsing failed, will be handled by caller
-                pass
+                logger.warning(f"Failed to parse action from content: {e}")
         
         # Extract reasoning if not already set
         if not response.reasoning:
