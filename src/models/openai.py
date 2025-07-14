@@ -242,9 +242,12 @@ class OpenAIModel(BaseModel):
             request_params = {
                 "model": self.model_id,
                 "messages": messages,
-                "temperature": temperature,
                 "n": 1,
             }
+            
+            # o1 models only support default temperature (1)
+            if not self.model_id.startswith("o1"):
+                request_params["temperature"] = temperature
             
             # Use max_completion_tokens for o1 models, max_tokens for others
             if self.model_id.startswith("o1"):
