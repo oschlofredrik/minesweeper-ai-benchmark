@@ -406,7 +406,6 @@ async def run_play_session(
         # Update database/storage backend
         try:
             from src.core.storage import get_storage
-            from src.core.types import ModelConfig
             
             storage = get_storage()
             
