@@ -328,16 +328,61 @@ class StreamingGameRunner:
         # Calculate final metrics
         from src.evaluation.metrics import MetricsCalculator
         from src.evaluation.advanced_metrics import AdvancedMetricsCalculator
+        from src.evaluation.reasoning_judge import ReasoningJudge
         from src.core.types import TaskType
         
         # Basic metrics
         calculator = MetricsCalculator()
         metrics_obj = calculator.calculate_metrics(transcripts)
         
+        # Judge reasoning quality (optional - for now use simple heuristic)
+        reasoning_judgments = None
+        
+        # Check if reasoning judge is enabled
+        try:
+            from src.api.reasoning_config import USE_REASONING_JUDGE
+            use_reasoning_judge = USE_REASONING_JUDGE
+        except ImportError:
+            use_reasoning_judge = False  # Default to simple heuristic
+        
+        if use_reasoning_judge and transcripts:
+            logger.info("🧠 Evaluating reasoning quality with LLM judge...")
+            judge = ReasoningJudge()
+            reasoning_judgments = {}
+            
+            for transcript in transcripts:
+                try:
+                    judgments = await judge.judge_transcript(transcript)
+                    reasoning_judgments[transcript.game_id] = judgments
+                except Exception as e:
+                    logger.error(f"Failed to judge reasoning for game {transcript.game_id}: {e}")
+        
         # Advanced metrics (MineBench scores)
         adv_calculator = AdvancedMetricsCalculator()
         # For now, treat all as interactive tasks
-        adv_metrics = adv_calculator.calculate_interactive_metrics(transcripts)
+        adv_metrics = adv_calculator.calculate_interactive_metrics(transcripts, reasoning_judgments)
+        
+        # If reasoning judge is disabled, calculate simple reasoning score
+        if not use_reasoning_judge:
+            # Simple heuristic: score based on presence and quality of reasoning
+            total_moves_with_reasoning = 0
+            total_moves = 0
+            
+            for transcript in transcripts:
+                for move in transcript.moves:
+                    if move.was_valid:
+                        total_moves += 1
+                        if move.model_reasoning and len(move.model_reasoning) > 20:
+                            total_moves_with_reasoning += 1
+            
+            # Simple scoring: 0.5 base + 0.5 based on reasoning presence
+            if total_moves > 0:
+                reasoning_ratio = total_moves_with_reasoning / total_moves
+                adv_metrics.reasoning_score = 0.5 + (0.5 * reasoning_ratio)
+            else:
+                adv_metrics.reasoning_score = 0.0
+            
+            logger.info(f"📊 Simple reasoning score: {adv_metrics.reasoning_score:.2f} ({total_moves_with_reasoning}/{total_moves} moves with reasoning)")
         
         # Convert to dict for backward compatibility
         metrics = {
@@ -357,6 +402,8 @@ class StreamingGameRunner:
             "flag_recall": adv_metrics.flag_recall,
             "reasoning_quality_score": metrics_obj.reasoning_quality_score,
         }
+        
+        logger.info(f"📊 Final metrics - Win rate: {metrics['win_rate']:.2%}, Reasoning: {metrics['reasoning_score']:.2f}")
         
         # Publish session completed
         await publish_event(job_id, EventType.STATUS_UPDATE, {
