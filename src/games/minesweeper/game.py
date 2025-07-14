@@ -1,6 +1,6 @@
 """Minesweeper game implementation with full game flow."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List, Tuple, Dict, Any
 import uuid
 
@@ -48,7 +48,7 @@ class MinesweeperGame:
         
         # Game state
         self.status = GameStatus.IN_PROGRESS
-        self.start_time = datetime.utcnow()
+        self.start_time = datetime.now(timezone.utc)
         self.end_time: Optional[datetime] = None
         self.moves: List[Move] = []
         self.first_move_safe = True  # Common Minesweeper rule
@@ -76,7 +76,7 @@ class MinesweeperGame:
         
         # Get current board state for the move record
         board_before = self.board.to_ascii()
-        timestamp = datetime.utcnow()
+        timestamp = datetime.now(timezone.utc)
         
         try:
             # Validate position
@@ -160,7 +160,7 @@ class MinesweeperGame:
         
         if hit_mine:
             self.status = GameStatus.LOST
-            self.end_time = datetime.utcnow()
+            self.end_time = datetime.now(timezone.utc)
             return True, "Hit a mine! Game over.", {
                 "hit_mine": True,
                 "cells_revealed": len(revealed_positions),
@@ -238,7 +238,7 @@ class MinesweeperGame:
         
         if game_state["is_won"]:
             self.status = GameStatus.WON
-            self.end_time = datetime.utcnow()
+            self.end_time = datetime.now(timezone.utc)
     
     def get_current_state(self) -> GameState:
         """Get current game state."""
@@ -316,7 +316,7 @@ class MinesweeperGame:
             moves=self.moves,
             final_state=self.get_current_state(),
             start_time=self.start_time,
-            end_time=self.end_time or datetime.utcnow(),
+            end_time=self.end_time or datetime.now(timezone.utc),
         )
     
     def get_statistics(self) -> Dict[str, Any]:
@@ -335,6 +335,6 @@ class MinesweeperGame:
             "incorrect_flags": self.flags_placed - self.correct_flags,
             "board_coverage": self.cells_revealed / non_mine_cells if non_mine_cells > 0 else 0,
             "duration_seconds": (
-                (self.end_time or datetime.utcnow()) - self.start_time
+                (self.end_time or datetime.now(timezone.utc)) - self.start_time
             ).total_seconds(),
         }

@@ -2,7 +2,7 @@
 
 import asyncio
 from typing import Optional, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 from src.core.types import (
     Action, ActionType, GameTranscript, ModelConfig, Task, Position, Move
@@ -280,7 +280,7 @@ class GameRunner:
         
         # Ensure game has end time
         if not game.end_time:
-            game.end_time = datetime.utcnow()
+            game.end_time = datetime.now(timezone.utc)
         
         transcript = game.get_transcript()
         
