@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minesweeper AI Benchmark - Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #000;
+            color: #0f0;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1, h2, h3 {
+            color: #0f0;
+            margin-bottom: 20px;
+            font-weight: normal;
+        }
+        
+        h1 {
+            font-size: 24px;
+            border-bottom: 1px solid #0f0;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        
+        h2 {
+            font-size: 20px;
+            margin-top: 30px;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #0f0;
+            margin-bottom: 30px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            background: none;
+            border: 1px solid #0f0;
+            border-bottom: none;
+            color: #0f0;
+            cursor: pointer;
+            margin-right: 5px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        
+        .tab.active {
+            background-color: #0f0;
+            color: #000;
+        }
+        
+        .tab:hover:not(.active) {
+            background-color: #030;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #0f0;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #0f0;
+        }
+        
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 8px;
+            background-color: #000;
+            border: 1px solid #0f0;
+            color: #0f0;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+        
+        button {
+            background: none;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 8px 20px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        
+        button:hover {
+            background-color: #0f0;
+            color: #000;
+        }
+        
+        button.danger {
+            border-color: #f00;
+            color: #f00;
+        }
+        
+        button.danger:hover {
+            background-color: #f00;
+            color: #000;
+        }
+        
+        .toggle {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .toggle input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+        }
+        
+        .prompt-list {
+            list-style: none;
+        }
+        
+        .prompt-item {
+            padding: 15px;
+            border: 1px solid #0f0;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        
+        .prompt-item:hover {
+            background-color: #030;
+        }
+        
+        .prompt-item.active {
+            background-color: #030;
+            border-color: #0ff;
+        }
+        
+        .prompt-meta {
+            font-size: 12px;
+            color: #090;
+            margin-top: 5px;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        
+        .status.active {
+            color: #0f0;
+            border: 1px solid #0f0;
+        }
+        
+        .status.inactive {
+            color: #999;
+            border: 1px solid #999;
+        }
+        
+        .message {
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid;
+        }
+        
+        .message.success {
+            border-color: #0f0;
+            color: #0f0;
+        }
+        
+        .message.error {
+            border-color: #f00;
+            color: #f00;
+        }
+        
+        .actions {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #0f0;
+        }
+        
+        .code {
+            font-family: 'Courier New', monospace;
+            background-color: #111;
+            padding: 10px;
+            border: 1px solid #333;
+            overflow-x: auto;
+        }
+        
+        .loading {
+            color: #ff0;
+        }
+        
+        .nav-link {
+            color: #0f0;
+            text-decoration: none;
+            margin-right: 20px;
+        }
+        
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MINESWEEPER AI BENCHMARK - ADMIN PANEL</h1>
+        
+        <div style="margin-bottom: 20px;">
+            <a href="/" class="nav-link">← Back to Main</a>
+            <a href="/docs" class="nav-link">API Docs</a>
+        </div>
+        
+        <div id="message-container"></div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('prompts')">Prompts</button>
+            <button class="tab" onclick="showTab('settings')">Settings</button>
+            <button class="tab" onclick="showTab('features')">Features</button>
+            <button class="tab" onclick="showTab('export')">Export/Import</button>
+        </div>
+        
+        <!-- Prompts Tab -->
+        <div id="prompts-tab" class="tab-content active">
+            <div class="section">
+                <h2>Prompt Templates</h2>
+                <button onclick="createNewPrompt()">+ New Prompt</button>
+                <button onclick="loadPrompts()">Refresh</button>
+                
+                <div style="display: flex; gap: 20px; margin-top: 20px;">
+                    <div style="flex: 1;">
+                        <h3>Available Templates</h3>
+                        <ul id="prompt-list" class="prompt-list">
+                            <li class="loading">Loading prompts...</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="flex: 2;">
+                        <h3>Edit Template</h3>
+                        <div id="prompt-editor" style="display: none;">
+                            <form id="prompt-form">
+                                <input type="hidden" id="prompt-id">
+                                
+                                <div class="form-group">
+                                    <label for="prompt-name">Name:</label>
+                                    <input type="text" id="prompt-name" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="prompt-description">Description:</label>
+                                    <input type="text" id="prompt-description" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="prompt-system">System Prompt:</label>
+                                    <textarea id="prompt-system" required></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="prompt-user">User Prompt Template:</label>
+                                    <textarea id="prompt-user" required placeholder="Use {board_state} as placeholder"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <div class="toggle">
+                                        <input type="checkbox" id="prompt-function-calling">
+                                        <label for="prompt-function-calling">Supports Function Calling</label>
+                                    </div>
+                                    
+                                    <div class="toggle">
+                                        <input type="checkbox" id="prompt-active">
+                                        <label for="prompt-active">Active</label>
+                                    </div>
+                                </div>
+                                
+                                <button type="submit">Save Template</button>
+                                <button type="button" onclick="cancelEdit()">Cancel</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Settings Tab -->
+        <div id="settings-tab" class="tab-content">
+            <div class="section">
+                <h2>System Settings</h2>
+                <div id="settings-list">
+                    <p class="loading">Loading settings...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Features Tab -->
+        <div id="features-tab" class="tab-content">
+            <div class="section">
+                <h2>Feature Toggles</h2>
+                <div id="features-list">
+                    <p class="loading">Loading features...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Export/Import Tab -->
+        <div id="export-tab" class="tab-content">
+            <div class="section">
+                <h2>Configuration Management</h2>
+                
+                <h3>Export Configuration</h3>
+                <p>Download all prompts, settings, and feature toggles as a JSON file.</p>
+                <button onclick="exportConfig()">Export Configuration</button>
+                
+                <h3 style="margin-top: 30px;">Import Configuration</h3>
+                <p>Upload a JSON configuration file to restore prompts, settings, and features.</p>
+                <input type="file" id="import-file" accept=".json" style="margin-bottom: 10px;">
+                <br>
+                <button onclick="importConfig()">Import Configuration</button>
+                
+                <h3 style="margin-top: 30px;">Preview</h3>
+                <div id="config-preview" class="code" style="display: none;">
+                    <pre id="config-json"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Global state
+        let currentPromptId = null;
+        let prompts = {};
+        let settings = {};
+        let features = {};
+        
+        // Tab switching
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+            
+            // Load data for the tab
+            if (tabName === 'prompts') {
+                loadPrompts();
+            } else if (tabName === 'settings') {
+                loadSettings();
+            } else if (tabName === 'features') {
+                loadFeatures();
+            }
+        }
+        
+        // Message display
+        function showMessage(message, type = 'success') {
+            const container = document.getElementById('message-container');
+            const div = document.createElement('div');
+            div.className = `message ${type}`;
+            div.textContent = message;
+            container.appendChild(div);
+            
+            setTimeout(() => {
+                div.remove();
+            }, 5000);
+        }
+        
+        // Prompts management
+        async function loadPrompts() {
+            try {
+                const response = await fetch('/api/admin/prompts');
+                const data = await response.json();
+                prompts = {};
+                data.prompts.forEach(p => {
+                    prompts[p.id] = p;
+                });
+                displayPrompts();
+            } catch (error) {
+                showMessage('Failed to load prompts: ' + error.message, 'error');
+            }
+        }
+        
+        function displayPrompts() {
+            const list = document.getElementById('prompt-list');
+            list.innerHTML = '';
+            
+            Object.values(prompts).forEach(prompt => {
+                const li = document.createElement('li');
+                li.className = 'prompt-item';
+                if (prompt.id === currentPromptId) {
+                    li.classList.add('active');
+                }
+                
+                li.innerHTML = `
+                    <strong>${prompt.name}</strong>
+                    <span class="status ${prompt.is_active ? 'active' : 'inactive'}">
+                        ${prompt.is_active ? 'ACTIVE' : 'INACTIVE'}
+                    </span>
+                    ${prompt.supports_function_calling ? '<span class="status active">FUNCTION CALLING</span>' : ''}
+                    <div class="prompt-meta">${prompt.description}</div>
+                `;
+                
+                li.onclick = () => editPrompt(prompt.id);
+                list.appendChild(li);
+            });
+        }
+        
+        async function editPrompt(promptId) {
+            try {
+                const response = await fetch(`/api/admin/prompts/${promptId}`);
+                const prompt = await response.json();
+                
+                currentPromptId = promptId;
+                document.getElementById('prompt-id').value = prompt.id;
+                document.getElementById('prompt-name').value = prompt.name;
+                document.getElementById('prompt-description').value = prompt.description;
+                document.getElementById('prompt-system').value = prompt.system_prompt;
+                document.getElementById('prompt-user').value = prompt.user_prompt_template;
+                document.getElementById('prompt-function-calling').checked = prompt.supports_function_calling;
+                document.getElementById('prompt-active').checked = prompt.is_active;
+                
+                document.getElementById('prompt-editor').style.display = 'block';
+                displayPrompts();
+            } catch (error) {
+                showMessage('Failed to load prompt: ' + error.message, 'error');
+            }
+        }
+        
+        function createNewPrompt() {
+            currentPromptId = null;
+            document.getElementById('prompt-form').reset();
+            document.getElementById('prompt-id').value = '';
+            document.getElementById('prompt-active').checked = true;
+            document.getElementById('prompt-editor').style.display = 'block';
+        }
+        
+        function cancelEdit() {
+            currentPromptId = null;
+            document.getElementById('prompt-editor').style.display = 'none';
+            displayPrompts();
+        }
+        
+        document.getElementById('prompt-form').onsubmit = async (e) => {
+            e.preventDefault();
+            
+            const promptId = document.getElementById('prompt-id').value;
+            const data = {
+                name: document.getElementById('prompt-name').value,
+                description: document.getElementById('prompt-description').value,
+                system_prompt: document.getElementById('prompt-system').value,
+                user_prompt_template: document.getElementById('prompt-user').value,
+                supports_function_calling: document.getElementById('prompt-function-calling').checked,
+                is_active: document.getElementById('prompt-active').checked
+            };
+            
+            try {
+                const url = promptId 
+                    ? `/api/admin/prompts/${promptId}`
+                    : '/api/admin/prompts';
+                const method = promptId ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    showMessage('Prompt saved successfully');
+                    loadPrompts();
+                    cancelEdit();
+                } else {
+                    const error = await response.json();
+                    showMessage('Failed to save prompt: ' + error.detail, 'error');
+                }
+            } catch (error) {
+                showMessage('Failed to save prompt: ' + error.message, 'error');
+            }
+        };
+        
+        // Settings management
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/admin/settings');
+                const data = await response.json();
+                settings = data.settings;
+                displaySettings();
+            } catch (error) {
+                showMessage('Failed to load settings: ' + error.message, 'error');
+            }
+        }
+        
+        function displaySettings() {
+            const container = document.getElementById('settings-list');
+            container.innerHTML = '';
+            
+            Object.entries(settings).forEach(([key, setting]) => {
+                const div = document.createElement('div');
+                div.className = 'form-group';
+                
+                const inputType = setting.type === 'int' || setting.type === 'float' ? 'number' : 'text';
+                const step = setting.type === 'float' ? '0.1' : '1';
+                
+                if (setting.type === 'bool') {
+                    div.innerHTML = `
+                        <div class="toggle">
+                            <input type="checkbox" id="setting-${key}" 
+                                   ${setting.value ? 'checked' : ''}
+                                   onchange="updateSetting('${key}', this.checked)">
+                            <label for="setting-${key}">${setting.description}</label>
+                        </div>
+                    `;
+                } else {
+                    div.innerHTML = `
+                        <label for="setting-${key}">${setting.description}:</label>
+                        <input type="${inputType}" 
+                               id="setting-${key}" 
+                               value="${setting.value}"
+                               step="${step}"
+                               onchange="updateSetting('${key}', this.value)">
+                    `;
+                }
+                
+                container.appendChild(div);
+            });
+        }
+        
+        async function updateSetting(key, value) {
+            try {
+                const response = await fetch(`/api/admin/settings/${key}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        key: key,
+                        value: value
+                    })
+                });
+                
+                if (response.ok) {
+                    showMessage('Setting updated successfully');
+                    settings[key].value = value;
+                } else {
+                    const error = await response.json();
+                    showMessage('Failed to update setting: ' + error.detail, 'error');
+                    // Revert the input
+                    loadSettings();
+                }
+            } catch (error) {
+                showMessage('Failed to update setting: ' + error.message, 'error');
+                loadSettings();
+            }
+        }
+        
+        // Features management
+        async function loadFeatures() {
+            try {
+                const response = await fetch('/api/admin/features');
+                const data = await response.json();
+                features = {};
+                data.features.forEach(f => {
+                    features[f.key] = f;
+                });
+                displayFeatures();
+            } catch (error) {
+                showMessage('Failed to load features: ' + error.message, 'error');
+            }
+        }
+        
+        function displayFeatures() {
+            const container = document.getElementById('features-list');
+            container.innerHTML = '';
+            
+            Object.values(features).forEach(feature => {
+                const div = document.createElement('div');
+                div.className = 'form-group';
+                div.innerHTML = `
+                    <div class="toggle">
+                        <input type="checkbox" 
+                               id="feature-${feature.key}" 
+                               ${feature.enabled ? 'checked' : ''}
+                               onchange="toggleFeature('${feature.key}', this.checked)">
+                        <label for="feature-${feature.key}">
+                            <strong>${feature.name}</strong>
+                            <br>
+                            <span style="font-size: 12px; color: #090;">${feature.description}</span>
+                        </label>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+        
+        async function toggleFeature(key, enabled) {
+            try {
+                const response = await fetch(`/api/admin/features/${key}?enabled=${enabled}`, {
+                    method: 'PUT'
+                });
+                
+                if (response.ok) {
+                    showMessage('Feature updated successfully');
+                    features[key].enabled = enabled;
+                } else {
+                    const error = await response.json();
+                    showMessage('Failed to update feature: ' + error.detail, 'error');
+                    // Revert the checkbox
+                    document.getElementById(`feature-${key}`).checked = !enabled;
+                }
+            } catch (error) {
+                showMessage('Failed to update feature: ' + error.message, 'error');
+                document.getElementById(`feature-${key}`).checked = !enabled;
+            }
+        }
+        
+        // Export/Import
+        async function exportConfig() {
+            try {
+                const response = await fetch('/api/admin/export');
+                const config = await response.json();
+                
+                // Show preview
+                document.getElementById('config-json').textContent = JSON.stringify(config, null, 2);
+                document.getElementById('config-preview').style.display = 'block';
+                
+                // Download file
+                const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `minesweeper-config-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                showMessage('Configuration exported successfully');
+            } catch (error) {
+                showMessage('Failed to export configuration: ' + error.message, 'error');
+            }
+        }
+        
+        async function importConfig() {
+            const fileInput = document.getElementById('import-file');
+            if (!fileInput.files.length) {
+                showMessage('Please select a file to import', 'error');
+                return;
+            }
+            
+            try {
+                const file = fileInput.files[0];
+                const text = await file.text();
+                const config = JSON.parse(text);
+                
+                // Show preview
+                document.getElementById('config-json').textContent = JSON.stringify(config, null, 2);
+                document.getElementById('config-preview').style.display = 'block';
+                
+                // Import the configuration
+                const response = await fetch('/api/admin/import', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: text
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    showMessage(`Configuration imported successfully: ${JSON.stringify(result.imported)}`);
+                    // Reload current tab
+                    const activeTab = document.querySelector('.tab.active').textContent.toLowerCase();
+                    if (activeTab === 'prompts') loadPrompts();
+                    else if (activeTab === 'settings') loadSettings();
+                    else if (activeTab === 'features') loadFeatures();
+                } else {
+                    const error = await response.json();
+                    showMessage('Failed to import configuration: ' + error.detail, 'error');
+                }
+            } catch (error) {
+                showMessage('Failed to import configuration: ' + error.message, 'error');
+            }
+        }
+        
+        // Initialize on load
+        loadPrompts();
+    </script>
+</body>
+</html>

@@ -9,6 +9,7 @@ from anthropic import AsyncAnthropic
 from src.core.config import settings
 from src.core.exceptions import ModelAPIError, ModelTimeoutError
 from src.core.logging_config import get_logger
+from src.core.prompts import prompt_manager
 from .base import BaseModel, ModelResponse
 
 # Initialize logger
@@ -103,6 +104,12 @@ class AnthropicModel(BaseModel):
         use_tools = kwargs.get("use_tools", True)
         
         try:
+            # Get appropriate system prompt
+            if use_tools and not self.supports_thinking:
+                prompts = prompt_manager.get_prompt_for_model("anthropic", "", use_function_calling=True)
+            else:
+                prompts = prompt_manager.get_prompt_for_model("anthropic", "", use_function_calling=False)
+            
             # Build the request parameters
             request_params = {
                 "model": self.model_id,
@@ -112,7 +119,7 @@ class AnthropicModel(BaseModel):
                         "content": prompt
                     }
                 ],
-                "system": "You are an expert Minesweeper player. Analyze the board carefully and make logical deductions. Think through your reasoning step by step before deciding on your move. Always provide clear reasoning for your moves.",
+                "system": prompts["system"],
                 "temperature": temperature,
                 "max_tokens": max_tokens,
             }

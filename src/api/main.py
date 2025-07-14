@@ -19,6 +19,7 @@ from .models import (
 from .database import get_leaderboard_data, get_model_results, get_game_replay
 from .evaluation_endpoints import router as evaluation_router
 from .play_endpoints import router as play_router
+from .admin_endpoints import router as admin_router
 
 # Initialize logging
 setup_logging(
@@ -74,6 +75,7 @@ app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 # Include routers
 app.include_router(evaluation_router)
 app.include_router(play_router)
+app.include_router(admin_router)
 
 # Debug router (REMOVE IN PRODUCTION)
 from .debug_endpoint import router as debug_router
@@ -140,6 +142,16 @@ async def terminal_design():
     terminal_file = static_dir / "index.html"
     if terminal_file.exists():
         return FileResponse(terminal_file)
+    else:
+        return RedirectResponse(url="/")
+
+
+@app.get("/admin", response_class=HTMLResponse)
+async def admin_interface():
+    """Serve the admin interface."""
+    admin_file = static_dir / "admin.html"
+    if admin_file.exists():
+        return FileResponse(admin_file)
     else:
         return RedirectResponse(url="/")
 

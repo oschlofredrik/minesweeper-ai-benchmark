@@ -10,6 +10,7 @@ import json
 from src.core.config import settings
 from src.core.exceptions import ModelAPIError, ModelTimeoutError
 from src.core.logging_config import get_logger
+from src.core.prompts import prompt_manager
 from .base import BaseModel, ModelResponse
 
 # Initialize logger
@@ -107,13 +108,19 @@ class OpenAIModel(BaseModel):
         use_functions = kwargs.get("use_functions", True)
         
         try:
+            # Get appropriate system prompt
+            if use_functions and not self.is_reasoning_model:
+                prompts = prompt_manager.get_prompt_for_model("openai", "", use_function_calling=True)
+            else:
+                prompts = prompt_manager.get_prompt_for_model("openai", "", use_function_calling=False)
+            
             # Build the request parameters
             request_params = {
                 "model": self.model_id,
                 "messages": [
                     {
                         "role": "system",
-                        "content": "You are an expert Minesweeper player. Analyze the board carefully and make logical deductions. Think step by step through your reasoning before deciding on your move."
+                        "content": prompts["system"]
                     },
                     {
                         "role": "user",

@@ -10,6 +10,7 @@ import asyncio
 from src.core.types import Action, ActionType, Position
 from src.core.exceptions import InvalidModelResponseError, ModelAPIError
 from src.core.logging_config import get_logger
+from src.core.prompts import prompt_manager
 
 logger = get_logger("models.base")
 
@@ -230,90 +231,34 @@ class BaseModel(ABC):
         
         return None
     
-    def format_prompt(self, board_state: str, format_type: str = "standard") -> str:
+    def format_prompt(self, board_state: str, format_type: str = "standard", use_functions: bool = False) -> str:
         """
         Format the prompt for the model.
         
         Args:
             board_state: The current board state
             format_type: Type of prompt format to use
+            use_functions: Whether function calling is enabled
         
         Returns:
             Formatted prompt string
         """
-        if format_type == "standard":
-            return f"""You are playing Minesweeper. Here is the current board state:
-
-{board_state}
-
-Legend:
-- ?: Hidden cell
-- F: Flagged cell
-- .: Empty cell (0 adjacent mines)
-- 1-8: Number of adjacent mines
-- *: Mine (only shown when game is over)
-
-Based on logical deduction, what is your next move?
-
-Think step by step about which cells are definitely safe or definitely mines based on the numbers shown. Then use the make_move function to specify your action."""
+        # Map old format types to template IDs
+        template_map = {
+            "standard": "function_calling" if use_functions else "standard",
+            "json": "standard",  # JSON format is deprecated
+            "cot": "cot",
+            "reasoning": "reasoning"
+        }
         
-        elif format_type == "json":
-            return f"""You are playing Minesweeper. Here is the current board state:
-
-{board_state}
-
-Legend:
-- ?: Hidden cell
-- F: Flagged cell  
-- .: Empty cell (0 adjacent mines)
-- 1-8: Number of adjacent mines
-
-Analyze the board and provide your next move as JSON:
-{{
-    "reasoning": "Your logical deduction explaining why this move is safe",
-    "action": "reveal",
-    "position": {{"row": 0, "col": 0}}
-}}
-
-Use logical deduction based on the numbers to find guaranteed safe cells or mines."""
+        template_id = template_map.get(format_type, "standard")
+        template = prompt_manager.get_template(template_id)
         
-        elif format_type == "cot":  # Chain of thought
-            return f"""You are an expert Minesweeper player. Analyze this board state:
-
-{board_state}
-
-Legend:
-- ?: Hidden cell
-- F: Flagged cell
-- .: Empty cell (0 adjacent mines)  
-- 1-8: Number of adjacent mines
-
-Let's think step by step:
-1. First, identify all revealed numbers and their adjacent hidden cells
-2. Count how many mines are already flagged around each number
-3. Determine which cells must be mines or must be safe
-4. Choose the best move based on certainty
-
-Provide your analysis and then state your move as: Action: [reveal/flag] (row, col)"""
+        if template:
+            return template.format_user_prompt(board_state)
         
-        elif format_type == "reasoning":  # For reasoning models
-            return f"""You are an expert Minesweeper player. Here is the current board state:
-
-{board_state}
-
-Legend:
-- ?: Hidden cell
-- F: Flagged cell
-- .: Empty cell (0 adjacent mines)
-- 1-8: Number of adjacent mines
-
-Analyze the board carefully. Think through all the logical deductions you can make based on the revealed numbers and their adjacent cells. Consider which cells must be mines and which must be safe.
-
-After your analysis, provide your next move in this format:
-Action: [reveal/flag] (row, col)"""
-        
-        else:
-            raise ValueError(f"Unknown prompt format type: {format_type}")
+        # Fallback to standard if template not found
+        return prompt_manager.get_template("standard").format_user_prompt(board_state)
     
     def get_optimal_prompt_format(self) -> str:
         """
@@ -347,7 +292,7 @@ Action: [reveal/flag] (row, col)"""
         if prompt_format == "auto":
             prompt_format = self.get_optimal_prompt_format()
             
-        prompt = self.format_prompt(board_state, prompt_format)
+        prompt = self.format_prompt(board_state, prompt_format, use_functions)
         
         # Pass use_functions to generate method
         kwargs = {}
