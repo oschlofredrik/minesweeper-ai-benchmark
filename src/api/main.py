@@ -86,6 +86,10 @@ app.include_router(streaming_router)
 from .debug_endpoint import router as debug_router
 app.include_router(debug_router)
 
+# Test DB endpoint (TEMPORARY)
+from .test_db_endpoint import router as test_router
+app.include_router(test_router)
+
 
 @app.on_event("startup")
 async def startup_event():

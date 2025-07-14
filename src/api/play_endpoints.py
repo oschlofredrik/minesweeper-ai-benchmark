@@ -430,7 +430,7 @@ async def run_play_session(
                 name=model_name,
                 api_key=api_key or ""
             )
-            logger.info(f"🔧 Created ModelConfig: {model_config}")
+            logger.info(f"🔧 Created ModelConfig: provider={model_config.provider}, name={model_config.name}")
             
             # Add all metrics for database storage
             metrics_with_games = metrics.copy()
@@ -467,6 +467,13 @@ async def run_play_session(
                     except Exception as e:
                         logger.warning(f"Failed to save game to database: {e}")
                         
+        except ImportError as e:
+            logger.error(f"❌ Import error: {type(e).__name__}: {str(e)}")
+            logger.error("   This might be a missing ModelConfig import")
+        except AttributeError as e:
+            logger.error(f"❌ Attribute error: {type(e).__name__}: {str(e)}")
+            logger.error("   This might be a ModelConfig issue")
+            logger.error("   Full error details:", exc_info=True)
         except Exception as e:
             logger.error(f"❌ Failed to update storage backend: {type(e).__name__}: {str(e)}")
             logger.error("   Full error details:", exc_info=True)
