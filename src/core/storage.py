@@ -12,7 +12,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from src.core.database import (
     get_db, init_db, Game, Evaluation, Task, PromptTemplate, 
-    LeaderboardEntry, game_to_dict, evaluation_to_dict
+    LeaderboardEntry, game_to_dict
 )
 from src.core.types import GameTranscript, EvaluationMetrics, ModelConfig
 
@@ -266,7 +266,7 @@ class StorageBackend:
         try:
             with open(file_path, 'r') as f:
                 data = json.load(f)
-            return GameResult.from_dict(data)
+            return GameTranscript.from_dict(data)
         except Exception as e:
             logger.error(f"Error loading game file: {e}")
             return None

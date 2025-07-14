@@ -14,7 +14,6 @@ from src.core.config import settings
 from src.core.logging_config import setup_logging
 from src.core.database import init_db
 from src.core.storage import StorageBackend
-from src.evaluation import MineBenchFormatter
 from .models import (
     LeaderboardEntry, ModelResult, TaskInfo, 
     EvaluationRequest, ComparisonResult
