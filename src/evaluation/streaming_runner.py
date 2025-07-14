@@ -78,8 +78,8 @@ class StreamingGameRunner:
             "game_num": game_num,
             "task_id": task.task_id,
             "difficulty": task.metadata.get("difficulty", "unknown"),
-            "board_size": f"{game.rows}x{game.cols}",
-            "num_mines": game.num_mines,
+            "board_size": f"{game.board.rows}x{game.board.cols}",
+            "num_mines": game.board.total_mines,
             "message": f"Starting game {game_num}"
         })
         
