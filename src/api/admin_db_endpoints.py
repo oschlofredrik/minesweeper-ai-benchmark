@@ -8,6 +8,7 @@ import logging
 from src.core.database import get_db, Game, LeaderboardEntry, Evaluation, Task
 from src.core.logging_config import get_logger
 from src.core.storage import get_storage
+from src.api.db_utils import safe_getattr
 
 router = APIRouter(prefix="/api/admin/db", tags=["admin-db"])
 logger = get_logger("api.admin_db")
@@ -119,8 +120,12 @@ async def list_games(
         # Get total count
         total = query.count()
         
-        # Get paginated results
-        games = query.order_by(Game.created_at.desc()).offset(offset).limit(limit).all()
+        # Get paginated results - use completed_at if created_at doesn't exist
+        try:
+            games = query.order_by(Game.created_at.desc()).offset(offset).limit(limit).all()
+        except Exception:
+            # Fallback to completed_at if created_at doesn't exist
+            games = query.order_by(Game.completed_at.desc()).offset(offset).limit(limit).all()
         
         result = {
             "total": total,
@@ -135,8 +140,8 @@ async def list_games(
                     "mines": game.mines,
                     "won": game.won,
                     "moves": game.num_moves,
-                    "created_at": game.created_at.isoformat() if game.created_at else None,
-                    "has_transcript": game.full_transcript is not None
+                    "created_at": safe_getattr(game, 'created_at', safe_getattr(game, 'completed_at')).isoformat() if safe_getattr(game, 'created_at', safe_getattr(game, 'completed_at')) else None,
+                    "has_transcript": safe_getattr(game, 'full_transcript') is not None
                 }
                 for game in games
             ]
@@ -252,7 +257,7 @@ async def get_leaderboard_entries():
                 "win_rate": entry.win_rate,
                 "global_score": entry.global_score,
                 "reasoning_score": entry.reasoning_score,
-                "created_at": entry.created_at.isoformat() if entry.created_at else None,
+                "created_at": safe_getattr(entry, 'created_at', safe_getattr(entry, 'updated_at')).isoformat() if safe_getattr(entry, 'created_at', safe_getattr(entry, 'updated_at')) else None,
                 "updated_at": entry.updated_at.isoformat() if entry.updated_at else None
             }
             for entry in entries
