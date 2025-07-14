@@ -1,16 +1,16 @@
 /* Minesweeper AI Benchmark - Minimalist Design */
 
 :root {
-    --bg-black: #000000;
-    --bg-dark: #0a0a0a;
-    --border-white: #ffffff;
-    --border-gray: #333333;
-    --text-white: #ffffff;
+    --bg-black: #45403A;
+    --bg-dark: #45403A;
+    --border-white: #DADCD1;
+    --border-gray: #7c7670;
+    --text-white: #DADCD1;
     --text-gray: #999999;
-    --accent-green: #00ff00;
-    --accent-red: #ff0000;
-    --accent-yellow: #ffff00;
-    --accent-blue: #00ffff;
+    --accent-green: #7c7670;
+    --accent-red: #6b6560;
+    --accent-yellow: #b5b0aa;
+    --accent-blue: #c5c0ba;
 }
 
 * {

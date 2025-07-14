@@ -16,17 +16,17 @@
   --text-2xl: 2.369rem;  /* 38px */
   
   /* Colors - minimal palette */
-  --black: #000000;
-  --gray-900: #111111;
-  --gray-800: #1a1a1a;
-  --gray-700: #2d2d2d;
-  --gray-600: #4a4a4a;
-  --gray-500: #666666;
+  --black: #45403A;
+  --gray-900: #45403A;
+  --gray-800: #45403A;
+  --gray-700: #5a5550;
+  --gray-600: #6b6560;
+  --gray-500: #7c7670;
   --gray-400: #999999;
-  --gray-300: #cccccc;
-  --gray-200: #e5e5e5;
-  --gray-100: #f5f5f5;
-  --white: #ffffff;
+  --gray-300: #b5b0aa;
+  --gray-200: #c5c0ba;
+  --gray-100: #e5e2dc;
+  --white: #DADCD1;
   
   /* Functional colors */
   --text-primary: var(--gray-900);
@@ -37,12 +37,12 @@
   --border: var(--gray-300);
   
   /* Dark mode */
-  --dark-text-primary: var(--gray-100);
-  --dark-text-secondary: var(--gray-400);
-  --dark-text-muted: var(--gray-500);
+  --dark-text-primary: var(--white);
+  --dark-text-secondary: var(--gray-300);
+  --dark-text-muted: var(--gray-400);
   --dark-bg-primary: var(--gray-900);
-  --dark-bg-secondary: var(--gray-800);
-  --dark-border: var(--gray-700);
+  --dark-bg-secondary: var(--gray-700);
+  --dark-border: var(--gray-600);
   
   /* Layout */
   --max-width: 1200px;
@@ -310,7 +310,7 @@ a:hover {
 }
 
 .status-active { background: var(--text-primary); color: var(--bg-primary); }
-.status-success { background: var(--gray-800); color: var(--white); }
+.status-success { background: var(--gray-700); color: var(--white); }
 .status-error { background: var(--gray-600); color: var(--white); }
 
 /* Details/Summary Elements */
@@ -458,7 +458,7 @@ details pre {
 }
 
 #events-container .text-danger {
-  color: #dc3545;
+  color: var(--gray-600);
 }
 
 #events-container .border-top {
