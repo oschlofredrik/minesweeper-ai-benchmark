@@ -11,7 +11,7 @@ from src.core.exceptions import (
     InvalidModelResponseError, GameAlreadyFinishedError,
     ModelTimeoutError
 )
-from src.games.minesweeper import MinesweeperGame
+from src.games.tilts import TiltsGame
 from src.models import create_model, BaseModel
 from src.core.logging_config import get_logger
 
@@ -53,7 +53,7 @@ class GameRunner:
         """
         # Extract board configuration
         board_config = task.board_config
-        game = MinesweeperGame(
+        game = TiltsGame(
             rows=board_config.get("rows", 16),
             cols=board_config.get("cols", 30),
             mines=board_config.get("mines", 99),

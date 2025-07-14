@@ -5,7 +5,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 
 from src.core.types import Task, TaskType, Difficulty, Position, Action, ActionType
-from src.games.minesweeper import MinesweeperGame, MinesweeperSolver
+from src.games.tilts import TiltsGame, TiltsSolver
 
 
 class TaskGenerator:
@@ -84,7 +84,7 @@ class TaskGenerator:
         
         # Create a game and reveal some cells
         config = self.DIFFICULTY_CONFIGS[difficulty].copy()
-        game = MinesweeperGame(
+        game = TiltsGame(
             rows=config["rows"],
             cols=config["cols"],
             mines=config["mines"],
@@ -95,7 +95,7 @@ class TaskGenerator:
         board_state = self._create_partial_board_state(game, reveal_percentage)
         
         # Find safe moves using solver
-        solver = MinesweeperSolver(game.board)
+        solver = TiltsSolver(game.board)
         safe_moves = solver.find_safe_moves()
         
         description = (
@@ -169,7 +169,7 @@ class TaskGenerator:
             config["seed"] = seed
             
             # Create game and check if it has safe moves available
-            game = MinesweeperGame(
+            game = TiltsGame(
                 rows=config["rows"],
                 cols=config["cols"],
                 mines=config["mines"],
@@ -190,7 +190,7 @@ class TaskGenerator:
                     break
             
             # Check if solver can find moves
-            solver = MinesweeperSolver(game.board)
+            solver = TiltsSolver(game.board)
             if solver.find_safe_moves():
                 return config
         
@@ -198,7 +198,7 @@ class TaskGenerator:
         return base_config
     
     def _create_partial_board_state(
-        self, game: MinesweeperGame, reveal_percentage: float
+        self, game: TiltsGame, reveal_percentage: float
     ) -> Dict[str, Any]:
         """Create a partially revealed board state."""
         total_cells = game.board.rows * game.board.cols

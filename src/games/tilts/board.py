@@ -28,7 +28,7 @@ class Cell:
         return self.state == CellState.HIDDEN
 
 
-class MinesweeperBoard:
+class TiltsBoard:
     """Minesweeper board with game logic."""
     
     def __init__(

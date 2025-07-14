@@ -1,4 +1,4 @@
-"""Logging configuration for the Minesweeper Benchmark platform."""
+"""Logging configuration for the Tilts platform."""
 
 import logging
 import logging.handlers
@@ -88,7 +88,7 @@ class ColoredFormatter(logging.Formatter):
 
 def setup_logging(
     log_level: str = "INFO",
-    log_file: str = "data/logs/minesweeper_benchmark.log",
+    log_file: str = "data/logs/tilts_benchmark.log",
     enable_console: bool = True,
     enable_file: bool = True,
     structured: bool = True

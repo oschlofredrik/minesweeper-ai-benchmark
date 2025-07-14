@@ -10,7 +10,7 @@ from src.core.exceptions import (
     GameAlreadyFinishedError
 )
 from src.core.logging_config import get_logger
-from src.games.minesweeper import MinesweeperGame
+from src.games.tilts import TiltsGame
 from src.models import create_model
 from src.api.event_streaming import (
     publish_game_started, publish_move_thinking, publish_move_reasoning,
@@ -54,7 +54,7 @@ class StreamingGameRunner:
         """
         # Create game from task
         board_config = task.board_config
-        game = MinesweeperGame(
+        game = TiltsGame(
             rows=board_config.get("rows", 16),
             cols=board_config.get("cols", 30),
             mines=board_config.get("mines", 99),

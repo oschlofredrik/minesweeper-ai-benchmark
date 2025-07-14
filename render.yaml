@@ -1,7 +1,7 @@
 services:
   # Web service for the API and frontend
   - type: web
-    name: minesweeper-benchmark
+    name: tilts-benchmark
     runtime: python
     buildCommand: pip install -r requirements-render.txt
     startCommand: python scripts/start_web.py
@@ -10,7 +10,7 @@ services:
         value: "3.11"
       - key: DATABASE_URL
         fromDatabase:
-          name: minesweeper-db
+          name: tilts-db
           property: connectionString
       - key: OPENAI_API_KEY
         sync: false  # Set manually in Render dashboard
@@ -24,7 +24,7 @@ services:
     healthCheckPath: /health
 
 databases:
-  - name: minesweeper-db
-    databaseName: minesweeper_benchmark
-    user: minesweeper_user
+  - name: tilts-db
+    databaseName: tilts_benchmark
+    user: tilts_user
     plan: free  # Upgrade to "starter" or higher for production

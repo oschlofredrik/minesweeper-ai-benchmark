@@ -7,7 +7,7 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.ico">
     <link rel="stylesheet" href="/static/rams-design.css" />
     <link rel="stylesheet" href="/static/event-stream.css" />
-    <link rel="stylesheet" href="/static/minesweeper.css" />
+    <link rel="stylesheet" href="/static/tilts.css" />
   </head>
   <body>
     <div class="layout">
@@ -92,15 +92,15 @@
             class="grid"
             style="grid-template-columns: 1fr 380px; gap: calc(var(--unit) * 4)"
           >
-            <!-- Visual Minesweeper Display -->
-            <div class="minesweeper-container">
-              <div class="minesweeper-header">
+            <!-- Visual Tilts Display -->
+            <div class="tilts-container">
+              <div class="tilts-header">
                 <h3>AI Game Visualization</h3>
                 <button id="start-eval-btn" class="button">Start AI Evaluation</button>
               </div>
               
               <div class="game-board-container">
-                <table id="minesweeper-board"></table>
+                <table id="tilts-board"></table>
                 <div class="board-placeholder">
                   <p class="text-muted">Start an AI evaluation to see the game board</p>
                 </div>
@@ -262,7 +262,7 @@ played by this model">Games</span>
     </div>
 
     <script src="/static/event-stream.js"></script>
-    <script src="/static/minesweeper-viz.js"></script>
+    <script src="/static/tilts-viz.js"></script>
     <script src="/static/app-rams.js"></script>
   </body>
 </html>

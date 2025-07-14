@@ -14,7 +14,7 @@ from src.core.types import ModelConfig, Difficulty, TaskType, Action, ActionType
 from src.core.config import settings
 from src.evaluation import EvaluationEngine
 from src.tasks import TaskRepository, TaskGenerator
-from src.games.minesweeper import MinesweeperGame
+from src.games.tilts import TiltsGame
 from src.models import list_providers
 from .web_commands import add_web_commands
 from .prompt_commands import add_prompt_commands
@@ -297,7 +297,7 @@ def compare(
 )
 def play(rows: int, cols: int, mines: int, seed: Optional[int]):
     """Play an interactive game of Minesweeper."""
-    game = MinesweeperGame(rows=rows, cols=cols, mines=mines, seed=seed)
+    game = TiltsGame(rows=rows, cols=cols, mines=mines, seed=seed)
     
     console.print("[bold]Welcome to Minesweeper![/bold]")
     console.print(f"Board: {rows}x{cols} with {mines} mines\n")

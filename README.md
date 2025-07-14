@@ -1,14 +1,14 @@
-# Minesweeper AI Benchmark
+# Tilts
 
-[![Live Demo](https://img.shields.io/badge/Live-Demo-green)](https://minesweeper-ai-benchmark.onrender.com)
+[![Live Demo](https://img.shields.io/badge/Live-Demo-green)](https://tilts.onrender.com)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A comprehensive benchmark platform for evaluating Large Language Models (LLMs) on logic-based reasoning tasks through expert-level Minesweeper gameplay.
+A comprehensive benchmark platform for evaluating Large Language Models (LLMs) on logic-based reasoning tasks through expert-level Tilts gameplay.
 
 ## 🚀 Live Deployment
 
-The platform is live at: https://minesweeper-ai-benchmark.onrender.com
+The platform is live at: https://tilts.onrender.com
 
 ## 🎯 Features
 

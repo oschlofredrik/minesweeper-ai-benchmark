@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "minesweeper-benchmark"
+name = "tilts-benchmark"
 version = "0.1.0"
 description = "A comprehensive benchmark platform for evaluating LLMs on logic-based reasoning tasks"
-authors = ["Minesweeper Benchmark Team"]
+authors = ["Tilts Benchmark Team"]
 readme = "README.md"
 packages = [{include = "src"}]
 
@@ -37,7 +37,7 @@ pre-commit = "^3.6.0"
 ipython = "^8.20.0"
 
 [tool.poetry.scripts]
-minesweeper-benchmark = "src.cli.main:cli"
+tilts-benchmark = "src.cli.main:cli"
 
 [build-system]
 requires = ["poetry-core"]

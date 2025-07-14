@@ -29,7 +29,7 @@ from .event_streaming import router as streaming_router
 # Initialize logging
 setup_logging(
     log_level=settings.log_level if hasattr(settings, 'log_level') else "INFO",
-    log_file="data/logs/minesweeper_api.log",
+    log_file="data/logs/tilts_api.log",
     enable_console=True,
     enable_file=True,
     structured=True

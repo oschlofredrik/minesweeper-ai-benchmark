@@ -13,7 +13,7 @@ from rich.syntax import Syntax
 from rich.panel import Panel
 
 from src.core.types import ModelConfig, Action, ActionType, Position
-from src.games.minesweeper import MinesweeperGame, MinesweeperBoard
+from src.games.tilts import TiltsGame, TiltsBoard
 from src.models import create_model
 from .prompt_manager import PromptManager, PromptTemplate
 
@@ -40,7 +40,7 @@ class PromptTester:
         self.test_results_dir = test_results_dir or Path("data/prompt_tests")
         self.test_results_dir.mkdir(parents=True, exist_ok=True)
         
-        self.current_game: Optional[MinesweeperGame] = None
+        self.current_game: Optional[TiltsGame] = None
         self.current_template: Optional[PromptTemplate] = None
         self.test_history: List[Dict[str, Any]] = []
     
@@ -131,7 +131,7 @@ class PromptTester:
         seed = int(seed_input) if seed_input else None
         
         # Create game
-        self.current_game = MinesweeperGame(rows=rows, cols=cols, mines=mines, seed=seed)
+        self.current_game = TiltsGame(rows=rows, cols=cols, mines=mines, seed=seed)
         
         # Option to make some moves
         if Confirm.ask("Make some initial moves?"):

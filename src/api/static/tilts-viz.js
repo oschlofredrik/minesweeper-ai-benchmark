@@ -1,8 +1,8 @@
-// Minesweeper Visualization for AI Moves
+// Tilts Visualization for AI Moves
 
-class MinesweeperVisualization {
+class TiltsVisualization {
     constructor() {
-        this.boardElement = document.getElementById('minesweeper-board');
+        this.boardElement = document.getElementById('tilts-board');
         this.placeholder = document.querySelector('.board-placeholder');
         this.board = null;
         this.size = { rows: 0, cols: 0 };
@@ -195,7 +195,7 @@ class MinesweeperVisualization {
 
 // Initialize visualization when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    window.minesweeperViz = new MinesweeperVisualization();
+    window.tiltsViz = new TiltsVisualization();
 });
 
 // Connect to event stream updates

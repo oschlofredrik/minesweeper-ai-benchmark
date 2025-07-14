@@ -1,10 +1,10 @@
-# Claude Memory - Minesweeper AI Benchmark
+# Claude Memory - Tilts
 
 ## Project Overview
-This is a comprehensive benchmark platform for evaluating Large Language Models (LLMs) on logic-based reasoning tasks through expert-level Minesweeper gameplay. The platform is now feature-complete and ready for deployment.
+This is a comprehensive benchmark platform for evaluating Large Language Models (LLMs) on logic-based reasoning tasks through expert-level Tilts gameplay. The platform is now feature-complete and ready for deployment.
 
 ## Current Status (Completed ✅)
-1. **Core Game Engine**: Full Minesweeper implementation with solver
+1. **Core Game Engine**: Full Tilts implementation with solver
 2. **Model Interfaces**: OpenAI and Anthropic integrations with function calling
 3. **Evaluation System**: Advanced metrics with statistical testing
 4. **Task Management**: Generation and storage of benchmark scenarios
@@ -30,10 +30,10 @@ This is a comprehensive benchmark platform for evaluating Large Language Models 
 
 ### Project Structure
 ```
-minesweeper-benchmark/
+tilts-benchmark/
 ├── src/
 │   ├── core/              # Types, config, utilities
-│   ├── games/             # Minesweeper implementation
+│   ├── games/             # Tilts implementation
 │   ├── models/            # LLM interfaces
 │   ├── evaluation/        # Metrics and scoring
 │   ├── tasks/             # Task generation

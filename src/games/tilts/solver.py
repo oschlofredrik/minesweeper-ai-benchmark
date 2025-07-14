@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from collections import defaultdict
 
 from src.core.types import Position, Action, ActionType
-from .board import MinesweeperBoard, Cell
+from .board import TiltsBoard, Cell
 
 
 @dataclass
@@ -18,10 +18,10 @@ class Constraint:
         return hash((frozenset(self.cells), self.mine_count))
 
 
-class MinesweeperSolver:
+class TiltsSolver:
     """Solver for Minesweeper using constraint satisfaction."""
     
-    def __init__(self, board: MinesweeperBoard):
+    def __init__(self, board: TiltsBoard):
         """Initialize solver with a board."""
         self.board = board
         self.constraints: Set[Constraint] = set()

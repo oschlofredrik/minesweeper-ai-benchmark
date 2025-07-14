@@ -11,10 +11,10 @@ from src.core.types import (
 from src.core.exceptions import (
     InvalidMoveError, GameAlreadyFinishedError, InvalidBoardConfigError
 )
-from .board import MinesweeperBoard
+from .board import TiltsBoard
 
 
-class MinesweeperGame:
+class TiltsGame:
     """Main Minesweeper game class managing game flow and state."""
     
     def __init__(
@@ -44,7 +44,7 @@ class MinesweeperGame:
         self.model_name = model_name or "unknown"
         
         # Initialize board
-        self.board = MinesweeperBoard(rows, cols, mines, seed)
+        self.board = TiltsBoard(rows, cols, mines, seed)
         
         # Game state
         self.status = GameStatus.IN_PROGRESS
