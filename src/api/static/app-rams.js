@@ -85,7 +85,9 @@ function updateModelOptions() {
     
     const models = {
         openai: [
-            // Reasoning models (o1 series)
+            // Reasoning models (o1/o3/o4 series)
+            { value: 'o4-mini', text: 'o4-mini (Latest Reasoning)' },
+            { value: 'o3-mini', text: 'o3-mini (Reasoning)' },
             { value: 'o1-preview', text: 'o1-preview (Reasoning)' },
             { value: 'o1-preview-2024-09-12', text: 'o1-preview-2024-09-12' },
             { value: 'o1-mini', text: 'o1-mini (Reasoning)' },

@@ -12,6 +12,7 @@ from src.core.exceptions import ModelAPIError, ModelTimeoutError
 from src.core.logging_config import get_logger
 from src.core.prompts import prompt_manager
 from .base import BaseModel, ModelResponse
+from .model_capabilities import get_model_capabilities
 
 # Initialize logger
 logger = get_logger("models.openai")
@@ -38,8 +39,14 @@ class OpenAIModel(BaseModel):
         self.model_id = model_config.get("model_id", "gpt-4")
         self.timeout = model_config.get("timeout", settings.model_timeout)
         
-        # Check if this is a reasoning model
-        self.is_reasoning_model = any(x in self.model_id.lower() for x in ['o1', 'reasoning'])
+        # Get model capabilities
+        self.capabilities = get_model_capabilities(self.model_id)
+        
+        # Set convenience properties
+        self.is_reasoning_model = self.capabilities.get("is_reasoning_model", False)
+        self.uses_responses_api = self.capabilities.get("api_type") == "responses"
+        self.supports_streaming = self.capabilities.get("supports_streaming", True)
+        self.supports_function_calling = self.capabilities.get("supports_function_calling", True)
     
     def _get_minesweeper_tools(self):
         """Get the Minesweeper function definitions for OpenAI."""
@@ -78,6 +85,83 @@ class OpenAIModel(BaseModel):
             }
         ]
     
+    async def _generate_with_responses_api(self, prompt: str, **kwargs) -> ModelResponse:
+        """Generate response using the new responses.create API for o3/o4 models."""
+        temperature = kwargs.get("temperature", self.temperature)
+        max_tokens = kwargs.get("max_tokens", self.max_tokens)
+        
+        logger.info(
+            f"Generating response using responses API",
+            extra={
+                "model_id": self.model_id,
+                "prompt_length": len(prompt)
+            }
+        )
+        
+        try:
+            # Get appropriate system prompt
+            prompts = prompt_manager.get_prompt_for_model("openai", "", use_function_calling=False)
+            
+            # Combine system and user prompts
+            full_prompt = f"{prompts['system']}\n\n{prompt}"
+            
+            # Create request with reasoning effort
+            response = await asyncio.wait_for(
+                self.client.responses.create(
+                    model=self.model_id,
+                    reasoning={"effort": kwargs.get("reasoning_effort", "medium")},
+                    input=[
+                        {
+                            "role": "user",
+                            "content": full_prompt
+                        }
+                    ]
+                ),
+                timeout=self.timeout
+            )
+            
+            # Extract content from response
+            content = response.output_text if hasattr(response, 'output_text') else str(response)
+            
+            # Log the response
+            logger.info(
+                f"Received response from reasoning API",
+                extra={
+                    "model_id": self.model_id,
+                    "response_length": len(content),
+                    "has_reasoning": hasattr(response, 'reasoning_text')
+                }
+            )
+            
+            # Extract reasoning if available
+            reasoning_text = None
+            if hasattr(response, 'reasoning_text'):
+                reasoning_text = response.reasoning_text
+            
+            return ModelResponse(
+                content=content,
+                raw_response=response,
+                model_name=self.model_id,
+                timestamp=datetime.now(timezone.utc),
+                tokens_used=response.usage.total_tokens if hasattr(response, 'usage') else None,
+                reasoning=reasoning_text
+            )
+            
+        except asyncio.TimeoutError:
+            logger.error(f"Timeout generating response for model {self.model_id}")
+            raise ModelAPIError(f"Timeout after {self.timeout}s")
+        except Exception as e:
+            logger.error(
+                f"Error generating response",
+                extra={
+                    "model_id": self.model_id,
+                    "error": str(e),
+                    "error_type": type(e).__name__
+                },
+                exc_info=True
+            )
+            raise ModelAPIError(f"OpenAI API error: {str(e)}")
+    
     async def generate(self, prompt: str, **kwargs) -> ModelResponse:
         """
         Generate response from OpenAI model.
@@ -103,6 +187,11 @@ class OpenAIModel(BaseModel):
                 "prompt_length": len(prompt)
             }
         )
+        
+        # Route to appropriate API based on model type
+        if self.uses_responses_api:
+            # Use new responses API for o3/o4 models
+            return await self._generate_with_responses_api(prompt, **kwargs)
         
         # Check if we should use function calling
         use_functions = kwargs.get("use_functions", True)
@@ -132,8 +221,8 @@ class OpenAIModel(BaseModel):
                 "n": 1,
             }
             
-            # Add tools if requested and not using a reasoning model
-            if use_functions and not self.is_reasoning_model:
+            # Add tools if requested and model supports it
+            if use_functions and self.supports_function_calling:
                 request_params["tools"] = self._get_minesweeper_tools()
                 # Force the model to use the function
                 request_params["tool_choice"] = {
