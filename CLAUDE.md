@@ -235,5 +235,62 @@ tools = [{"type": "function", "function": {"name": "make_move", ...}}]
 tools = [{"name": "make_move", "input_schema": {...}}]
 ```
 
+### Recent Fixes and Improvements (Latest)
+
+#### Database Administration
+- **Admin Panel Database Tab**: Complete database management interface
+- **Safe SQL Endpoints**: Handle missing columns gracefully before migration
+- **Migration Script**: `scripts/migrate_db_add_columns.py` adds missing fields
+- **Database Stats**: View games, leaderboard entries, and model performance
+- **Bulk Operations**: Delete games, reset model stats, cleanup database
+
+#### UI/UX Refinements
+- **Admin Button**: Moved to left sidebar (text-only, no icon)
+- **Live Game Stream**: Removed all colored icons and backgrounds
+- **Consistent Design**: Pure Dieter Rams aesthetic throughout
+- **Leaderboard Tooltips**: Hover explanations for all metrics
+- **Favicon**: Minimalist Minesweeper grid icon
+
+#### Error Handling & Fairness
+- **Technical Failure Handling**: New GameStatus.ERROR for API/system failures
+- **Fair Scoring**: Technical failures don't count as losses
+- **Error Tracking**: Full error messages stored with game transcripts
+- **Leaderboard Accuracy**: Only valid games count toward rankings
+- **Debug Information**: Detailed logging for troubleshooting
+
+#### Model-Specific Fixes
+- **o1 Models**: Fixed system message incompatibility
+- **o3/o4 Models**: Proper timeout configurations (2-5 minutes)
+- **Reasoning Models**: Special handling for models without function calling
+- **API Compatibility**: Automatic message format adaptation
+
+### Database Schema Updates
+Run migration if upgrading existing deployment:
+```bash
+python scripts/migrate_db_add_columns.py
+```
+
+Adds:
+- `games.full_transcript` - Complete game transcript with reasoning
+- `games.task_id` - Reference to benchmark task
+- `games.job_id` - Reference to play session
+- `leaderboard_entries.created_at` - Timestamp tracking
+
+### Admin Features
+Access via Admin button in left sidebar:
+- **Prompts**: Create/edit prompt templates
+- **Models**: Configure model settings and API keys
+- **Settings**: System configuration
+- **Features**: Toggle feature flags
+- **Database**: Manage games and leaderboard
+- **Export/Import**: Backup configuration
+
+### Error Status Tracking
+Games now have four possible statuses:
+- `IN_PROGRESS`: Game is active
+- `WON`: Successfully completed
+- `LOST`: Hit a mine
+- `ERROR`: Technical failure (not counted in stats)
+
 ## Final State
-The Minesweeper AI Benchmark is production-ready with robust function calling integration. It provides reliable evaluation of LLM reasoning through strategic gameplay, capturing complete interaction data with every move. The platform features comprehensive monitoring, structured logging, and an elegant Dieter Rams-inspired interface.
+The Minesweeper AI Benchmark is production-ready with robust error handling and fair scoring. Technical failures are distinguished from game losses, ensuring accurate model evaluation. The platform features comprehensive database administration, consistent Dieter Rams design, and detailed debugging capabilities. All models are properly supported with appropriate message formatting and timeout configurations.
