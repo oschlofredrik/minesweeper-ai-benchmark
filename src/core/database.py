@@ -29,6 +29,11 @@ class Game(Base):
     final_board = Column(JSON, nullable=True)  # Final revealed board state
     moves = Column(JSON, nullable=False)  # List of all moves made
     
+    # Full transcript data (new)
+    full_transcript = Column(JSON, nullable=True)  # Complete game transcript including reasoning
+    task_id = Column(String, nullable=True)  # Reference to the task
+    job_id = Column(String, nullable=True)  # Reference to the play session
+    
     # Results
     won = Column(Boolean, nullable=False)
     num_moves = Column(Integer, nullable=False)

@@ -157,6 +157,7 @@
                 <button onclick="showTab('models')">Models</button>
                 <button onclick="showTab('settings')">Settings</button>
                 <button onclick="showTab('features')">Features</button>
+                <button onclick="showTab('database')">Database</button>
                 <button onclick="showTab('export')">Export/Import</button>
             </nav>
             
@@ -314,6 +315,77 @@
                 </div>
             </div>
             
+            <!-- Database Tab -->
+            <div id="database-panel" class="tab-panel">
+                <div class="mb-3">
+                    <h3>Database Overview</h3>
+                    <div id="db-stats" class="card">
+                        <p class="text-muted">Loading database statistics...</p>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h3>Games Management</h3>
+                    <div class="mb-3">
+                        <button class="button button-secondary" onclick="loadDatabaseGames()">Refresh Games</button>
+                        <button class="button button-secondary" onclick="showCleanupDialog()">Cleanup Database</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="label">Filter Games</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <select class="select" id="db-filter-model" onchange="loadDatabaseGames()">
+                                <option value="">All Models</option>
+                            </select>
+                            <select class="select" id="db-filter-provider" onchange="loadDatabaseGames()">
+                                <option value="">All Providers</option>
+                                <option value="openai">OpenAI</option>
+                                <option value="anthropic">Anthropic</option>
+                            </select>
+                            <select class="select" id="db-filter-won" onchange="loadDatabaseGames()">
+                                <option value="">All Games</option>
+                                <option value="true">Won</option>
+                                <option value="false">Lost</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="db-games-list" class="mt-3">
+                        <p class="text-muted">No games loaded</p>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h3>Leaderboard Management</h3>
+                    <div id="db-leaderboard-list">
+                        <p class="text-muted">Loading leaderboard...</p>
+                    </div>
+                </div>
+                
+                <!-- Cleanup Dialog -->
+                <div id="cleanup-dialog" class="card" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; background: var(--bg-primary); border: 2px solid var(--text-primary); padding: calc(var(--unit) * 4); min-width: 400px;">
+                    <h3>Database Cleanup</h3>
+                    <div class="form-group">
+                        <div class="toggle-switch mb-2">
+                            <input type="checkbox" id="cleanup-orphaned">
+                            <label for="cleanup-orphaned">Delete orphaned evaluations</label>
+                        </div>
+                        <div class="toggle-switch mb-2">
+                            <input type="checkbox" id="cleanup-empty">
+                            <label for="cleanup-empty">Delete games without moves</label>
+                        </div>
+                        <div class="toggle-switch mb-2">
+                            <input type="checkbox" id="cleanup-tasks">
+                            <label for="cleanup-tasks">Delete unused tasks</label>
+                        </div>
+                    </div>
+                    <div class="actions">
+                        <button class="button" onclick="performCleanup()">Perform Cleanup</button>
+                        <button class="button button-secondary" onclick="hideCleanupDialog()">Cancel</button>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Export/Import Tab -->
             <div id="export-panel" class="tab-panel">
                 <div class="grid grid-cols-2">
@@ -374,6 +446,10 @@
                 loadSettings();
             } else if (tabName === 'features') {
                 loadFeatures();
+            } else if (tabName === 'database') {
+                loadDatabaseStats();
+                loadDatabaseGames();
+                loadDatabaseLeaderboard();
             }
         }
         
@@ -846,6 +922,249 @@
                 }
             } catch (error) {
                 showMessage('Failed to import configuration: ' + error.message, 'error');
+            }
+        }
+        
+        // Database management functions
+        async function loadDatabaseStats() {
+            try {
+                const response = await fetch('/api/admin/database/stats');
+                const stats = await response.json();
+                
+                const container = document.getElementById('db-stats');
+                container.innerHTML = `
+                    <div class="grid grid-cols-4 gap-3">
+                        <div>
+                            <h4 class="text-sm text-muted">Total Games</h4>
+                            <p class="text-2xl">${stats.games.total}</p>
+                        </div>
+                        <div>
+                            <h4 class="text-sm text-muted">Won Games</h4>
+                            <p class="text-2xl">${stats.games.won}</p>
+                        </div>
+                        <div>
+                            <h4 class="text-sm text-muted">Leaderboard Entries</h4>
+                            <p class="text-2xl">${stats.leaderboard_entries}</p>
+                        </div>
+                        <div>
+                            <h4 class="text-sm text-muted">Tasks</h4>
+                            <p class="text-2xl">${stats.tasks}</p>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <h4 class="text-sm text-muted mb-2">Games by Model</h4>
+                        <div class="grid grid-cols-2 gap-2">
+                            ${Object.entries(stats.games.by_model).map(([model, data]) => `
+                                <div class="text-sm">
+                                    <span class="text-muted">${model}:</span> ${data.total} games (${data.won} won)
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                
+                // Update model filter options
+                const modelSelect = document.getElementById('db-filter-model');
+                modelSelect.innerHTML = '<option value="">All Models</option>';
+                stats.models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.name;
+                    option.textContent = `${model.provider}:${model.name}`;
+                    modelSelect.appendChild(option);
+                });
+                
+            } catch (error) {
+                showMessage('Failed to load database stats: ' + error.message, 'error');
+            }
+        }
+        
+        async function loadDatabaseGames() {
+            try {
+                const modelFilter = document.getElementById('db-filter-model').value;
+                const providerFilter = document.getElementById('db-filter-provider').value;
+                const wonFilter = document.getElementById('db-filter-won').value;
+                
+                let url = '/api/admin/database/games?limit=50';
+                if (modelFilter) url += `&model_name=${modelFilter}`;
+                if (providerFilter) url += `&provider=${providerFilter}`;
+                if (wonFilter) url += `&won=${wonFilter}`;
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                const container = document.getElementById('db-games-list');
+                if (data.games.length === 0) {
+                    container.innerHTML = '<p class="text-muted">No games found</p>';
+                    return;
+                }
+                
+                container.innerHTML = `
+                    <p class="text-sm text-muted mb-2">Showing ${data.games.length} of ${data.total} games</p>
+                    <div class="space-y-2">
+                        ${data.games.map(game => `
+                            <div class="list-item">
+                                <div class="flex justify-between align-items-center">
+                                    <div>
+                                        <strong>${game.model}</strong> • ${game.difficulty} • ${game.board_size} • ${game.mines} mines
+                                        <br>
+                                        <span class="text-sm text-muted">
+                                            ${game.won ? '✓ Won' : '✗ Lost'} • ${game.moves} moves • ${game.created_at ? new Date(game.created_at).toLocaleString() : 'Unknown date'}
+                                            ${game.has_transcript ? ' • 📝 Transcript' : ''}
+                                        </span>
+                                    </div>
+                                    <button class="button button-secondary" onclick="deleteGame('${game.id}')">Delete</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                
+            } catch (error) {
+                showMessage('Failed to load games: ' + error.message, 'error');
+            }
+        }
+        
+        async function loadDatabaseLeaderboard() {
+            try {
+                const response = await fetch('/api/admin/database/leaderboard');
+                const entries = await response.json();
+                
+                const container = document.getElementById('db-leaderboard-list');
+                if (entries.length === 0) {
+                    container.innerHTML = '<p class="text-muted">No leaderboard entries</p>';
+                    return;
+                }
+                
+                container.innerHTML = `
+                    <div class="space-y-2">
+                        ${entries.map(entry => `
+                            <div class="list-item">
+                                <div class="flex justify-between align-items-center">
+                                    <div>
+                                        <strong>${entry.model}</strong>
+                                        <br>
+                                        <span class="text-sm text-muted">
+                                            ${entry.total_games} games • Win rate: ${(entry.win_rate * 100).toFixed(1)}% • 
+                                            Global score: ${entry.global_score.toFixed(4)} • 
+                                            Reasoning: ${entry.reasoning_score.toFixed(2)}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <button class="button button-secondary" onclick="resetModelStats('${entry.model_name}', '${entry.provider}')">Reset</button>
+                                        <button class="button button-secondary" onclick="deleteLeaderboardEntry(${entry.id})">Delete</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                
+            } catch (error) {
+                showMessage('Failed to load leaderboard: ' + error.message, 'error');
+            }
+        }
+        
+        async function deleteGame(gameId) {
+            if (!confirm('Are you sure you want to delete this game?')) return;
+            
+            try {
+                const response = await fetch(`/api/admin/database/games/${gameId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showMessage('Game deleted successfully');
+                    loadDatabaseGames();
+                    loadDatabaseStats();
+                } else {
+                    const error = await response.json();
+                    showMessage('Failed to delete game: ' + error.detail, 'error');
+                }
+            } catch (error) {
+                showMessage('Failed to delete game: ' + error.message, 'error');
+            }
+        }
+        
+        async function deleteLeaderboardEntry(entryId) {
+            if (!confirm('Are you sure you want to delete this leaderboard entry?')) return;
+            
+            try {
+                const response = await fetch(`/api/admin/database/leaderboard/${entryId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showMessage('Leaderboard entry deleted successfully');
+                    loadDatabaseLeaderboard();
+                    loadDatabaseStats();
+                } else {
+                    const error = await response.json();
+                    showMessage('Failed to delete entry: ' + error.detail, 'error');
+                }
+            } catch (error) {
+                showMessage('Failed to delete entry: ' + error.message, 'error');
+            }
+        }
+        
+        async function resetModelStats(modelName, provider) {
+            if (!confirm(`Are you sure you want to reset all stats for ${provider}:${modelName}?\nThis will delete all games and leaderboard data.`)) return;
+            
+            try {
+                const response = await fetch(`/api/admin/database/leaderboard/reset/${modelName}?provider=${provider}`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    showMessage(`Reset complete: ${result.games_deleted} games deleted`);
+                    loadDatabaseStats();
+                    loadDatabaseGames();
+                    loadDatabaseLeaderboard();
+                } else {
+                    const error = await response.json();
+                    showMessage('Failed to reset stats: ' + error.detail, 'error');
+                }
+            } catch (error) {
+                showMessage('Failed to reset stats: ' + error.message, 'error');
+            }
+        }
+        
+        function showCleanupDialog() {
+            document.getElementById('cleanup-dialog').style.display = 'block';
+        }
+        
+        function hideCleanupDialog() {
+            document.getElementById('cleanup-dialog').style.display = 'none';
+        }
+        
+        async function performCleanup() {
+            try {
+                const params = {
+                    delete_orphaned_evaluations: document.getElementById('cleanup-orphaned').checked,
+                    delete_games_without_moves: document.getElementById('cleanup-empty').checked,
+                    delete_old_tasks: document.getElementById('cleanup-tasks').checked
+                };
+                
+                const response = await fetch('/api/admin/database/cleanup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(params)
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    showMessage(`Cleanup complete: ${JSON.stringify(result.stats)}`);
+                    hideCleanupDialog();
+                    loadDatabaseStats();
+                    loadDatabaseGames();
+                } else {
+                    const error = await response.json();
+                    showMessage('Failed to perform cleanup: ' + error.detail, 'error');
+                }
+            } catch (error) {
+                showMessage('Failed to perform cleanup: ' + error.message, 'error');
             }
         }
         

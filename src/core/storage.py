@@ -151,7 +151,11 @@ class StorageBackend:
                 invalid_moves=game_result.invalid_moves,
                 flags_placed=game_result.flags_placed,
                 cells_revealed=game_result.cells_revealed,
-                completed_at=datetime.now(timezone.utc)
+                completed_at=datetime.now(timezone.utc),
+                # Store full transcript
+                full_transcript=game_result.to_dict(),
+                task_id=getattr(game_result, 'task_id', None),
+                job_id=getattr(game_result, 'job_id', None)
             )
             
             db.add(game)

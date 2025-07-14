@@ -14,6 +14,7 @@ from src.core.config import settings
 from src.core.logging_config import get_logger
 from src.core.types import ModelConfig
 from src.models import list_providers
+from src.core.database import get_db, Game, LeaderboardEntry, Evaluation, Task
 
 logger = get_logger("api.admin")
 
@@ -546,4 +547,240 @@ async def update_api_key(provider: str, api_key: str):
     # For now, just log that it was updated
     logger.info(f"API key updated for provider: {provider}")
     
-    return {"message": f"API key updated for {provider}", "provider": provider}
+    return {"message": f"API key updated for {provider}", "provider": provider}# Database Admin Endpoints (to be appended to admin_endpoints.py)
+
+@router.get("/database/stats")
+async def get_database_stats():
+    """Get database statistics."""
+    try:
+        db = next(get_db())
+        
+        stats = {
+            "games": {
+                "total": db.query(Game).count(),
+                "won": db.query(Game).filter(Game.won == True).count(),
+                "lost": db.query(Game).filter(Game.won == False).count(),
+                "by_model": {}
+            },
+            "leaderboard_entries": db.query(LeaderboardEntry).count(),
+            "evaluations": db.query(Evaluation).count(),
+            "tasks": db.query(Task).count(),
+            "models": []
+        }
+        
+        # Get per-model stats
+        models = db.query(Game.model_name, Game.model_provider).distinct().all()
+        for model_name, provider in models:
+            model_games = db.query(Game).filter(
+                Game.model_name == model_name,
+                Game.model_provider == provider
+            )
+            stats["games"]["by_model"][f"{provider}:{model_name}"] = {
+                "total": model_games.count(),
+                "won": model_games.filter(Game.won == True).count()
+            }
+            stats["models"].append({
+                "provider": provider,
+                "name": model_name
+            })
+        
+        db.close()
+        return stats
+        
+    except Exception as e:
+        logger.error(f"Error getting database stats: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/database/games")
+async def list_games(
+    model_name: Optional[str] = None,
+    provider: Optional[str] = None,
+    won: Optional[bool] = None,
+    limit: int = 50,
+    offset: int = 0
+):
+    """List games with filtering options."""
+    try:
+        db = next(get_db())
+        
+        query = db.query(Game)
+        
+        # Apply filters
+        if model_name:
+            query = query.filter(Game.model_name == model_name)
+        if provider:
+            query = query.filter(Game.model_provider == provider)
+        if won is not None:
+            query = query.filter(Game.won == won)
+        
+        # Get total count
+        total = query.count()
+        
+        # Get paginated results
+        games = query.order_by(Game.created_at.desc()).offset(offset).limit(limit).all()
+        
+        result = {
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "games": [
+                {
+                    "id": game.id,
+                    "model": f"{game.model_provider}:{game.model_name}",
+                    "difficulty": game.difficulty,
+                    "board_size": f"{game.rows}x{game.cols}",
+                    "mines": game.mines,
+                    "won": game.won,
+                    "moves": game.num_moves,
+                    "created_at": game.created_at.isoformat() if game.created_at else None,
+                    "has_transcript": game.full_transcript is not None
+                }
+                for game in games
+            ]
+        }
+        
+        db.close()
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error listing games: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/database/games/{game_id}")
+async def delete_game(game_id: str):
+    """Delete a specific game and its evaluations."""
+    try:
+        db = next(get_db())
+        
+        game = db.query(Game).filter(Game.id == game_id).first()
+        if not game:
+            raise HTTPException(status_code=404, detail="Game not found")
+        
+        # Delete will cascade to evaluations
+        db.delete(game)
+        db.commit()
+        
+        db.close()
+        logger.info(f"Deleted game {game_id}")
+        
+        return {"message": f"Game {game_id} deleted successfully"}
+        
+    except Exception as e:
+        logger.error(f"Error deleting game: {e}")
+        db.rollback()
+        db.close()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/database/cleanup")
+async def cleanup_database(
+    delete_model: Optional[str] = None,
+    delete_provider: Optional[str] = None,
+    delete_before: Optional[str] = None,
+    delete_empty_games: bool = False
+):
+    """Clean up database based on criteria."""
+    try:
+        db = next(get_db())
+        
+        query = db.query(Game)
+        
+        # Apply filters
+        if delete_model:
+            query = query.filter(Game.model_name == delete_model)
+        if delete_provider:
+            query = query.filter(Game.model_provider == delete_provider)
+        if delete_before:
+            date = datetime.fromisoformat(delete_before)
+            query = query.filter(Game.created_at < date)
+        if delete_empty_games:
+            query = query.filter(Game.num_moves == 0)
+        
+        # Get count before deletion
+        count = query.count()
+        
+        if count == 0:
+            db.close()
+            return {"message": "No games matched the criteria", "deleted": 0}
+        
+        # Delete all matching games
+        query.delete()
+        db.commit()
+        
+        db.close()
+        logger.info(f"Deleted {count} games")
+        
+        return {"message": f"Deleted {count} games", "deleted": count}
+        
+    except Exception as e:
+        logger.error(f"Error during cleanup: {e}")
+        db.rollback()
+        db.close()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/database/leaderboard/{model_name}")
+async def delete_leaderboard_entry(model_name: str, provider: str):
+    """Delete a specific leaderboard entry."""
+    try:
+        db = next(get_db())
+        
+        entry = db.query(LeaderboardEntry).filter(
+            LeaderboardEntry.model_name == model_name,
+            LeaderboardEntry.model_provider == provider
+        ).first()
+        
+        if not entry:
+            raise HTTPException(status_code=404, detail="Leaderboard entry not found")
+        
+        db.delete(entry)
+        db.commit()
+        
+        db.close()
+        logger.info(f"Deleted leaderboard entry for {provider}:{model_name}")
+        
+        return {"message": f"Leaderboard entry deleted"}
+        
+    except Exception as e:
+        logger.error(f"Error deleting leaderboard entry: {e}")
+        db.rollback()
+        db.close()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/database/reset/{model_name}")
+async def reset_model_stats(model_name: str, provider: str):
+    """Reset all statistics for a specific model."""
+    try:
+        db = next(get_db())
+        
+        # Delete all games for this model
+        deleted_games = db.query(Game).filter(
+            Game.model_name == model_name,
+            Game.model_provider == provider
+        ).delete()
+        
+        # Delete leaderboard entry
+        deleted_entry = db.query(LeaderboardEntry).filter(
+            LeaderboardEntry.model_name == model_name,
+            LeaderboardEntry.model_provider == provider
+        ).delete()
+        
+        db.commit()
+        db.close()
+        
+        logger.info(f"Reset stats for {provider}:{model_name}")
+        
+        return {
+            "message": f"Reset complete",
+            "games_deleted": deleted_games,
+            "leaderboard_reset": deleted_entry > 0
+        }
+        
+    except Exception as e:
+        logger.error(f"Error resetting model stats: {e}")
+        db.rollback()
+        db.close()
+        raise HTTPException(status_code=500, detail=str(e))

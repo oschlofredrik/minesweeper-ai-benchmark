@@ -213,6 +213,39 @@
         </section>
       </main>
     </div>
+    
+    <!-- Admin Button -->
+    <a href="/admin" class="admin-button" title="Admin Panel">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M6.5 2.5L7.5 0.5H8.5L9.5 2.5L11.5 3L12 4L10.5 5.5L10 7.5V8.5L8 9.5L6 8.5V7.5L5.5 5.5L4 4L4.5 3L6.5 2.5Z" stroke="currentColor" stroke-width="1"/>
+        <path d="M3 13.5H13M3 11H13" stroke="currentColor" stroke-width="1"/>
+      </svg>
+    </a>
+    
+    <style>
+      .admin-button {
+        position: fixed;
+        bottom: calc(var(--unit) * 2);
+        right: calc(var(--unit) * 2);
+        width: calc(var(--unit) * 8);
+        height: calc(var(--unit) * 8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-primary);
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: all var(--transition);
+        opacity: 0.6;
+      }
+      
+      .admin-button:hover {
+        opacity: 1;
+        color: var(--text-primary);
+        border-color: var(--text-primary);
+      }
+    </style>
 
     <script src="/static/event-stream.js"></script>
     <script src="/static/app-rams.js"></script>
