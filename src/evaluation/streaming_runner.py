@@ -73,9 +73,10 @@ class StreamingGameRunner:
             game.make_move(first_action)
         
         # Publish game started event
+        logger.info(f"Publishing GAME_STARTED event for job {job_id}, game {game_num}")
         await publish_event(job_id, EventType.GAME_STARTED, {
             "game_num": game_num,
-            "task_id": task.task_uid,
+            "task_id": task.task_id,
             "difficulty": task.metadata.get("difficulty", "unknown"),
             "board_size": f"{game.rows}x{game.cols}",
             "num_mines": game.num_mines,

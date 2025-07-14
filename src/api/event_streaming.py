@@ -17,7 +17,7 @@ logger = get_logger("api.event_streaming")
 router = APIRouter(prefix="/api/stream", tags=["streaming"])
 
 # Event queues for each game session
-game_event_queues: Dict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
+game_event_queues: Dict[str, asyncio.Queue] = {}
 # Active connections per game
 game_connections: Dict[str, int] = defaultdict(int)
 
@@ -47,18 +47,27 @@ async def publish_event(job_id: str, event_type: str, data: Dict):
         "data": data
     }
     
-    if job_id in game_event_queues:
-        queue = game_event_queues[job_id]
-        # Don't block if queue is full
-        try:
-            await queue.put(event)
-            logger.debug(f"Published {event_type} event for game {job_id}")
-        except asyncio.QueueFull:
-            logger.warning(f"Event queue full for game {job_id}, dropping event")
+    # Create queue if it doesn't exist
+    if job_id not in game_event_queues:
+        game_event_queues[job_id] = asyncio.Queue(maxsize=1000)
+        logger.debug(f"Created event queue for game {job_id}")
+    
+    queue = game_event_queues[job_id]
+    # Don't block if queue is full
+    try:
+        await queue.put(event)
+        logger.debug(f"Published {event_type} event for game {job_id}")
+    except asyncio.QueueFull:
+        logger.warning(f"Event queue full for game {job_id}, dropping event")
 
 
 async def event_generator(request: Request, job_id: str) -> AsyncGenerator:
     """Generate events for SSE streaming."""
+    # Create queue if it doesn't exist
+    if job_id not in game_event_queues:
+        game_event_queues[job_id] = asyncio.Queue(maxsize=1000)
+        logger.debug(f"Created event queue for game {job_id} on client connect")
+    
     # Register connection
     game_connections[job_id] += 1
     queue = game_event_queues[job_id]
