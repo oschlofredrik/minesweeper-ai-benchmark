@@ -15,6 +15,42 @@ class EventStreamUI {
     
     initializeUI() {
         this.container.innerHTML = `
+            <style>
+                .reasoning-text.streaming::after {
+                    content: '▌';
+                    animation: blink 1s infinite;
+                    opacity: 0.7;
+                }
+                
+                @keyframes blink {
+                    0%, 50% { opacity: 0.7; }
+                    51%, 100% { opacity: 0; }
+                }
+                
+                .event-stream-container {
+                    max-height: 600px;
+                    overflow-y: auto;
+                    padding: 10px;
+                }
+                
+                .event-item {
+                    display: flex;
+                    margin-bottom: 10px;
+                    padding: 8px;
+                    animation: slideIn 0.3s ease-out;
+                }
+                
+                @keyframes slideIn {
+                    from {
+                        opacity: 0;
+                        transform: translateX(-10px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateX(0);
+                    }
+                }
+            </style>
             <div class="event-stream-header">
                 <h4>Live Game Stream</h4>
                 <div class="stream-controls">
@@ -213,28 +249,65 @@ class EventStreamUI {
     }
     
     addReasoningEvent(data) {
-        // Remove thinking indicator if exists
-        const thinkingEl = document.getElementById(`thinking-${data.game_num}-${data.move_num}`);
-        if (thinkingEl) {
-            thinkingEl.remove();
-        }
-        
-        const event = document.createElement('div');
-        event.className = 'event-item reasoning';
-        event.innerHTML = `
-            <div class="event-icon">💭</div>
-            <div class="event-content">
-                <div class="event-title">AI Reasoning</div>
-                <div class="reasoning-text ${data.partial ? 'streaming' : ''}">${this.formatReasoning(data.reasoning)}</div>
-                <div class="event-time">${this.formatTime()}</div>
-            </div>
-        `;
-        
         if (data.partial) {
+            // Handle streaming reasoning updates
+            const existingEl = document.getElementById(`reasoning-${data.game_num}-${data.move_num}`);
+            if (existingEl) {
+                // Append to existing reasoning
+                const textEl = existingEl.querySelector('.reasoning-text');
+                if (textEl) {
+                    textEl.textContent += data.reasoning;
+                    this.scrollToBottom();
+                }
+                return;
+            }
+            
+            // Create new streaming reasoning element
+            const event = document.createElement('div');
             event.id = `reasoning-${data.game_num}-${data.move_num}`;
+            event.className = 'event-item reasoning';
+            event.innerHTML = `
+                <div class="event-icon">💭</div>
+                <div class="event-content">
+                    <div class="event-title">AI Reasoning (streaming...)</div>
+                    <div class="reasoning-text streaming">${this.formatReasoning(data.reasoning)}</div>
+                    <div class="event-time">${this.formatTime()}</div>
+                </div>
+            `;
+            this.streamList.appendChild(event);
+        } else {
+            // Remove thinking indicator if exists
+            const thinkingEl = document.getElementById(`thinking-${data.game_num}-${data.move_num}`);
+            if (thinkingEl) {
+                thinkingEl.remove();
+            }
+            
+            // Update existing streaming element or create new one
+            const existingEl = document.getElementById(`reasoning-${data.game_num}-${data.move_num}`);
+            if (existingEl) {
+                // Update the existing element to final state
+                const titleEl = existingEl.querySelector('.event-title');
+                const textEl = existingEl.querySelector('.reasoning-text');
+                if (titleEl) titleEl.textContent = 'AI Reasoning';
+                if (textEl) {
+                    textEl.classList.remove('streaming');
+                    textEl.textContent = this.formatReasoning(data.reasoning);
+                }
+            } else {
+                // Create complete reasoning element
+                const event = document.createElement('div');
+                event.className = 'event-item reasoning';
+                event.innerHTML = `
+                    <div class="event-icon">💭</div>
+                    <div class="event-content">
+                        <div class="event-title">AI Reasoning</div>
+                        <div class="reasoning-text">${this.formatReasoning(data.reasoning)}</div>
+                        <div class="event-time">${this.formatTime()}</div>
+                    </div>
+                `;
+                this.streamList.appendChild(event);
+            }
         }
-        
-        this.streamList.appendChild(event);
     }
     
     addMoveEvent(data) {

@@ -99,12 +99,27 @@ class StreamingGameRunner:
             await publish_move_thinking(job_id, game_num, move_count, board_state)
             
             try:
+                # Create a callback for streaming reasoning
+                async def stream_reasoning(chunk: str):
+                    # Publish partial reasoning as it comes
+                    await publish_move_reasoning(
+                        job_id, game_num, move_count, 
+                        chunk, partial=True
+                    )
+                
                 # Get model's move with function calling
                 logger.info(f"Game {game_num} - Calling model.play_move with prompt_format={prompt_format}")
+                
+                # For non-function models, pass the streaming callback
+                kwargs = {"use_functions": True}
+                if hasattr(self.model, 'is_reasoning_model') and self.model.is_reasoning_model:
+                    kwargs["stream_callback"] = stream_reasoning
+                    kwargs["use_functions"] = False  # Can't use functions with streaming
+                
                 response = await self.model.play_move(
                     board_state, 
                     prompt_format, 
-                    use_functions=True
+                    **kwargs
                 )
                 logger.info(f"Game {game_num} - Got response from model: has_action={response.action is not None}, has_reasoning={bool(response.reasoning)}")
                 
@@ -120,7 +135,9 @@ class StreamingGameRunner:
                 
                 # Parse action
                 if not response.action:
-                    logger.error(f"Game {game_num} - No action found in response")
+                    logger.error(f"Game {game_num} - No action found in response. Content preview: {response.content[:200] if response.content else 'No content'}")
+                    # Try to help by showing what patterns we're looking for
+                    logger.info("Expected action format examples: 'reveal (2, 3)', 'flag 1,2', 'Action: reveal Position: (2,3)'")
                     raise InvalidModelResponseError("No action found in response")
                 
                 action = response.action

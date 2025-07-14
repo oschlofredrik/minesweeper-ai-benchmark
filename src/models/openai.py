@@ -140,21 +140,49 @@ class OpenAIModel(BaseModel):
             else:
                 logger.info(f"NOT using function calling for model {self.model_id}: use_functions={use_functions}, is_reasoning_model={self.is_reasoning_model}")
             
-            # Create completion with timeout
-            response = await asyncio.wait_for(
-                self.client.chat.completions.create(**request_params),
-                timeout=self.timeout
-            )
+            # Create completion with timeout and streaming if supported
+            stream_callback = kwargs.get('stream_callback')
             
-            # Extract response based on whether functions were used
-            message = response.choices[0].message
-            content = message.content or ""
-            tokens_used = response.usage.total_tokens if response.usage else None
+            if stream_callback and not use_functions:  # Can't stream with function calling
+                # Stream the response
+                stream = await asyncio.wait_for(
+                    self.client.chat.completions.create(**request_params, stream=True),
+                    timeout=self.timeout
+                )
+                
+                content = ""
+                message = None
+                tokens_used = None
+                
+                async for chunk in stream:
+                    if chunk.choices:
+                        delta = chunk.choices[0].delta
+                        if delta.content:
+                            content += delta.content
+                            # Stream reasoning as it comes
+                            await stream_callback(delta.content)
+                        
+                        # Get final message from last chunk
+                        if chunk.choices[0].finish_reason:
+                            message = chunk.choices[0].message if hasattr(chunk.choices[0], 'message') else None
+                            if hasattr(chunk, 'usage'):
+                                tokens_used = chunk.usage.total_tokens
+            else:
+                # Non-streaming request
+                response = await asyncio.wait_for(
+                    self.client.chat.completions.create(**request_params),
+                    timeout=self.timeout
+                )
+                
+                message = response.choices[0].message
+                content = message.content or ""
+                tokens_used = response.usage.total_tokens if response.usage else None
+            
             reasoning_text = None
             function_call = None
             
             # Check for function calls
-            if hasattr(message, 'tool_calls') and message.tool_calls:
+            if message and hasattr(message, 'tool_calls') and message.tool_calls:
                 logger.info(
                     f"OpenAI function call received",
                     extra={
@@ -182,8 +210,10 @@ class OpenAIModel(BaseModel):
                     if reasoning_text:
                         content = f"{reasoning_text}\n\n{content}"
             else:
+                if message:
+                    logger.warning(f"No function call in response from {self.model_id}, content length: {len(content)}")
                 # For o1 models or when functions not used, check for reasoning
-                if hasattr(response.choices[0], 'message') and hasattr(response.choices[0].message, 'reasoning'):
+                if hasattr(response, 'choices') and response.choices and hasattr(response.choices[0], 'message') and hasattr(response.choices[0].message, 'reasoning'):
                     reasoning_text = response.choices[0].message.reasoning
                 elif 'o1' in self.model_id.lower() or 'reasoning' in self.model_id.lower():
                     # For o1 models, the response often starts with reasoning
@@ -197,8 +227,8 @@ class OpenAIModel(BaseModel):
                     "model_id": self.model_id,
                     "response_length": len(content) if content else 0,
                     "tokens_used": tokens_used,
-                    "completion_tokens": response.usage.completion_tokens if response.usage else None,
-                    "prompt_tokens": response.usage.prompt_tokens if response.usage else None,
+                    "completion_tokens": response.usage.completion_tokens if hasattr(response, 'usage') and response.usage else None,
+                    "prompt_tokens": response.usage.prompt_tokens if hasattr(response, 'usage') and response.usage else None,
                     "has_function_call": function_call is not None,
                     "has_reasoning": bool(reasoning_text)
                 }
