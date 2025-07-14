@@ -343,7 +343,7 @@ class StreamingGameRunner:
             from src.api.reasoning_config import USE_REASONING_JUDGE
             use_reasoning_judge = USE_REASONING_JUDGE
         except ImportError:
-            use_reasoning_judge = False  # Default to simple heuristic
+            use_reasoning_judge = True  # Default to proper AI evaluation
         
         if use_reasoning_judge and transcripts:
             logger.info("🧠 Evaluating reasoning quality with LLM judge...")
@@ -418,7 +418,8 @@ class StreamingGameRunner:
             
             moves_with_reasoning = sum(1 for s in quality_scores if s > 0)
             avg_quality = adv_metrics.reasoning_score
-            logger.info(f"📊 Simple reasoning score: {avg_quality:.2f} ({moves_with_reasoning}/{total_moves} moves with reasoning, avg quality: {avg_quality:.2f})")
+            logger.info(f"📊 Heuristic reasoning score: {avg_quality:.2f} ({moves_with_reasoning}/{total_moves} moves with reasoning, avg quality: {avg_quality:.2f})")
+            logger.warning("⚠️ Using heuristic scoring. For proper AI evaluation, ensure USE_REASONING_JUDGE=true")
         
         # Convert to dict for backward compatibility
         metrics = {
