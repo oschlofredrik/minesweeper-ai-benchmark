@@ -12,6 +12,7 @@ anthropic>=0.12.0
 # Data processing
 numpy>=1.26.3
 scipy>=1.11.4
+statsmodels>=0.14.0
 
 # Async support
 httpx>=0.26.0

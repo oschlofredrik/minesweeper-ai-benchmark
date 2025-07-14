@@ -7,7 +7,7 @@ from collections import defaultdict
 import hashlib
 from datetime import datetime, timezone
 
-from src.core.types import TaskType, GameTranscript
+from src.core.types import TaskType, GameTranscript, GameStatus
 from src.core.logging_config import get_logger
 from .statistical_analysis import StatisticalAnalyzer, SignificanceTestResult
 from .reasoning_judge import ReasoningJudgment
@@ -173,7 +173,7 @@ class AdvancedMetricsCalculator:
         # Process each transcript
         for transcript in transcripts:
             # Win rate
-            if transcript.final_state.status == "won":
+            if transcript.final_state.status == GameStatus.WON:
                 wins += 1
                 moves_to_win.append(transcript.num_moves)
             else:
@@ -186,13 +186,13 @@ class AdvancedMetricsCalculator:
                     valid_moves += 1
             
             # Coverage (board exploration)
-            board_size = transcript.final_state.board_size
+            board_size = transcript.final_state.board_rows * transcript.final_state.board_cols
             mine_count = len(transcript.final_state.mine_positions)
             safe_cells = board_size - mine_count
             total_possible_cells += safe_cells
             
             # Count revealed cells
-            revealed = transcript.final_state.revealed_cells
+            revealed = len(transcript.final_state.revealed_cells)
             total_revealed_cells += revealed
             
             # Flag precision/recall
@@ -200,7 +200,7 @@ class AdvancedMetricsCalculator:
             
             # Check flagged positions
             for move in transcript.moves:
-                if move.action.action_type.value == "flag":
+                if move.action.action_type.value.lower() == "flag":
                     pos = move.action.position
                     if (pos.row, pos.col) in transcript.final_state.mine_positions:
                         true_positives += 1
