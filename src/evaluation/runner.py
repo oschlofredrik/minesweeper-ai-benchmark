@@ -213,23 +213,54 @@ class GameRunner:
                     print(f"Action: {action.to_string()}")
                     print(f"Result: {message}")
                 
-                # Reset error counter on successful move
-                consecutive_errors = 0
-                
-                # Debug: Log end of successful move
-                logger.debug(
-                    f"Move {move_count} completed successfully",
-                    extra={
-                        "game_id": game.game_id,
-                        "game_status_after_move": game.status.value,
-                        "will_continue": game.status.value == "in_progress" and move_count < max_moves,
-                        "total_cells_revealed": game.cells_revealed,
-                        "total_flags_placed": game.flags_placed,
-                        "model_name": self.model_config.name,
-                        "model_provider": self.model_config.provider,
-                        "move_num": move_count
-                    }
-                )
+                if success:
+                    # Reset error counter on successful move
+                    consecutive_errors = 0
+                    
+                    # Debug: Log end of successful move
+                    logger.debug(
+                        f"Move {move_count} completed successfully",
+                        extra={
+                            "game_id": game.game_id,
+                            "game_status_after_move": game.status.value,
+                            "will_continue": game.status.value == "in_progress" and move_count < max_moves,
+                            "total_cells_revealed": game.cells_revealed,
+                            "total_flags_placed": game.flags_placed,
+                            "model_name": self.model_config.name,
+                            "model_provider": self.model_config.provider,
+                            "move_num": move_count
+                        }
+                    )
+                else:
+                    # Handle invalid moves
+                    consecutive_errors += 1
+                    logger.warning(
+                        f"Move {move_count} - Invalid move attempted",
+                        extra={
+                            "game_id": game.game_id,
+                            "move_count": move_count,
+                            "action": action.to_string(),
+                            "message": message,
+                            "consecutive_errors": consecutive_errors,
+                            "model_name": self.model_config.name,
+                            "model_provider": self.model_config.provider,
+                            "move_num": move_count
+                        }
+                    )
+                    
+                    if consecutive_errors >= 3:
+                        logger.error(
+                            f"Too many consecutive invalid moves, ending game",
+                            extra={
+                                "game_id": game.game_id,
+                                "consecutive_errors": consecutive_errors,
+                                "model_name": self.model_config.name,
+                                "model_provider": self.model_config.provider
+                            }
+                        )
+                        # Mark game as error
+                        game.mark_as_error("Too many consecutive invalid moves")
+                        break
                 
             except InvalidModelResponseError as e:
                 consecutive_errors += 1

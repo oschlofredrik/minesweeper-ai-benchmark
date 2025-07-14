@@ -242,14 +242,37 @@ class StreamingGameRunner:
                 if verbose:
                     print(f"Move {move_count}: {action.to_string()} - {message}")
                 
-                # Reset error counter on successful move
-                consecutive_errors = 0
-                logger.debug(f"Game {game_num} - Move {move_count} completed successfully", extra={
-                    "model_name": self.model_config.name,
-                    "model_provider": self.model_config.provider,
-                    "game_num": game_num,
-                    "move_num": move_count
-                })
+                if success:
+                    # Reset error counter on successful move
+                    consecutive_errors = 0
+                    logger.debug(f"Game {game_num} - Move {move_count} completed successfully", extra={
+                        "model_name": self.model_config.name,
+                        "model_provider": self.model_config.provider,
+                        "game_num": game_num,
+                        "move_num": move_count
+                    })
+                else:
+                    # Handle invalid moves
+                    consecutive_errors += 1
+                    logger.warning(f"Game {game_num} - Invalid move: {message}", extra={
+                        "model_name": self.model_config.name,
+                        "model_provider": self.model_config.provider,
+                        "game_num": game_num,
+                        "move_num": move_count,
+                        "action": action.to_string(),
+                        "consecutive_errors": consecutive_errors
+                    })
+                    
+                    if consecutive_errors >= 3:
+                        logger.error(f"Game {game_num} - Too many consecutive invalid moves, ending game", extra={
+                            "model_name": self.model_config.name,
+                            "model_provider": self.model_config.provider,
+                            "game_num": game_num,
+                            "move_num": move_count
+                        })
+                        # Mark game as error due to repeated invalid moves
+                        game.mark_as_error("Too many consecutive invalid moves")
+                        break
                 
             except InvalidModelResponseError as e:
                 consecutive_errors += 1
