@@ -22,7 +22,10 @@ async def test_database_save():
         model_config = ModelConfig(
             provider="openai",
             name="test-model",
-            api_key=""
+            model_id="test-model",
+            temperature=0.7,
+            max_tokens=1000,
+            additional_params={}
         )
         
         # Create test metrics

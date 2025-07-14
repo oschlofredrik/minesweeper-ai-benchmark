@@ -428,7 +428,10 @@ async def run_play_session(
             model_config = ModelConfig(
                 provider=model_provider,
                 name=model_name,
-                api_key=api_key or ""
+                model_id=model_name,
+                temperature=0.7,
+                max_tokens=1000,
+                additional_params={"api_key": api_key} if api_key else {}
             )
             logger.info(f"🔧 Created ModelConfig: provider={model_config.provider}, name={model_config.name}")
             
