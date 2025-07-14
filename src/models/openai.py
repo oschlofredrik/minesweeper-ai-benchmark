@@ -13,6 +13,7 @@ from src.core.logging_config import get_logger
 from src.core.prompts import prompt_manager
 from .base import BaseModel, ModelResponse
 from .model_capabilities import get_model_capabilities
+from .model_config import get_model_config, get_model_timeout
 
 # Initialize logger
 logger = get_logger("models.openai")
@@ -37,7 +38,13 @@ class OpenAIModel(BaseModel):
         
         self.client = AsyncOpenAI(api_key=api_key)
         self.model_id = model_config.get("model_id", "gpt-4")
-        self.timeout = model_config.get("timeout", settings.model_timeout)
+        
+        # Get model-specific configuration
+        model_cfg = get_model_config(self.model_id)
+        self.timeout = model_config.get("timeout", model_cfg.get("timeout", settings.model_timeout))
+        
+        # Log the timeout being used
+        logger.info(f"Initialized {self.model_id} with timeout: {self.timeout}s")
         
         # Get model capabilities
         self.capabilities = get_model_capabilities(self.model_id)
@@ -94,7 +101,8 @@ class OpenAIModel(BaseModel):
             f"Generating response using responses API",
             extra={
                 "model_id": self.model_id,
-                "prompt_length": len(prompt)
+                "prompt_length": len(prompt),
+                "timeout": self.timeout
             }
         )
         
@@ -148,8 +156,8 @@ class OpenAIModel(BaseModel):
             )
             
         except asyncio.TimeoutError:
-            logger.error(f"Timeout generating response for model {self.model_id}")
-            raise ModelAPIError(f"Timeout after {self.timeout}s")
+            logger.error(f"Timeout generating response for model {self.model_id} after {self.timeout}s")
+            raise ModelAPIError(f"Timeout after {self.timeout}s. Consider increasing timeout for {self.model_id} models.")
         except Exception as e:
             logger.error(
                 f"Error generating response",
