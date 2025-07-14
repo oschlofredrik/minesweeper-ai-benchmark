@@ -84,18 +84,17 @@ Remember: Even if you're unsure, you MUST choose an action. If no moves seem cer
 
 Your task is to analyze the board and make the best possible move using logical deduction.
 
-You MUST use the make_move function to specify your action. The function takes:
+IMPORTANT: Follow these steps:
+1. First, think step-by-step and write your logical analysis of the board
+2. Then, call the make_move function with your chosen action
+
+The make_move function takes:
 - action: "reveal", "flag", or "unflag"
 - row: 0-based row index
 - col: 0-based column index
-- reasoning: Your logical explanation for this move
+- reasoning: Brief summary of why this move (can be shorter than your analysis)
 
-YOU MUST ALWAYS CALL THE make_move FUNCTION. This is MANDATORY - never respond without using the function.
-
-If the function call fails, you MUST include your action in this EXACT format:
-Action: [reveal/flag/unflag] (row, col)
-
-NEVER provide reasoning without an action. ALWAYS make a move.""",
+You MUST call the make_move function after your analysis. Both your detailed reasoning and the function call will be captured.""",
             user_prompt_template="""Current Minesweeper board state:
 
 {board_state}
@@ -106,14 +105,13 @@ Legend:
 - .: Empty cell (0 adjacent mines)
 - 1-8: Number of adjacent mines
 
-YOU MUST use the make_move function to specify your next move.
+Please analyze the board step-by-step:
+1. Identify revealed numbers and their adjacent cells
+2. Count flagged mines around each number
+3. Determine which cells must be mines or must be safe
+4. Explain your logical deductions
 
-Analysis steps:
-1. Look for cells where the number of adjacent mines equals the number of adjacent hidden cells
-2. Look for cells where all adjacent mines are already flagged
-3. Use logical deduction to find guaranteed safe cells or mines
-
-REMEMBER: You MUST call make_move() with your chosen action. This is NOT optional.""",
+After your analysis, use the make_move function to execute your chosen move.""",
             supports_function_calling=True,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc)

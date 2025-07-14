@@ -258,12 +258,17 @@ class OpenAIModel(BaseModel):
             # Add tools if requested and model supports it
             if use_functions and self.supports_function_calling:
                 request_params["tools"] = self._get_minesweeper_tools()
-                # Force the model to use the function
-                request_params["tool_choice"] = {
-                    "type": "function",
-                    "function": {"name": "make_move"}
-                }
-                logger.info(f"Using function calling for model {self.model_id} with forced tool_choice")
+                # Use auto tool_choice to allow reasoning in content field
+                # Can be overridden with force_tool_choice kwarg if needed
+                if kwargs.get('force_tool_choice', False):
+                    request_params["tool_choice"] = {
+                        "type": "function",
+                        "function": {"name": "make_move"}
+                    }
+                    logger.info(f"Using function calling for model {self.model_id} with forced tool_choice")
+                else:
+                    # Default is auto - allows content alongside tool calls
+                    logger.info(f"Using function calling for model {self.model_id} with auto tool_choice")
             else:
                 logger.info(f"NOT using function calling for model {self.model_id}: use_functions={use_functions}, is_reasoning_model={self.is_reasoning_model}")
             
@@ -308,6 +313,12 @@ class OpenAIModel(BaseModel):
             reasoning_text = None
             function_call = None
             
+            # With auto tool_choice, content field may contain detailed reasoning
+            if content:
+                # Content field contains the detailed step-by-step analysis
+                reasoning_text = content
+                logger.info(f"Captured reasoning from content field: {len(content)} chars")
+            
             # Check for function calls
             if message and hasattr(message, 'tool_calls') and message.tool_calls:
                 logger.info(
@@ -315,7 +326,8 @@ class OpenAIModel(BaseModel):
                     extra={
                         "model_id": self.model_id,
                         "num_tool_calls": len(message.tool_calls),
-                        "tool_names": [tc.function.name for tc in message.tool_calls] if message.tool_calls else []
+                        "tool_names": [tc.function.name for tc in message.tool_calls] if message.tool_calls else [],
+                        "has_content": bool(content)
                     }
                 )
                 tool_call = message.tool_calls[0]
@@ -326,16 +338,23 @@ class OpenAIModel(BaseModel):
                         extra={
                             "action": function_call.get('action'),
                             "position": f"({function_call.get('row')}, {function_call.get('col')})",
-                            "reasoning_length": len(function_call.get('reasoning', '')),
-                            "reasoning_preview": function_call.get('reasoning', '')[:100] + '...' if len(function_call.get('reasoning', '')) > 100 else function_call.get('reasoning', '')
+                            "reasoning_in_function": bool(function_call.get('reasoning')),
+                            "reasoning_in_content": bool(content)
                         }
                     )
-                    # Extract reasoning from function call
-                    reasoning_text = function_call.get('reasoning', '')
-                    # Format content to include the action
-                    content = f"Action: {function_call['action']} ({function_call['row']}, {function_call['col']})"
-                    if reasoning_text:
-                        content = f"{reasoning_text}\n\n{content}"
+                    # Preserve the action for parsing
+                    action_str = f"Action: {function_call['action']} ({function_call['row']}, {function_call['col']})"
+                    
+                    # If we have detailed reasoning in content, use that as primary reasoning
+                    # Otherwise fall back to reasoning from function call
+                    if not reasoning_text:
+                        reasoning_text = function_call.get('reasoning', '')
+                    
+                    # Append action to content for backward compatibility
+                    if content:
+                        content = f"{content}\n\n{action_str}"
+                    else:
+                        content = action_str
             else:
                 if message:
                     logger.warning(f"No function call in response from {self.model_id}, content length: {len(content)}")

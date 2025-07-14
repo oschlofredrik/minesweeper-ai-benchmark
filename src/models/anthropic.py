@@ -149,13 +149,22 @@ class AnthropicModel(BaseModel):
                             reasoning_text = block.text
                         elif block.type == 'tool_use' and block.name == 'make_move':
                             tool_use = block.input
-                            # Extract reasoning from tool use
-                            if 'reasoning' in tool_use:
-                                reasoning_text = tool_use['reasoning']
-                            # Format content to include the action
-                            content = f"Action: {tool_use['action']} ({tool_use['row']}, {tool_use['col']})"
-                            if reasoning_text:
-                                content = f"{reasoning_text}\n\n{content}"
+            
+            # With auto tool use, content contains detailed reasoning
+            if content and not reasoning_text:
+                reasoning_text = content
+                logger.info(f"Captured reasoning from text content: {len(content)} chars")
+            
+            # If we have a tool use, append the action to content
+            if tool_use:
+                action_str = f"Action: {tool_use['action']} ({tool_use['row']}, {tool_use['col']})"
+                if content:
+                    content = f"{content}\n\n{action_str}"
+                else:
+                    content = action_str
+                    # Fall back to reasoning from tool use if no text content
+                    if not reasoning_text and 'reasoning' in tool_use:
+                        reasoning_text = tool_use['reasoning']
             
             # If no content was extracted, try the old way
             if not content and response.content:
