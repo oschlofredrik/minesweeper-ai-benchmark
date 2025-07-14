@@ -1,7 +1,7 @@
 services:
   # Web service for the API and frontend
   - type: web
-    name: tilts-benchmark
+    name: tilts
     runtime: python
     buildCommand: pip install -r requirements-render.txt
     startCommand: python scripts/start_web.py
@@ -25,6 +25,6 @@ services:
 
 databases:
   - name: tilts-db
-    databaseName: tilts_benchmark
+    databaseName: tilts
     user: tilts_user
     plan: free  # Upgrade to "starter" or higher for production

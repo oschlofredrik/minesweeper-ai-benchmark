@@ -88,7 +88,7 @@ class ColoredFormatter(logging.Formatter):
 
 def setup_logging(
     log_level: str = "INFO",
-    log_file: str = "data/logs/tilts_benchmark.log",
+    log_file: str = "data/logs/tilts.log",
     enable_console: bool = True,
     enable_file: bool = True,
     structured: bool = True

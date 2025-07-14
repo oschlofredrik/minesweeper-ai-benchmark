@@ -30,7 +30,7 @@ This is a comprehensive benchmark platform for evaluating Large Language Models 
 
 ### Project Structure
 ```
-tilts-benchmark/
+tilts/
 ├── src/
 │   ├── core/              # Types, config, utilities
 │   ├── games/             # Tilts implementation
