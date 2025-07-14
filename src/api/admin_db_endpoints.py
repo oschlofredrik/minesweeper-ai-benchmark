@@ -7,6 +7,7 @@ import logging
 
 from src.core.database import get_db, Game, LeaderboardEntry, Evaluation, Task
 from src.core.logging_config import get_logger
+from src.core.storage import get_storage
 
 router = APIRouter(prefix="/api/admin/db", tags=["admin-db"])
 logger = get_logger("api.admin_db")
@@ -15,8 +16,29 @@ logger = get_logger("api.admin_db")
 @router.get("/stats")
 async def get_database_stats():
     """Get database statistics."""
+    logger.info("Database stats endpoint called")
+    
+    # Check if database is available
+    storage = get_storage()
+    if not storage.use_database:
+        logger.warning("Database not available - returning empty stats")
+        return {
+            "games": {
+                "total": 0,
+                "won": 0,
+                "lost": 0,
+                "by_model": {}
+            },
+            "leaderboard_entries": 0,
+            "evaluations": 0,
+            "tasks": 0,
+            "models": [],
+            "database_available": False
+        }
+    
     try:
         db = next(get_db())
+        logger.info("Got database connection")
         
         stats = {
             "games": {
@@ -28,7 +50,8 @@ async def get_database_stats():
             "leaderboard_entries": db.query(LeaderboardEntry).count(),
             "evaluations": db.query(Evaluation).count(),
             "tasks": db.query(Task).count(),
-            "models": []
+            "models": [],
+            "database_available": True
         }
         
         # Get per-model stats
@@ -48,10 +71,11 @@ async def get_database_stats():
             })
         
         db.close()
+        logger.info(f"Database stats retrieved successfully: {stats['games']['total']} games, {stats['leaderboard_entries']} leaderboard entries")
         return stats
         
     except Exception as e:
-        logger.error(f"Error getting database stats: {e}")
+        logger.error(f"Error getting database stats: {type(e).__name__}: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -64,8 +88,23 @@ async def list_games(
     offset: int = Query(0, ge=0)
 ):
     """List games with filtering options."""
+    logger.info(f"List games called - model: {model_name}, provider: {provider}, won: {won}, limit: {limit}, offset: {offset}")
+    
+    # Check if database is available
+    storage = get_storage()
+    if not storage.use_database:
+        logger.warning("Database not available - returning empty games list")
+        return {
+            "total": 0,
+            "limit": limit,
+            "offset": offset,
+            "games": [],
+            "database_available": False
+        }
+    
     try:
         db = next(get_db())
+        logger.info("Got database connection for games list")
         
         query = db.query(Game)
         
@@ -187,8 +226,17 @@ async def delete_games(
 @router.get("/leaderboard")
 async def get_leaderboard_entries():
     """Get all leaderboard entries with management info."""
+    logger.info("Leaderboard entries endpoint called")
+    
+    # Check if database is available
+    storage = get_storage()
+    if not storage.use_database:
+        logger.warning("Database not available - returning empty leaderboard")
+        return []
+    
     try:
         db = next(get_db())
+        logger.info("Got database connection for leaderboard")
         
         entries = db.query(LeaderboardEntry).order_by(
             LeaderboardEntry.global_score.desc()

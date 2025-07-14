@@ -140,6 +140,7 @@ a:hover {
 .sidebar {
   border-right: 1px solid var(--border);
   padding: calc(var(--unit) * 3);
+  position: relative;
 }
 
 .main {

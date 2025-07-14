@@ -15,42 +15,6 @@ class EventStreamUI {
     
     initializeUI() {
         this.container.innerHTML = `
-            <style>
-                .reasoning-text.streaming::after {
-                    content: '▌';
-                    animation: blink 1s infinite;
-                    opacity: 0.7;
-                }
-                
-                @keyframes blink {
-                    0%, 50% { opacity: 0.7; }
-                    51%, 100% { opacity: 0; }
-                }
-                
-                .event-stream-container {
-                    max-height: 600px;
-                    overflow-y: auto;
-                    padding: 10px;
-                }
-                
-                .event-item {
-                    display: flex;
-                    margin-bottom: 10px;
-                    padding: 8px;
-                    animation: slideIn 0.3s ease-out;
-                }
-                
-                @keyframes slideIn {
-                    from {
-                        opacity: 0;
-                        transform: translateX(-10px);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translateX(0);
-                    }
-                }
-            </style>
             <div class="event-stream-header">
                 <h4>Live Game Stream</h4>
                 <div class="stream-controls">
@@ -236,9 +200,7 @@ class EventStreamUI {
         event.id = `thinking-${data.game_num}-${data.move_num}`;
         event.innerHTML = `
             <div class="event-icon">
-                <div class="thinking-indicator">
-                    <span></span><span></span><span></span>
-                </div>
+                <div class="thinking-indicator">...</div>
             </div>
             <div class="event-content">
                 <div class="event-message">Analyzing board for move ${data.move_num}...</div>
@@ -267,7 +229,7 @@ class EventStreamUI {
             event.id = `reasoning-${data.game_num}-${data.move_num}`;
             event.className = 'event-item reasoning';
             event.innerHTML = `
-                <div class="event-icon">💭</div>
+                <div class="event-icon">REASON</div>
                 <div class="event-content">
                     <div class="event-title">AI Reasoning (streaming...)</div>
                     <div class="reasoning-text streaming">${this.formatReasoning(data.reasoning)}</div>
@@ -298,7 +260,7 @@ class EventStreamUI {
                 const event = document.createElement('div');
                 event.className = 'event-item reasoning';
                 event.innerHTML = `
-                    <div class="event-icon">💭</div>
+                    <div class="event-icon">REASON</div>
                     <div class="event-content">
                         <div class="event-title">AI Reasoning</div>
                         <div class="reasoning-text">${this.formatReasoning(data.reasoning)}</div>
