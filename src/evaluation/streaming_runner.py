@@ -90,7 +90,7 @@ class StreamingGameRunner:
             move_count += 1
             
             # Get current board state
-            board_state = game.get_board_state_for_ai()
+            board_state = game.get_board_representation("ascii")
             
             # Publish thinking event
             await publish_move_thinking(job_id, game_num, move_count, board_state)
@@ -135,7 +135,7 @@ class StreamingGameRunner:
                 await publish_move_completed(
                     job_id, game_num, move_count,
                     action.to_string(), success,
-                    game.get_board_state_for_ai() if success else None
+                    game.get_board_representation("ascii") if success else None
                 )
                 
                 if verbose:
