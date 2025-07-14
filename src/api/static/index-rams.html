@@ -3,22 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Minesweeper AI Benchmark</title>
+    <title>Tilts</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.ico">
     <link rel="stylesheet" href="/static/rams-design.css" />
     <link rel="stylesheet" href="/static/event-stream.css" />
   </head>
   <body>
     <div class="layout">
-      <!-- Header -->
-      <header class="header">
-        <h1 style="font-size: var(--text-base); font-weight: 500; margin: 0">
-          Minesweeper AI Benchmark
-        </h1>
-      </header>
-
       <!-- Sidebar Navigation -->
       <aside class="sidebar">
+        <!-- Logo at top of sidebar -->
+        <div class="sidebar-logo">
+          <h1 class="logo-text">Tilts</h1>
+        </div>
+        
         <nav>
           <ul class="nav">
             <li class="nav-item">
@@ -75,11 +73,10 @@
           </div>
 
           <div class="card">
-            <h3>About</h3>
+            <h3>About Tilts</h3>
             <p class="text-muted">
-              A comprehensive benchmark platform for evaluating Large Language
-              Models on strategic reasoning tasks through expert-level
-              Minesweeper gameplay.
+              A benchmark platform for evaluating AI models on strategic 
+              reasoning tasks through expert-level Minesweeper gameplay.
             </p>
             <p class="text-muted">
               Models must demonstrate logical deduction, pattern recognition,
@@ -149,8 +146,7 @@
 
             <!-- Game Events -->
             <div
-              class="card"
-              style="height: 80vh; display: flex; flex-direction: column"
+              class="card game-feed-container"
             >
               <div id="event-stream-ui" style="flex: 1;">
                 <!-- Event stream UI will be initialized here -->

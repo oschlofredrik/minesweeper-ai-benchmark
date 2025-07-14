@@ -36,8 +36,8 @@ setup_logging(
 )
 
 app = FastAPI(
-    title="Minesweeper AI Benchmark",
-    description="Benchmark platform for evaluating LLMs on Minesweeper",
+    title="Tilts",
+    description="Benchmark platform for evaluating AI models on strategic reasoning",
     version="1.0.0",
 )
 

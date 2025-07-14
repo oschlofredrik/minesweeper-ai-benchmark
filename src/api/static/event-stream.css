@@ -33,7 +33,7 @@
 }
 
 .event-stream-container {
-    height: 600px;
+    flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
     border: 1px solid var(--border);
