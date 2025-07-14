@@ -173,12 +173,36 @@
               <tr>
                 <th style="width: 60px">Rank</th>
                 <th>Model</th>
-                <th style="width: 80px">Global</th>
-                <th style="width: 80px">MS-S</th>
-                <th style="width: 80px">MS-I</th>
-                <th style="width: 80px">Win Rate</th>
-                <th style="width: 80px">Reasoning</th>
-                <th style="width: 60px">Games</th>
+                <th style="width: 80px">
+                  <span class="tooltip" data-tooltip="Global Score
+Overall MineBench composite score
+combining all performance metrics">Global</span>
+                </th>
+                <th style="width: 80px">
+                  <span class="tooltip" data-tooltip="MS-S Score
+Static task composite score
+measuring prediction accuracy">MS-S</span>
+                </th>
+                <th style="width: 80px">
+                  <span class="tooltip" data-tooltip="MS-I Score
+Interactive task composite score
+measuring gameplay performance">MS-I</span>
+                </th>
+                <th style="width: 80px">
+                  <span class="tooltip" data-tooltip="Win Rate
+Percentage of games
+successfully completed">Win Rate</span>
+                </th>
+                <th style="width: 80px">
+                  <span class="tooltip" data-tooltip="Reasoning Score
+Quality of explanations
+evaluated by AI judge">Reasoning</span>
+                </th>
+                <th style="width: 60px">
+                  <span class="tooltip" data-tooltip="Total Games
+Number of games
+played by this model">Games</span>
+                </th>
               </tr>
             </thead>
             <tbody id="leaderboard-body">

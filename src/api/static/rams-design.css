@@ -480,3 +480,75 @@ details pre {
 #events-container .pt-2 { padding-top: calc(var(--unit) * 0.5); }
 #events-container .p-2 { padding: calc(var(--unit) * 0.5); }
 #events-container .pl-2 { padding-left: calc(var(--unit) * 0.5); }
+
+/* Tooltips */
+.tooltip {
+  position: relative;
+  cursor: help;
+  display: inline-block;
+}
+
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  padding: calc(var(--unit) * 2);
+  margin-bottom: var(--unit);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  white-space: pre-line;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition);
+  z-index: 10;
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.tooltip:hover::after {
+  opacity: 1;
+}
+
+/* Arrow for tooltip */
+.tooltip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(7px);
+  border: 6px solid transparent;
+  border-top-color: var(--border);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition);
+  z-index: 11;
+}
+
+.tooltip:hover::before {
+  opacity: 1;
+}
+
+/* Table header tooltips */
+th .tooltip {
+  border-bottom: 1px dotted var(--text-secondary);
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Adjust tooltip position for table headers */
+.table th .tooltip::after {
+  bottom: auto;
+  top: 100%;
+  margin-bottom: 0;
+  margin-top: var(--unit);
+}
+
+.table th .tooltip::before {
+  bottom: auto;
+  top: 100%;
+  transform: translateX(-50%) translateY(-13px) rotate(180deg);
+}
