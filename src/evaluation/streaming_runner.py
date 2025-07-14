@@ -110,11 +110,19 @@ class StreamingGameRunner:
                 # Get model's move with function calling
                 logger.info(f"Game {game_num} - Calling model.play_move with prompt_format={prompt_format}")
                 
-                # For non-function models, pass the streaming callback
-                kwargs = {"use_functions": True}
+                # Set up kwargs based on model capabilities
+                kwargs = {}
+                
+                # Check if model is a reasoning model (o1 series)
                 if hasattr(self.model, 'is_reasoning_model') and self.model.is_reasoning_model:
-                    kwargs["stream_callback"] = stream_reasoning
-                    kwargs["use_functions"] = False  # Can't use functions with streaming
+                    # o1 models don't support function calling
+                    kwargs["use_functions"] = False
+                    # Only add stream_callback if the model supports it (not for o1)
+                    if hasattr(self.model, 'supports_streaming') and self.model.supports_streaming:
+                        kwargs["stream_callback"] = stream_reasoning
+                else:
+                    # Regular models use function calling
+                    kwargs["use_functions"] = True
                 
                 response = await self.model.play_move(
                     board_state, 

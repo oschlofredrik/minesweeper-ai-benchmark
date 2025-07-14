@@ -283,13 +283,15 @@ class BaseModel(ABC):
         else:
             return "standard"
     
-    async def play_move(self, board_state: str, prompt_format: str = "auto", use_functions: bool = True) -> ModelResponse:
+    async def play_move(self, board_state: str, prompt_format: str = "auto", use_functions: bool = True, stream_callback=None) -> ModelResponse:
         """
         High-level method to get a move from the model.
         
         Args:
             board_state: Current board state
             prompt_format: Format type for the prompt ("auto" to auto-detect)
+            use_functions: Whether to use function calling (if supported)
+            stream_callback: Optional callback for streaming responses (ignored by models that don't support it)
         
         Returns:
             ModelResponse with parsed action
