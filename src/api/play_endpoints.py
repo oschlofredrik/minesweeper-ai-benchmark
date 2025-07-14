@@ -292,51 +292,59 @@ async def run_play_session(
     try:
         logger.info(f"Starting play session", extra={"job_id": job_id, "model": model_name})
         games[job_id].status = "running"
-        games[job_id].message = f"Generating {num_games} games..."
+        games[job_id].message = f"Starting first game..."
         
-        # Step 1: Generate games
-        logger.info(f"Generating games for play session")
+        # Quick setup
+        logger.info(f"Setting up play session")
         generator = TaskGenerator()
         repository = TaskRepository()
         
-        generated_tasks = []
-        for i in range(num_games):
+        # Convert difficulty
+        diff_enum = Difficulty.EXPERT
+        if difficulty:
             try:
-                # Update progress
-                games[job_id].progress = (i / num_games) * 0.3  # First 30% for generation
-                
-                # Convert string difficulty to enum if provided
-                diff_enum = None
-                if difficulty:
+                diff_enum = Difficulty(difficulty.lower())
+            except ValueError:
+                logger.warning(f"Invalid difficulty '{difficulty}', using default")
+        
+        # Generate ONLY the first game to start immediately
+        logger.info(f"Generating first game for immediate play")
+        if game_type == "static":
+            first_task = generator.generate_static_task(difficulty=diff_enum)
+        elif game_type == "interactive":
+            first_task = generator.generate_interactive_task(difficulty=diff_enum)
+        else:
+            first_task = generator.generate_interactive_task(difficulty=diff_enum)
+        
+        repository.save_task(first_task)
+        generated_tasks = [first_task]
+        
+        # Generate remaining games in background while playing
+        remaining_games = num_games - 1
+        if remaining_games > 0:
+            logger.info(f"Scheduling generation of {remaining_games} more games in background")
+            
+            async def generate_remaining():
+                for i in range(1, num_games):
                     try:
-                        diff_enum = Difficulty(difficulty.lower())
-                    except ValueError:
-                        logger.warning(f"Invalid difficulty '{difficulty}', using default")
-                        diff_enum = Difficulty.EXPERT
-                else:
-                    diff_enum = Difficulty.EXPERT
-                
-                # Generate task based on type
-                if game_type == "static":
-                    task = generator.generate_static_task(difficulty=diff_enum)
-                elif game_type == "interactive":
-                    task = generator.generate_interactive_task(difficulty=diff_enum)
-                else:
-                    # Mix of both
-                    task = (generator.generate_static_task(difficulty=diff_enum) 
-                            if i % 2 == 0 else 
-                            generator.generate_interactive_task(difficulty=diff_enum))
-                
-                # Save task
-                repository.save_task(task)
-                generated_tasks.append(task)
-                
-            except Exception as task_error:
-                logger.warning(
-                    f"Failed to generate game {i}",
-                    extra={"error": str(task_error)},
-                    exc_info=True
-                )
+                        if game_type == "static":
+                            task = generator.generate_static_task(difficulty=diff_enum)
+                        elif game_type == "interactive":
+                            task = generator.generate_interactive_task(difficulty=diff_enum)
+                        else:
+                            # Mix of both
+                            task = (generator.generate_static_task(difficulty=diff_enum) 
+                                    if i % 2 == 0 else 
+                                    generator.generate_interactive_task(difficulty=diff_enum))
+                        
+                        repository.save_task(task)
+                        generated_tasks.append(task)
+                        
+                    except Exception as task_error:
+                        logger.warning(f"Failed to generate game {i}", exc_info=True)
+            
+            # Start generating remaining games asynchronously
+            asyncio.create_task(generate_remaining())
         
         if not generated_tasks:
             raise Exception("Failed to generate any games")
@@ -367,8 +375,8 @@ async def run_play_session(
         start_eval_time = time.time()
         
         # Update status before starting
-        games[job_id].message = f"Playing {len(generated_tasks)} games with {model_name}..."
-        games[job_id].progress = 0.3  # 30% done with generation
+        games[job_id].message = f"Playing game 1 of {num_games} with {model_name}..."
+        games[job_id].progress = 0.0  # Starting immediately, no generation delay
         
         try:
             # Run games with live streaming
