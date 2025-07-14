@@ -24,6 +24,7 @@ from .evaluation_endpoints import router as evaluation_router
 from .play_endpoints import router as play_router
 from .admin_endpoints import router as admin_router
 from .admin_db_endpoints import router as admin_db_router
+from .admin_db_safe_endpoints import router as admin_db_safe_router
 from .event_streaming import router as streaming_router
 
 # Initialize logging
@@ -82,6 +83,7 @@ app.include_router(evaluation_router)
 app.include_router(play_router)
 app.include_router(admin_router)
 app.include_router(admin_db_router)
+app.include_router(admin_db_safe_router)
 app.include_router(streaming_router)
 
 # Debug router (REMOVE IN PRODUCTION)
@@ -150,6 +152,16 @@ async def startup_event():
         logger.error(f"❌ Critical error during startup: {type(e).__name__}: {str(e)}", exc_info=True)
         logger.warning("⚠️ Falling back to file storage due to initialization error")
         # Don't fail startup, just use file storage
+
+
+@app.get("/favicon.ico")
+async def favicon():
+    """Serve favicon."""
+    favicon_path = static_dir / "favicon.svg"
+    if favicon_path.exists():
+        return FileResponse(favicon_path, media_type="image/svg+xml")
+    else:
+        raise HTTPException(status_code=404, detail="Favicon not found")
 
 
 @app.get("/health")

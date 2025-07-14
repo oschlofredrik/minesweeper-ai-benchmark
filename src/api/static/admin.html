@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Minesweeper AI Benchmark</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico">
     <link rel="stylesheet" href="/static/rams-design.css">
     <style>
         /* Admin-specific styles */
@@ -928,7 +929,8 @@
         // Database management functions
         async function loadDatabaseStats() {
             try {
-                const response = await fetch('/api/admin/db/stats');
+                // Use safe endpoint temporarily until migration is run
+                const response = await fetch('/api/admin/db/safe/stats');
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -1005,7 +1007,8 @@
                 const providerFilter = document.getElementById('db-filter-provider').value;
                 const wonFilter = document.getElementById('db-filter-won').value;
                 
-                let url = '/api/admin/db/games?limit=50';
+                // Use safe endpoint temporarily until migration is run
+                let url = '/api/admin/db/safe/games?limit=50';
                 if (modelFilter) url += `&model_name=${modelFilter}`;
                 if (providerFilter) url += `&provider=${providerFilter}`;
                 if (wonFilter) url += `&won=${wonFilter}`;
