@@ -3,10 +3,11 @@
 import json
 from datetime import datetime
 from typing import Optional, Dict, Any, List
-from sqlalchemy import create_engine, Column, String, Integer, Float, DateTime, Text, Boolean, ForeignKey, JSON
+from sqlalchemy import create_engine, Column, String, Integer, Float, DateTime, Text, Boolean, ForeignKey, JSON, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session
 from sqlalchemy.pool import NullPool
+from sqlalchemy import inspect
 import os
 
 Base = declarative_base()
@@ -170,20 +171,45 @@ def init_db():
     """Initialize database connection."""
     global _engine, _SessionLocal
     
+    import logging
+    logger = logging.getLogger("database.init")
+    
     database_url = get_database_url()
+    logger.info(f"Initializing database with URL: {database_url[:30]}...")
     
-    if 'sqlite' in database_url:
-        # SQLite doesn't support async, use sync driver
-        database_url = database_url.replace('sqlite+aiosqlite', 'sqlite')
-        _engine = create_engine(database_url, connect_args={"check_same_thread": False})
-    else:
-        # PostgreSQL with connection pooling disabled for serverless
-        _engine = create_engine(database_url, poolclass=NullPool)
-    
-    _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
-    
-    # Create tables if they don't exist
-    Base.metadata.create_all(bind=_engine)
+    try:
+        if 'sqlite' in database_url:
+            # SQLite doesn't support async, use sync driver
+            logger.info("Using SQLite database")
+            database_url = database_url.replace('sqlite+aiosqlite', 'sqlite')
+            _engine = create_engine(database_url, connect_args={"check_same_thread": False})
+        else:
+            # PostgreSQL with connection pooling disabled for serverless
+            logger.info("Using PostgreSQL database")
+            _engine = create_engine(database_url, poolclass=NullPool)
+        
+        logger.info("Creating session factory...")
+        _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
+        
+        # Test connection
+        logger.info("Testing database connection...")
+        with _engine.connect() as conn:
+            result = conn.execute(text("SELECT 1"))
+            logger.info(f"✅ Database connection successful: {result.scalar()}")
+        
+        # Create tables if they don't exist
+        logger.info("Creating database tables if they don't exist...")
+        Base.metadata.create_all(bind=_engine)
+        logger.info("✅ Database tables ready")
+        
+        # Log table information
+        inspector = inspect(_engine)
+        tables = inspector.get_table_names()
+        logger.info(f"Available tables: {', '.join(tables)}")
+        
+    except Exception as e:
+        logger.error(f"❌ Database initialization failed: {type(e).__name__}: {str(e)}", exc_info=True)
+        raise
     
     return _engine
 

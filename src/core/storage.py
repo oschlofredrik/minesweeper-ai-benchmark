@@ -23,17 +23,33 @@ class StorageBackend:
     """Unified storage backend supporting both database and file storage."""
     
     def __init__(self):
-        self.use_database = os.getenv('DATABASE_URL') is not None
+        db_url = os.getenv('DATABASE_URL')
+        logger.info(f"StorageBackend init - DATABASE_URL present: {db_url is not None}")
+        
+        self.use_database = db_url is not None
         if self.use_database:
             try:
+                logger.info("Attempting to use database storage...")
                 init_db()
-                logger.info("Using database storage backend")
+                logger.info("✅ Successfully initialized database storage backend")
+                
+                # Test database access
+                try:
+                    db = next(get_db())
+                    # Try to count entries in a table
+                    count = db.query(LeaderboardEntry).count()
+                    logger.info(f"✅ Database access confirmed - LeaderboardEntry count: {count}")
+                    db.close()
+                except Exception as test_error:
+                    logger.warning(f"⚠️ Database test query failed: {test_error}")
+                    
             except Exception as e:
-                logger.error(f"Failed to initialize database: {e}")
-                logger.info("Falling back to file storage")
+                logger.error(f"❌ Failed to initialize database: {type(e).__name__}: {str(e)}", exc_info=True)
+                logger.warning("⚠️ Falling back to file storage")
                 self.use_database = False
         else:
-            logger.info("Using file storage backend")
+            logger.info("ℹ️ No DATABASE_URL found - using file storage backend")
+            logger.info(f"   Current environment has {len(os.environ)} variables")
     
     # Game Storage Methods
     def save_game(self, game_result: GameTranscript) -> str:

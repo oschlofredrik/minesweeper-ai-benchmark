@@ -94,22 +94,56 @@ async def startup_event():
     logger = logging.getLogger("api.startup")
     
     try:
-        # Initialize database if DATABASE_URL is set
-        if os.getenv('DATABASE_URL'):
-            logger.info("Initializing database connection...")
-            init_db()
-            logger.info("Database initialized successfully")
+        # Check for DATABASE_URL
+        db_url = os.getenv('DATABASE_URL')
+        if db_url:
+            logger.info("DATABASE_URL found in environment")
+            logger.info(f"Database URL format: {db_url[:20]}...{db_url[-20:]}")  # Log partial URL for security
+            
+            # Check URL format
+            if db_url.startswith('postgres://'):
+                logger.info("Database URL uses postgres:// format (will be converted)")
+            elif db_url.startswith('postgresql://'):
+                logger.info("Database URL uses postgresql:// format")
+            else:
+                logger.warning(f"Unexpected database URL format: {db_url[:30]}...")
+            
+            logger.info("Attempting to initialize database connection...")
+            try:
+                init_db()
+                logger.info("✅ Database initialized successfully")
+            except Exception as db_error:
+                logger.error(f"❌ Database initialization failed: {type(db_error).__name__}: {str(db_error)}")
+                raise
         else:
-            logger.info("No DATABASE_URL found, using file storage")
+            logger.warning("❌ No DATABASE_URL found in environment variables")
+            logger.info("Will use file-based storage")
         
         # Initialize storage backend
+        logger.info("Initializing storage backend...")
         storage = StorageBackend()
-        logger.info(f"Storage backend initialized: {'database' if storage.use_database else 'file'}")
+        
+        # Log storage backend status
+        if storage.use_database:
+            logger.info("✅ Storage backend: Using PostgreSQL database")
+            # Try a test query
+            try:
+                from src.core.database import get_db
+                from sqlalchemy import text
+                db = next(get_db())
+                result = db.execute(text("SELECT 1"))
+                logger.info(f"✅ Database connection test successful: {result.scalar()}")
+                db.close()
+            except Exception as test_error:
+                logger.error(f"❌ Database connection test failed: {test_error}")
+        else:
+            logger.info("ℹ️ Storage backend: Using file-based storage")
+            logger.info("   Data directory: data/")
         
     except Exception as e:
-        logger.error(f"Error during startup: {e}")
+        logger.error(f"❌ Critical error during startup: {type(e).__name__}: {str(e)}", exc_info=True)
+        logger.warning("⚠️ Falling back to file storage due to initialization error")
         # Don't fail startup, just use file storage
-        logger.info("Continuing with file storage")
 
 
 @app.get("/health")
@@ -309,7 +343,7 @@ async def get_platform_stats():
         "total_tasks": num_tasks,
         "unique_models": len(models),
         "model_list": sorted(list(models)),
-        "last_updated": datetime.utcnow().isoformat(),
+        "last_updated": datetime.now(timezone.utc).isoformat(),
     }
 
 
