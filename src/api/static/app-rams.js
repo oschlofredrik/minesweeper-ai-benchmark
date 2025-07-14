@@ -82,12 +82,16 @@ function updateModelOptions() {
     
     const models = {
         openai: [
+            { value: 'gpt-4o', text: 'GPT-4o' },
+            { value: 'gpt-4o-mini', text: 'GPT-4o Mini' },
+            { value: 'gpt-4-turbo', text: 'GPT-4 Turbo' },
             { value: 'gpt-4', text: 'GPT-4' },
             { value: 'gpt-3.5-turbo', text: 'GPT-3.5 Turbo' }
         ],
         anthropic: [
-            { value: 'claude-3-opus', text: 'Claude 3 Opus' },
-            { value: 'claude-3-sonnet', text: 'Claude 3 Sonnet' }
+            { value: 'claude-3-opus-20240229', text: 'Claude 3 Opus' },
+            { value: 'claude-3-5-sonnet-20241022', text: 'Claude 3.5 Sonnet' },
+            { value: 'claude-3-5-haiku-20241022', text: 'Claude 3.5 Haiku' }
         ]
     };
     
