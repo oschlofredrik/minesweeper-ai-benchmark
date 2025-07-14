@@ -108,6 +108,10 @@ class BaseModel(ABC):
         """
         # Try multiple parsing patterns
         patterns = [
+            # Format: "Action: reveal (2, 3)" - the exact format we specify in prompts
+            r'Action:\s*(reveal|flag|unflag)\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)',
+            # Format: "action: reveal (2, 3)" - lowercase version
+            r'action:\s*(reveal|flag|unflag)\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)',
             # Format: "reveal (2, 3)" or "flag (1, 2)"
             r'(reveal|flag|unflag)\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)',
             # Format: "reveal 2,3" or "flag 1,2"
@@ -120,10 +124,12 @@ class BaseModel(ABC):
             r'([RFU])\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)',
         ]
         
-        response_lower = response.lower()
-        
         for pattern in patterns:
-            match = re.search(pattern, response_lower, re.IGNORECASE)
+            # Try with original case first (for patterns like "Action:")
+            match = re.search(pattern, response)
+            if not match:
+                # If no match, try with lowercase
+                match = re.search(pattern, response, re.IGNORECASE)
             if match:
                 action_str = match.group(1).lower()
                 row = int(match.group(2))

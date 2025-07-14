@@ -42,7 +42,7 @@ class PromptManager:
             id="standard",
             name="Standard Prompt",
             description="Basic prompt for text-based responses",
-            system_prompt="You are an expert Minesweeper player. Analyze the board carefully and make logical deductions. Think step by step through your reasoning before deciding on your move.",
+            system_prompt="You are an expert Minesweeper player. Analyze the board carefully and make logical deductions. You MUST ALWAYS provide an action. Even if you're uncertain, choose the move with the highest probability of success. Never respond without an action.",
             user_prompt_template="""You are playing Minesweeper. Here is the current board state:
 
 {board_state}
@@ -56,8 +56,20 @@ Legend:
 
 Based on logical deduction, what is your next move?
 
-Provide your move in the format: Action: [reveal/flag/unflag] (row, col)
-Explain your reasoning step by step.""",
+IMPORTANT: You MUST provide exactly one action in this format:
+Action: [reveal/flag/unflag] (row, col)
+
+Where:
+- reveal: Uncover a hidden cell
+- flag: Mark a cell as containing a mine
+- unflag: Remove a flag from a cell
+- row, col: 0-based coordinates
+
+Example: Action: reveal (2, 3)
+
+Explain your reasoning step by step, then provide your action at the end.
+
+Remember: Even if you're unsure, you MUST choose an action. If no moves seem certain, choose the cell with the highest probability of being safe.""",
             supports_function_calling=False,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc)
@@ -72,15 +84,18 @@ Explain your reasoning step by step.""",
 
 Your task is to analyze the board and make the best possible move using logical deduction.
 
-IMPORTANT: You MUST use the make_move function to specify your action. Do not provide moves in text format.
-
-The make_move function takes:
+You MUST use the make_move function to specify your action. The function takes:
 - action: "reveal", "flag", or "unflag"
 - row: 0-based row index
 - col: 0-based column index
 - reasoning: Your logical explanation for this move
 
-Always think through your reasoning before making a move.""",
+YOU MUST ALWAYS CALL THE make_move FUNCTION. This is MANDATORY - never respond without using the function.
+
+If the function call fails, you MUST include your action in this EXACT format:
+Action: [reveal/flag/unflag] (row, col)
+
+NEVER provide reasoning without an action. ALWAYS make a move.""",
             user_prompt_template="""Current Minesweeper board state:
 
 {board_state}
@@ -91,13 +106,14 @@ Legend:
 - .: Empty cell (0 adjacent mines)
 - 1-8: Number of adjacent mines
 
-Analyze the board and use the make_move function to make your next move. 
+YOU MUST use the make_move function to specify your next move.
 
-Remember to:
+Analysis steps:
 1. Look for cells where the number of adjacent mines equals the number of adjacent hidden cells
 2. Look for cells where all adjacent mines are already flagged
 3. Use logical deduction to find guaranteed safe cells or mines
-4. Include clear reasoning for your move""",
+
+REMEMBER: You MUST call make_move() with your chosen action. This is NOT optional.""",
             supports_function_calling=True,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc)
@@ -108,7 +124,7 @@ Remember to:
             id="cot",
             name="Chain of Thought",
             description="Detailed reasoning with step-by-step analysis",
-            system_prompt="You are an expert Minesweeper player. Break down your analysis into clear steps.",
+            system_prompt="You are an expert Minesweeper player. Break down your analysis into clear steps. You MUST always conclude with a specific action in the required format.",
             user_prompt_template="""You are an expert Minesweeper player. Analyze this board state:
 
 {board_state}
@@ -125,7 +141,13 @@ Let's think step by step:
 3. Determine which cells must be mines or must be safe
 4. Choose the best move based on certainty
 
-Provide your analysis and then state your move as: Action: [reveal/flag] (row, col)""",
+After your analysis, you MUST provide exactly one action in this format:
+Action: [reveal/flag/unflag] (row, col)
+
+Where row and col are 0-based coordinates.
+Example: Action: reveal (2, 3)
+
+Remember: You MUST always provide an action, even if uncertain.""",
             supports_function_calling=False,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc)
@@ -136,7 +158,7 @@ Provide your analysis and then state your move as: Action: [reveal/flag] (row, c
             id="reasoning",
             name="Reasoning Model Prompt",
             description="Optimized for models with extended reasoning capabilities",
-            system_prompt="You are an expert Minesweeper player. Provide thorough logical analysis.",
+            system_prompt="You are an expert Minesweeper player. Provide thorough logical analysis. You MUST always conclude with a specific action in the required format.",
             user_prompt_template="""You are an expert Minesweeper player. Here is the current board state:
 
 {board_state}
@@ -149,8 +171,50 @@ Legend:
 
 Analyze the board carefully. Think through all the logical deductions you can make based on the revealed numbers and their adjacent cells. Consider which cells must be mines and which must be safe.
 
-After your analysis, provide your next move in this format:
-Action: [reveal/flag] (row, col)""",
+IMPORTANT: After your analysis, you MUST provide exactly one action in this format:
+Action: [reveal/flag/unflag] (row, col)
+
+Where row and col are 0-based coordinates.
+Example: Action: reveal (2, 3)
+
+Remember: You MUST always provide an action. If no moves seem certain, choose the cell with the highest probability of being safe.""",
+            supports_function_calling=False,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
+        )
+        
+        # Simple direct prompt
+        self._templates["simple"] = PromptTemplate(
+            id="simple",
+            name="Simple Direct Prompt",
+            description="Very direct prompt that focuses on always getting an action",
+            system_prompt="You are playing Minesweeper. You must ALWAYS provide an action in the exact format specified.",
+            user_prompt_template="""Current Minesweeper board:
+
+{board_state}
+
+Legend:
+- ?: Hidden cell
+- F: Flagged cell
+- .: Empty cell (no adjacent mines)
+- 1-8: Number of adjacent mines
+
+Analyze the board and choose your next move.
+
+YOU MUST provide your action in EXACTLY this format:
+Action: reveal (row, col)
+OR
+Action: flag (row, col)
+OR
+Action: unflag (row, col)
+
+The row and col are 0-based coordinates.
+
+Example valid responses:
+- "I think cell (2,3) is safe. Action: reveal (2, 3)"
+- "This must be a mine. Action: flag (0, 1)"
+
+IMPORTANT: You MUST include "Action:" followed by the command. No other format will be accepted.""",
             supports_function_calling=False,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc)
