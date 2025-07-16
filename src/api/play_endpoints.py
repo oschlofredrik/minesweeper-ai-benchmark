@@ -10,7 +10,7 @@ import time
 import traceback
 import os
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Query, Depends
 from pydantic import BaseModel
 
 from src.core.config import settings
@@ -25,6 +25,7 @@ from .event_streaming import (
     publish_game_started, publish_move_thinking, publish_move_reasoning,
     publish_move_completed, publish_game_completed, publish_metrics_update
 )
+from .auth import get_current_user
 
 # Initialize logger
 logger = get_logger("api.play")
@@ -73,7 +74,8 @@ games: Dict[str, GameStatus] = {}
 @router.post("", response_model=PlayResponse)
 async def start_play(
     request: PlayRequest,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    current_user: str = Depends(get_current_user())
 ):
     """Start playing games with automatic evaluation."""
     job_id = f"play_{uuid4().hex[:8]}"
@@ -101,7 +103,8 @@ async def start_play(
             "num_games": request.num_games,
             "game_type": request.game_type,
             "difficulty": request.difficulty,
-            "has_api_key": bool(request.api_key)
+            "has_api_key": bool(request.api_key),
+            "user": current_user
         }
     )
     

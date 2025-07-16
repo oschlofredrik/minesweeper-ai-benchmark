@@ -1,6 +1,6 @@
 """FastAPI application for the Minesweeper benchmark platform."""
 
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import FastAPI, HTTPException, Query, Request, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,6 +25,7 @@ from .admin_endpoints import router as admin_router
 from .admin_db_endpoints import router as admin_db_router
 from .admin_db_safe_endpoints import router as admin_db_safe_router
 from .event_streaming import router as streaming_router
+from .auth import get_current_user
 
 # Initialize logging
 setup_logging(
@@ -174,7 +175,7 @@ async def health_check():
 
 
 @app.get("/", response_class=HTMLResponse)
-async def root():
+async def root(current_user: str = Depends(get_current_user())):
     """Serve the main web interface."""
     index_file = static_dir / "index-rams.html"
     if index_file.exists():
@@ -200,7 +201,7 @@ async def root():
 
 
 @app.get("/summary/{job_id}", response_class=HTMLResponse)
-async def game_summary_page(job_id: str):
+async def game_summary_page(job_id: str, current_user: str = Depends(get_current_user())):
     """Serve the game summary page."""
     summary_file = static_dir / "summary.html"
     if summary_file.exists():
@@ -228,7 +229,7 @@ async def terminal_design():
 
 
 @app.get("/admin", response_class=HTMLResponse)
-async def admin_interface():
+async def admin_interface(current_user: str = Depends(get_current_user())):
     """Serve the admin interface."""
     admin_file = static_dir / "admin.html"
     if admin_file.exists():

@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     openai_api_key: Optional[str] = Field(default=None, description="OpenAI API key")
     anthropic_api_key: Optional[str] = Field(default=None, description="Anthropic API key")
     
+    # Authentication
+    auth_username: str = Field(default="admin", description="Username for basic auth")
+    auth_password: Optional[str] = Field(default=None, description="Password for basic auth")
+    disable_auth: bool = Field(default=False, description="Disable authentication (not recommended)")
+    
     # Database
     database_url: str = Field(
         default="postgresql://user:password@localhost:5432/minesweeper_benchmark",

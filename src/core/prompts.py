@@ -42,16 +42,22 @@ class PromptManager:
             id="standard",
             name="Standard Prompt",
             description="Basic prompt for text-based responses",
-            system_prompt="You are an expert Minesweeper player. Analyze the board carefully and make logical deductions. You MUST ALWAYS provide an action. Even if you're uncertain, choose the move with the highest probability of success. Never respond without an action.",
+            system_prompt="""You are an expert Minesweeper player. Analyze the board carefully and make logical deductions. You MUST ALWAYS provide an action. Even if you're uncertain, choose the move with the highest probability of success. Never respond without an action.
+
+IMPORTANT RULES:
+- Hidden cells (?) can be revealed or flagged
+- Flagged cells (F) can ONLY be unflagged (you cannot reveal a flagged cell directly)
+- Revealed cells (numbers/.) cannot be changed
+- To reveal a cell you previously flagged, you must first unflag it, then reveal it in a later move""",
             user_prompt_template="""You are playing Minesweeper. Here is the current board state:
 
 {board_state}
 
 Legend:
-- ?: Hidden cell
-- F: Flagged cell
-- .: Empty cell (0 adjacent mines)
-- 1-8: Number of adjacent mines
+- ?: Hidden cell (can be revealed or flagged)
+- F: Flagged cell (can ONLY be unflagged, cannot be revealed directly)
+- .: Empty cell (0 adjacent mines, already revealed)
+- 1-8: Number of adjacent mines (already revealed)
 - *: Mine (only shown when game is over)
 
 Based on logical deduction, what is your next move?
@@ -60,9 +66,9 @@ IMPORTANT: You MUST provide exactly one action in this format:
 Action: [reveal/flag/unflag] (row, col)
 
 Where:
-- reveal: Uncover a hidden cell
-- flag: Mark a cell as containing a mine
-- unflag: Remove a flag from a cell
+- reveal: Uncover a hidden cell (?) - CANNOT be used on flagged cells (F)
+- flag: Mark a hidden cell (?) as containing a mine
+- unflag: Remove a flag from a flagged cell (F) - use this before revealing if you change your mind
 - row, col: 0-based coordinates
 
 Example: Action: reveal (2, 3)
@@ -84,12 +90,18 @@ Remember: Even if you're unsure, you MUST choose an action. If no moves seem cer
 
 Your task is to analyze the board and make the best possible move using logical deduction.
 
+GAME RULES YOU MUST FOLLOW:
+- Hidden cells (?) can be revealed or flagged
+- Flagged cells (F) can ONLY be unflagged - you CANNOT reveal them directly
+- Revealed cells (numbers/.) cannot be changed
+- To reveal a cell you previously flagged: first unflag it, then reveal it in a subsequent move
+
 IMPORTANT: Follow these steps:
 1. First, think step-by-step and write your logical analysis of the board
 2. Then, call the make_move function with your chosen action
 
 The make_move function takes:
-- action: "reveal", "flag", or "unflag"
+- action: "reveal" (for ? cells), "flag" (for ? cells), or "unflag" (for F cells)
 - row: 0-based row index
 - col: 0-based column index
 - reasoning: Brief summary of why this move (can be shorter than your analysis)
@@ -100,16 +112,21 @@ You MUST call the make_move function after your analysis. Both your detailed rea
 {board_state}
 
 Legend:
-- ?: Hidden cell
-- F: Flagged cell
-- .: Empty cell (0 adjacent mines)
-- 1-8: Number of adjacent mines
+- ?: Hidden cell (can be revealed or flagged) 
+- F: Flagged cell (can ONLY be unflagged - cannot be revealed until unflagged)
+- .: Empty cell (0 adjacent mines, already revealed)
+- 1-8: Number of adjacent mines (already revealed)
+
+REMEMBER THE RULES:
+- You can only reveal or flag hidden cells (?)
+- You can only unflag flagged cells (F)
+- You CANNOT reveal a flagged cell - you must unflag it first
 
 Please analyze the board step-by-step:
 1. Identify revealed numbers and their adjacent cells
 2. Count flagged mines around each number
 3. Determine which cells must be mines or must be safe
-4. Explain your logical deductions
+4. Check if any of your target cells are flagged (need unflagging first)
 
 After your analysis, use the make_move function to execute your chosen move.""",
             supports_function_calling=True,
@@ -122,16 +139,22 @@ After your analysis, use the make_move function to execute your chosen move.""",
             id="cot",
             name="Chain of Thought",
             description="Detailed reasoning with step-by-step analysis",
-            system_prompt="You are an expert Minesweeper player. Break down your analysis into clear steps. You MUST always conclude with a specific action in the required format.",
+            system_prompt="""You are an expert Minesweeper player. Break down your analysis into clear steps. You MUST always conclude with a specific action in the required format.
+
+CRITICAL GAME RULES:
+- Hidden cells (?) can be revealed or flagged
+- Flagged cells (F) can ONLY be unflagged - you CANNOT reveal a flagged cell
+- Revealed cells (numbers/.) cannot be changed
+- If you want to reveal a flagged cell, you must unflag it first""",
             user_prompt_template="""You are an expert Minesweeper player. Analyze this board state:
 
 {board_state}
 
 Legend:
-- ?: Hidden cell
-- F: Flagged cell
-- .: Empty cell (0 adjacent mines)  
-- 1-8: Number of adjacent mines
+- ?: Hidden cell (can be revealed or flagged)
+- F: Flagged cell (can ONLY be unflagged, cannot be revealed)
+- .: Empty cell (0 adjacent mines, already revealed)  
+- 1-8: Number of adjacent mines (already revealed)
 
 Let's think step by step:
 1. First, identify all revealed numbers and their adjacent hidden cells
@@ -156,18 +179,29 @@ Remember: You MUST always provide an action, even if uncertain.""",
             id="reasoning",
             name="Reasoning Model Prompt",
             description="Optimized for models with extended reasoning capabilities",
-            system_prompt="You are an expert Minesweeper player. Provide thorough logical analysis. You MUST always conclude with a specific action in the required format.",
+            system_prompt="""You are an expert Minesweeper player. Provide thorough logical analysis. You MUST always conclude with a specific action in the required format.
+
+ESSENTIAL RULES:
+- Hidden cells (?) can be revealed or flagged
+- Flagged cells (F) can ONLY be unflagged (cannot be revealed while flagged)
+- Already revealed cells (numbers/.) cannot be changed
+- To reveal a previously flagged cell: unflag it first, then reveal it""",
             user_prompt_template="""You are an expert Minesweeper player. Here is the current board state:
 
 {board_state}
 
 Legend:
-- ?: Hidden cell
-- F: Flagged cell
+- ?: Hidden cell (can be revealed or flagged)
+- F: Flagged cell (can ONLY be unflagged - cannot be revealed until unflagged)
 - .: Empty cell (0 adjacent mines)
 - 1-8: Number of adjacent mines
 
-Analyze the board carefully. Think through all the logical deductions you can make based on the revealed numbers and their adjacent cells. Consider which cells must be mines and which must be safe.
+ACTION RULES:
+- reveal: Only works on hidden cells (?)
+- flag: Only works on hidden cells (?)
+- unflag: Only works on flagged cells (F)
+
+Analyze the board carefully. Think through all the logical deductions you can make based on the revealed numbers and their adjacent cells. Consider which cells must be mines and which must be safe. If you need to reveal a flagged cell, remember to unflag it first.
 
 IMPORTANT: After your analysis, you MUST provide exactly one action in this format:
 Action: [reveal/flag/unflag] (row, col)
@@ -186,7 +220,12 @@ Remember: You MUST always provide an action. If no moves seem certain, choose th
             id="simple",
             name="Simple Direct Prompt",
             description="Very direct prompt that focuses on always getting an action",
-            system_prompt="You are playing Minesweeper. You must ALWAYS provide an action in the exact format specified.",
+            system_prompt="""You are playing Minesweeper. You must ALWAYS provide an action in the exact format specified.
+
+KEY RULES:
+- ? cells: Can be revealed or flagged
+- F cells: Can ONLY be unflagged (NOT revealed)
+- Number/. cells: Already revealed, cannot change""",
             user_prompt_template="""Current Minesweeper board:
 
 {board_state}
