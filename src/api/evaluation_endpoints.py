@@ -12,6 +12,8 @@ import traceback
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
 from pydantic import BaseModel
 
+from .auth import get_current_user
+
 from src.core.config import settings
 from src.core.logging_config import (
     get_logger, 
@@ -128,7 +130,8 @@ async def generate_tasks(
 @router.post("/start", response_model=EvaluationJobResponse)
 async def start_evaluation(
     request: EvaluationJobRequest,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    current_user: str = get_current_user()
 ):
     """Start a new evaluation job."""
     job_id = f"eval_{uuid4().hex[:8]}"

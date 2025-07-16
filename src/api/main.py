@@ -6,7 +6,7 @@ from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 from typing import List, Optional, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import os
 
@@ -175,7 +175,7 @@ async def health_check():
 
 
 @app.get("/", response_class=HTMLResponse)
-async def root(current_user: str = Depends(get_current_user())):
+async def root(current_user: str = get_current_user()):
     """Serve the main web interface."""
     index_file = static_dir / "index-rams.html"
     if index_file.exists():
@@ -201,7 +201,7 @@ async def root(current_user: str = Depends(get_current_user())):
 
 
 @app.get("/summary/{job_id}", response_class=HTMLResponse)
-async def game_summary_page(job_id: str, current_user: str = Depends(get_current_user())):
+async def game_summary_page(job_id: str, current_user: str = get_current_user()):
     """Serve the game summary page."""
     summary_file = static_dir / "summary.html"
     if summary_file.exists():
@@ -229,7 +229,7 @@ async def terminal_design():
 
 
 @app.get("/admin", response_class=HTMLResponse)
-async def admin_interface(current_user: str = Depends(get_current_user())):
+async def admin_interface(current_user: str = get_current_user()):
     """Serve the admin interface."""
     admin_file = static_dir / "admin.html"
     if admin_file.exists():

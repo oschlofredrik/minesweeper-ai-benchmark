@@ -75,7 +75,7 @@ games: Dict[str, GameStatus] = {}
 async def start_play(
     request: PlayRequest,
     background_tasks: BackgroundTasks,
-    current_user: str = Depends(get_current_user())
+    current_user: str = get_current_user()
 ):
     """Start playing games with automatic evaluation."""
     job_id = f"play_{uuid4().hex[:8]}"
