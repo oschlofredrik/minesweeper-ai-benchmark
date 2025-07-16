@@ -339,6 +339,21 @@ class EventStreamUI {
             </div>
         `;
         this.streamList.appendChild(event);
+        
+        // Add delay message if not the last game
+        if (data.game_num < data.total_games) {
+            setTimeout(() => {
+                const delayEvent = document.createElement('div');
+                delayEvent.className = 'event-item status';
+                delayEvent.innerHTML = `
+                    <div class="event-content">
+                        <div class="event-message">Starting next game in 3 seconds...</div>
+                        <div class="event-time">${this.formatTime()}</div>
+                    </div>
+                `;
+                this.streamList.appendChild(delayEvent);
+            }, 500);
+        }
     }
     
     addErrorEvent(data) {
@@ -369,6 +384,21 @@ class EventStreamUI {
     }
     
     updateMetrics(data) {
+        // Update game stats display
+        const statsEl = document.getElementById('game-stats');
+        if (statsEl) {
+            statsEl.style.display = 'flex';
+            
+            // Update individual stats
+            const gameNumEl = document.getElementById('current-game-num');
+            const totalGamesEl = document.getElementById('total-games');
+            const winRateEl = document.getElementById('win-rate');
+            
+            if (gameNumEl) gameNumEl.textContent = data.games_completed;
+            if (totalGamesEl) totalGamesEl.textContent = data.games_total;
+            if (winRateEl) winRateEl.textContent = `${(data.win_rate * 100).toFixed(1)}%`;
+        }
+        
         // Update progress bar if exists
         const progressBar = document.querySelector('.progress-fill');
         if (progressBar) {

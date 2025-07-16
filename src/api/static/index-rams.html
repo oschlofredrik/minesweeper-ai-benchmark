@@ -99,6 +99,26 @@
                 <button id="start-eval-btn" class="button">Start AI Evaluation</button>
               </div>
               
+              <!-- Game Stats -->
+              <div id="game-stats" class="game-stats" style="display: none;">
+                <div class="stat-group">
+                  <span class="stat-label">Game:</span>
+                  <span id="current-game-num">0</span> / <span id="total-games">0</span>
+                </div>
+                <div class="stat-group">
+                  <span class="stat-label">Win Rate:</span>
+                  <span id="win-rate">0%</span>
+                </div>
+                <div class="stat-group">
+                  <span class="stat-label">Current:</span>
+                  <span id="current-moves">0</span> moves
+                </div>
+                <div class="stat-group">
+                  <span class="stat-label">Coverage:</span>
+                  <span id="board-coverage">0%</span>
+                </div>
+              </div>
+              
               <div class="game-board-container">
                 <table id="tilts-board"></table>
                 <div class="board-placeholder">

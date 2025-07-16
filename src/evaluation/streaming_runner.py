@@ -488,6 +488,10 @@ class StreamingGameRunner:
                     win_rate, avg_moves
                 )
                 
+                # Add delay between games (except after last game)
+                if game_num < total_games:
+                    await asyncio.sleep(3.0)  # 3 second delay
+                
             except Exception as e:
                 logger.error(f"Failed to complete game {game_num}", exc_info=True, extra={
                     "model_name": self.model_config.name,

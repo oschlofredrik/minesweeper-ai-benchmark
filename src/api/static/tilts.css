@@ -13,6 +13,30 @@
     margin-bottom: calc(var(--unit) * 3);
 }
 
+/* Game stats */
+.game-stats {
+    display: flex;
+    gap: calc(var(--unit) * 4);
+    margin-bottom: calc(var(--unit) * 3);
+    padding: calc(var(--unit) * 2);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    font-family: 'Berkeley Mono', monospace;
+}
+
+.stat-group {
+    display: flex;
+    align-items: center;
+    gap: var(--unit);
+}
+
+.stat-label {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 .game-board-container {
     flex: 1;
     display: flex;
@@ -63,9 +87,10 @@
 }
 
 #tilts-board td.flagged::after {
-    content: 'F';
-    font-weight: bold;
-    color: var(--gray-600);
+    content: '⚑';
+    font-weight: normal;
+    color: var(--gray-700);
+    font-size: 1.1em;
 }
 
 /* Bomb cells */
