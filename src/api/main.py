@@ -215,23 +215,6 @@ async def game_summary_page(job_id: str, current_user: str = get_current_user())
     else:
         return RedirectResponse(url="/")
 
-@app.get("/design-preview", response_class=HTMLResponse)
-async def design_preview():
-    """Serve the design preview page."""
-    preview_file = static_dir / "design-preview.html"
-    if preview_file.exists():
-        return FileResponse(preview_file)
-    else:
-        return RedirectResponse(url="/")
-
-@app.get("/terminal", response_class=HTMLResponse)
-async def terminal_design():
-    """Serve the original terminal design."""
-    terminal_file = static_dir / "index.html"
-    if terminal_file.exists():
-        return FileResponse(terminal_file)
-    else:
-        return RedirectResponse(url="/")
 
 
 @app.get("/admin", response_class=HTMLResponse)
