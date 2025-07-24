@@ -69,3 +69,39 @@ class ComparisonResult(BaseModel):
     models: List[str]
     comparison_id: str
     message: str
+
+
+class GameInfo(BaseModel):
+    """Information about a game."""
+    name: str
+    display_name: str
+    description: str
+    supported_modes: List[str]
+    is_active: bool
+    player_count: int
+
+
+class GameListResponse(BaseModel):
+    """Response for listing games."""
+    games: List[GameInfo]
+    total: int
+
+
+class GamePlayRequest(BaseModel):
+    """Request to play a game."""
+    player_id: str
+    ai_model: str
+    difficulty: str = "medium"
+    mode: Optional[str] = None
+    custom_settings: Optional[Dict[str, Any]] = None
+    time_limit: Optional[int] = None
+    session_id: Optional[str] = None
+    round_number: Optional[int] = None
+
+
+class GamePlayResponse(BaseModel):
+    """Response after starting a game."""
+    game_id: int
+    instance_id: str
+    initial_state: Dict[str, Any]
+    visualization_data: Dict[str, Any]

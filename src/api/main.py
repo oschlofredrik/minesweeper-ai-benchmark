@@ -25,6 +25,9 @@ from .admin_endpoints import router as admin_router
 from .admin_db_endpoints import router as admin_db_router
 from .admin_db_safe_endpoints import router as admin_db_safe_router
 from .event_streaming import router as streaming_router
+from .game_endpoints import router as game_router
+from .session_endpoints import router as session_router
+from .prompt_endpoints import router as prompt_router
 from .auth import get_current_user
 
 # Initialize logging
@@ -85,6 +88,9 @@ app.include_router(admin_router)
 app.include_router(admin_db_router)
 app.include_router(admin_db_safe_router)
 app.include_router(streaming_router)
+app.include_router(game_router)
+app.include_router(session_router)
+app.include_router(prompt_router)
 
 # Debug router (REMOVE IN PRODUCTION)
 from .debug_endpoint import router as debug_router
