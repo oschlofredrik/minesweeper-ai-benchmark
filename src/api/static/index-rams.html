@@ -478,11 +478,64 @@ played by this model">Games</span>
           </div>
         </div>
         <div class="lobby-content">
+          <!-- Instructions Section -->
+          <div class="lobby-instructions">
+            <h4>How to Play</h4>
+            <ol class="instructions-list">
+              <li>
+                <strong>Select your AI Model</strong>
+                <p>Click the "Select Model" button below to choose which AI model you want to use in the competition.</p>
+              </li>
+              <li>
+                <strong>Mark Yourself as Ready</strong>
+                <p>Once you've selected a model, click "Ready" to indicate you're prepared to start.</p>
+              </li>
+              <li>
+                <strong>Wait for Host to Start</strong>
+                <p>When all players are ready, the host can start the competition. Games will run automatically!</p>
+              </li>
+            </ol>
+          </div>
+          
+          <!-- Player Controls -->
+          <div class="player-controls" id="player-controls">
+            <div class="control-group">
+              <label>Your AI Model:</label>
+              <select id="lobby-model-select" class="form-control">
+                <option value="">Select a model...</option>
+                <optgroup label="OpenAI">
+                  <option value="gpt-4o-mini">GPT-4o Mini</option>
+                  <option value="gpt-4o">GPT-4o</option>
+                  <option value="gpt-4">GPT-4</option>
+                  <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                </optgroup>
+                <optgroup label="Anthropic">
+                  <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                  <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+                  <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
+                </optgroup>
+              </select>
+              <button class="button button-secondary" id="update-model-btn" onclick="updatePlayerModel()">Update Model</button>
+            </div>
+            <button class="button button-success" id="ready-btn" onclick="toggleReady()">
+              <span id="ready-btn-text">Click to Mark Ready</span>
+            </button>
+          </div>
+
+          <div class="divider"></div>
+          
+          <!-- Players Grid -->
+          <h4>Players in Lobby</h4>
           <div class="players-grid" id="lobby-players">
             <!-- Players will be added here -->
           </div>
+          
+          <!-- Host Controls -->
           <div class="lobby-controls">
-            <button class="button button-primary" id="start-competition-btn" style="display: none;">Start Competition</button>
+            <div id="host-message" style="display: none;" class="host-info">
+              <p><strong>You are the host!</strong> Start the competition when all players are ready.</p>
+            </div>
+            <button class="button button-primary button-large" id="start-competition-btn" style="display: none;" onclick="startCompetition()">Start Competition</button>
             <button class="button" onclick="leaveLobby()">Leave Lobby</button>
           </div>
         </div>

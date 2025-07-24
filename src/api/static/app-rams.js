@@ -546,6 +546,9 @@ async function handleCreateSession(e) {
     e.preventDefault();
     
     const formData = new FormData(e.target);
+    const creatorId = 'user-' + Math.random().toString(36).substr(2, 9);
+    window.currentPlayerId = creatorId;
+    
     const sessionData = {
         name: formData.get('session-name'),
         description: `${formData.get('game-type')} competition`,
@@ -557,7 +560,7 @@ async function handleCreateSession(e) {
             scoring_profile: 'balanced',
             time_limit: 300
         }],
-        creator_id: 'user-' + Math.random().toString(36).substr(2, 9),
+        creator_id: creatorId,
         max_players: parseInt(formData.get('max-players')),
         is_public: true,
         flow_mode: 'asynchronous'
@@ -572,7 +575,7 @@ async function handleCreateSession(e) {
         
         if (response.ok) {
             const result = await response.json();
-            showLobby(result.session_id, result.join_code, true);
+            showLobby(result.session_id, result.join_code, true, creatorId);
             hideModal('create-session-modal');
         } else {
             alert('Failed to create session');
@@ -589,6 +592,7 @@ async function handleJoinSession(e) {
     const joinCode = document.getElementById('quick-join-code').value.toUpperCase();
     const playerName = 'Player-' + Math.random().toString(36).substr(2, 5);
     const playerId = 'player-' + Math.random().toString(36).substr(2, 9);
+    window.currentPlayerId = playerId;
     
     try {
         const response = await fetch('/api/sessions/join', {
@@ -598,13 +602,13 @@ async function handleJoinSession(e) {
                 join_code: joinCode,
                 player_id: playerId,
                 player_name: playerName,
-                ai_model: 'gpt-4'
+                ai_model: null  // Will be selected in lobby
             })
         });
         
         if (response.ok) {
             const result = await response.json();
-            showLobby(result.session_id, joinCode, false);
+            showLobby(result.session_id, joinCode, false, playerId);
             hideModal('join-session-modal');
         } else {
             alert('Invalid join code');
@@ -615,19 +619,34 @@ async function handleJoinSession(e) {
     }
 }
 
-function showLobby(sessionId, joinCode, isHost) {
+function showLobby(sessionId, joinCode, isHost, playerId = null) {
     const modal = document.getElementById('session-lobby-modal');
     document.getElementById('lobby-join-code').textContent = joinCode;
     
+    // Store session info globally
+    window.currentSession = {
+        sessionId: sessionId,
+        playerId: playerId || window.currentPlayerId,
+        isHost: isHost
+    };
+    
     if (isHost) {
         document.getElementById('start-competition-btn').style.display = 'block';
+        document.getElementById('host-message').style.display = 'block';
+    }
+    
+    // Initialize competition manager
+    if (window.competitionManager) {
+        window.competitionManager.sessionId = sessionId;
+        window.competitionManager.playerId = playerId || window.currentPlayerId;
+        window.competitionManager.isHost = isHost;
     }
     
     modal.classList.add('active');
     
     // Start polling for lobby updates
     updateLobby(sessionId);
-    setInterval(() => updateLobby(sessionId), 2000);
+    window.lobbyInterval = setInterval(() => updateLobby(sessionId), 2000);
 }
 
 async function updateLobby(sessionId) {
@@ -655,6 +674,125 @@ function renderLobbyPlayers(players) {
 
 function leaveLobby() {
     hideModal('session-lobby-modal');
+    if (window.lobbyInterval) {
+        clearInterval(window.lobbyInterval);
+    }
+}
+
+// Update player's AI model
+async function updatePlayerModel() {
+    const modelSelect = document.getElementById('lobby-model-select');
+    const selectedModel = modelSelect.value;
+    
+    if (!selectedModel) {
+        alert('Please select an AI model first');
+        return;
+    }
+    
+    if (!window.currentSession) {
+        alert('Session information not found');
+        return;
+    }
+    
+    // For now, just store locally and show in UI
+    window.currentPlayerModel = selectedModel;
+    
+    // Update UI to show selected model
+    const btn = document.getElementById('update-model-btn');
+    btn.textContent = 'Model Selected ✓';
+    btn.disabled = true;
+    
+    setTimeout(() => {
+        btn.textContent = 'Update Model';
+        btn.disabled = false;
+    }, 2000);
+}
+
+// Toggle ready status
+async function toggleReady() {
+    if (!window.currentSession) {
+        alert('Session information not found');
+        return;
+    }
+    
+    if (!window.currentPlayerModel && !window.currentSession.isHost) {
+        alert('Please select an AI model before marking ready');
+        return;
+    }
+    
+    const readyBtn = document.getElementById('ready-btn');
+    const isReady = readyBtn.classList.contains('ready');
+    
+    try {
+        // If using competition manager
+        if (window.competitionManager && window.competitionManager.setReady) {
+            await window.competitionManager.setReady(!isReady);
+        } else {
+            // Direct API call
+            const response = await fetch(`/api/sessions/${window.currentSession.sessionId}/ready?player_id=${window.currentSession.playerId}&ready=${!isReady}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to update ready status');
+            }
+        }
+        
+        // Update button UI
+        if (!isReady) {
+            readyBtn.classList.add('ready');
+            document.getElementById('ready-btn-text').textContent = 'Click to Unready';
+        } else {
+            readyBtn.classList.remove('ready');
+            document.getElementById('ready-btn-text').textContent = 'Click to Mark Ready';
+        }
+        
+    } catch (error) {
+        console.error('Error updating ready status:', error);
+        alert('Failed to update ready status');
+    }
+}
+
+// Start the competition (host only)
+async function startCompetition() {
+    if (!window.currentSession || !window.currentSession.isHost) {
+        alert('Only the host can start the competition');
+        return;
+    }
+    
+    try {
+        // Use competition manager if available
+        if (window.competitionManager && window.competitionManager.startCompetition) {
+            await window.competitionManager.startCompetition();
+        } else {
+            // Direct API call
+            const response = await fetch(`/api/sessions/${window.currentSession.sessionId}/start?player_id=${window.currentSession.playerId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            if (response.ok) {
+                // Clear lobby interval
+                if (window.lobbyInterval) {
+                    clearInterval(window.lobbyInterval);
+                }
+                
+                // Show competition view
+                if (window.competitionManager) {
+                    window.competitionManager.showCompetitionView();
+                } else {
+                    alert('Competition started! Watch the progress in the event stream.');
+                }
+            } else {
+                const error = await response.json();
+                alert(error.detail || 'Failed to start competition');
+            }
+        }
+    } catch (error) {
+        console.error('Error starting competition:', error);
+        alert('Failed to start competition');
+    }
 }
 
 function navigateTo(section) {

@@ -59,7 +59,7 @@ class JoinSessionRequest(BaseModel):
     join_code: str
     player_id: str
     player_name: str
-    ai_model: str
+    ai_model: Optional[str] = None
 
 
 class Player(BaseModel):
