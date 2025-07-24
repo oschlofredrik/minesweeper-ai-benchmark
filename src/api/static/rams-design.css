@@ -287,6 +287,15 @@ a:hover {
   color: var(--text-primary);
 }
 
+/* Anchor tags styled as buttons */
+a.button {
+  text-decoration: none;
+}
+
+a.button:hover {
+  text-decoration: none;
+}
+
 .button-secondary {
   background: var(--bg-primary);
   color: var(--text-primary);

@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Host Competition - Tilts</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico">
+    <link rel="stylesheet" href="/static/rams-design.css" />
+    <link rel="stylesheet" href="/static/event-stream.css" />
+    <link rel="stylesheet" href="/static/tilts.css" />
+    <link rel="stylesheet" href="/static/evaluation-selector.css" />
+    <style>
+      /* Host-specific styles */
+      .wizard-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: calc(var(--unit) * 4);
+      }
+      
+      .wizard-header {
+        margin-bottom: calc(var(--unit) * 4);
+      }
+      
+      .wizard-progress {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: calc(var(--unit) * 3);
+        position: relative;
+      }
+      
+      .wizard-progress::before {
+        content: '';
+        position: absolute;
+        top: 20px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--color-border);
+        z-index: 0;
+      }
+      
+      .wizard-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 1;
+        background: var(--color-bg);
+        padding: 0 calc(var(--unit) * 2);
+      }
+      
+      .wizard-step-number {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--color-bg-secondary);
+        border: 2px solid var(--color-border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        margin-bottom: calc(var(--unit) * 1);
+        transition: all 0.3s ease;
+      }
+      
+      .wizard-step.active .wizard-step-number {
+        background: var(--color-primary);
+        border-color: var(--color-primary);
+        color: white;
+      }
+      
+      .wizard-step.completed .wizard-step-number {
+        background: var(--color-success);
+        border-color: var(--color-success);
+        color: white;
+      }
+      
+      .wizard-step-label {
+        font-size: var(--font-size-sm);
+        color: var(--color-text-muted);
+        text-align: center;
+      }
+      
+      .wizard-step.active .wizard-step-label {
+        color: var(--color-text);
+        font-weight: 500;
+      }
+      
+      .wizard-content {
+        min-height: 400px;
+      }
+      
+      .wizard-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: calc(var(--unit) * 4);
+        padding-top: calc(var(--unit) * 3);
+        border-top: 1px solid var(--color-border);
+      }
+      
+      .config-section {
+        margin-bottom: calc(var(--unit) * 4);
+      }
+      
+      .config-section h3 {
+        margin-bottom: calc(var(--unit) * 2);
+      }
+      
+      .game-option {
+        padding: calc(var(--unit) * 2);
+        border: 2px solid var(--color-border);
+        border-radius: var(--radius);
+        margin-bottom: calc(var(--unit) * 2);
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      
+      .game-option:hover {
+        border-color: var(--color-primary);
+        background: var(--color-bg-hover);
+      }
+      
+      .game-option.selected {
+        border-color: var(--color-primary);
+        background: var(--color-bg-selected);
+      }
+      
+      .game-option h4 {
+        margin-bottom: calc(var(--unit) * 1);
+      }
+      
+      .difficulty-selector {
+        display: flex;
+        gap: calc(var(--unit) * 2);
+        margin-top: calc(var(--unit) * 2);
+      }
+      
+      .difficulty-option {
+        flex: 1;
+        padding: calc(var(--unit) * 2);
+        border: 2px solid var(--color-border);
+        border-radius: var(--radius);
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      
+      .difficulty-option:hover {
+        border-color: var(--color-primary);
+      }
+      
+      .difficulty-option.selected {
+        border-color: var(--color-primary);
+        background: var(--color-bg-selected);
+      }
+      
+      .model-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: calc(var(--unit) * 2);
+      }
+      
+      .model-option {
+        padding: calc(var(--unit) * 2);
+        border: 2px solid var(--color-border);
+        border-radius: var(--radius);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+      }
+      
+      .model-option:hover {
+        border-color: var(--color-primary);
+      }
+      
+      .model-option.selected {
+        border-color: var(--color-primary);
+        background: var(--color-bg-selected);
+      }
+      
+      .model-option .provider {
+        font-size: var(--font-size-sm);
+        color: var(--color-text-muted);
+        margin-top: calc(var(--unit) * 0.5);
+      }
+      
+      .summary-section {
+        background: var(--color-bg-secondary);
+        padding: calc(var(--unit) * 3);
+        border-radius: var(--radius);
+        margin-bottom: calc(var(--unit) * 3);
+      }
+      
+      .summary-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: calc(var(--unit) * 1.5);
+      }
+      
+      .summary-label {
+        color: var(--color-text-muted);
+      }
+      
+      .summary-value {
+        font-weight: 500;
+      }
+      
+      .join-code-display {
+        text-align: center;
+        padding: calc(var(--unit) * 3);
+        background: var(--color-bg-secondary);
+        border-radius: var(--radius);
+        margin: calc(var(--unit) * 3) 0;
+      }
+      
+      .join-code-display .code {
+        font-size: 48px;
+        font-weight: bold;
+        letter-spacing: 8px;
+        color: var(--color-primary);
+        margin: calc(var(--unit) * 2) 0;
+      }
+      
+      .back-link {
+        display: inline-flex;
+        align-items: center;
+        color: var(--color-text-muted);
+        text-decoration: none;
+        margin-bottom: calc(var(--unit) * 3);
+        transition: color 0.2s ease;
+      }
+      
+      .back-link:hover {
+        color: var(--color-text);
+      }
+      
+      .back-link::before {
+        content: '←';
+        margin-right: calc(var(--unit) * 1);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wizard-container">
+      <a href="/" class="back-link">Back to Tilts</a>
+      
+      <div class="wizard-header">
+        <h1>Host a Competition</h1>
+        <p class="text-muted">Set up your AI competition in just a few steps</p>
+      </div>
+      
+      <div class="wizard-progress">
+        <div class="wizard-step active" data-step="1">
+          <div class="wizard-step-number">1</div>
+          <div class="wizard-step-label">Basic Info</div>
+        </div>
+        <div class="wizard-step" data-step="2">
+          <div class="wizard-step-number">2</div>
+          <div class="wizard-step-label">Game Setup</div>
+        </div>
+        <div class="wizard-step" data-step="3">
+          <div class="wizard-step-number">3</div>
+          <div class="wizard-step-label">AI Models</div>
+        </div>
+        <div class="wizard-step" data-step="4">
+          <div class="wizard-step-number">4</div>
+          <div class="wizard-step-label">Scoring</div>
+        </div>
+        <div class="wizard-step" data-step="5">
+          <div class="wizard-step-number">5</div>
+          <div class="wizard-step-label">Review</div>
+        </div>
+      </div>
+      
+      <div class="wizard-content">
+        <!-- Step 1: Basic Info -->
+        <div class="wizard-panel" data-panel="1">
+          <div class="config-section">
+            <h3>Competition Details</h3>
+            <div class="form-stack">
+              <div class="form-group">
+                <label>Competition Name</label>
+                <input type="text" id="competition-name" placeholder="Friday AI Challenge" required>
+              </div>
+              <div class="form-group">
+                <label>Description</label>
+                <textarea id="competition-description" rows="3" placeholder="Test your AI models in a friendly competition..."></textarea>
+              </div>
+              <div class="form-group">
+                <label>Maximum Players</label>
+                <input type="number" id="max-players" min="2" max="50" value="10">
+              </div>
+              <div class="form-group">
+                <label>Competition Format</label>
+                <select id="competition-format">
+                  <option value="single_round">Single Round - One game decides the winner</option>
+                  <option value="best_of_three">Best of 3 - First to win 2 games</option>
+                  <option value="tournament">Tournament - Multiple rounds with elimination</option>
+                  <option value="round_robin">Round Robin - Everyone plays everyone</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Step 2: Game Setup -->
+        <div class="wizard-panel" data-panel="2" style="display: none;">
+          <div class="config-section">
+            <h3>Select Game</h3>
+            <div id="game-options">
+              <div class="game-option" data-game="minesweeper">
+                <h4>Minesweeper</h4>
+                <p class="text-muted">Classic mine-finding puzzle game. Test logical deduction and risk assessment.</p>
+              </div>
+              <div class="game-option" data-game="risk">
+                <h4>Risk</h4>
+                <p class="text-muted">Strategic territory control game. Balance expansion with defense.</p>
+              </div>
+              <div class="game-option" data-game="sudoku">
+                <h4>Sudoku</h4>
+                <p class="text-muted">Number placement puzzle. Pure logic and constraint satisfaction.</p>
+              </div>
+              <div class="game-option" data-game="number_puzzle">
+                <h4>Number Puzzle</h4>
+                <p class="text-muted">Mathematical reasoning challenges. Pattern recognition and calculation.</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="config-section" id="game-config" style="display: none;">
+            <h3>Game Configuration</h3>
+            <div id="game-specific-config">
+              <!-- Dynamically populated based on selected game -->
+            </div>
+            
+            <h4>Difficulty Level</h4>
+            <div class="difficulty-selector">
+              <div class="difficulty-option" data-difficulty="easy">
+                <h4>Easy</h4>
+                <p class="text-sm text-muted">Beginner friendly</p>
+              </div>
+              <div class="difficulty-option selected" data-difficulty="medium">
+                <h4>Medium</h4>
+                <p class="text-sm text-muted">Balanced challenge</p>
+              </div>
+              <div class="difficulty-option" data-difficulty="hard">
+                <h4>Hard</h4>
+                <p class="text-sm text-muted">Expert level</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Step 3: AI Models -->
+        <div class="wizard-panel" data-panel="3" style="display: none;">
+          <div class="config-section">
+            <h3>Select AI Models</h3>
+            <p class="text-muted">Choose which AI models can join this competition. Players will select from these when joining.</p>
+            
+            <div class="form-group mb-3">
+              <label>
+                <input type="checkbox" id="allow-all-models" checked>
+                Allow all available models
+              </label>
+            </div>
+            
+            <div id="model-selection" style="display: none;">
+              <h4>OpenAI Models</h4>
+              <div class="model-list mb-3">
+                <div class="model-option" data-model="gpt-4">
+                  <div>GPT-4</div>
+                  <div class="provider">OpenAI</div>
+                </div>
+                <div class="model-option" data-model="gpt-4-turbo">
+                  <div>GPT-4 Turbo</div>
+                  <div class="provider">OpenAI</div>
+                </div>
+                <div class="model-option" data-model="gpt-3.5-turbo">
+                  <div>GPT-3.5 Turbo</div>
+                  <div class="provider">OpenAI</div>
+                </div>
+                <div class="model-option" data-model="o1-preview">
+                  <div>O1 Preview</div>
+                  <div class="provider">OpenAI</div>
+                </div>
+              </div>
+              
+              <h4>Anthropic Models</h4>
+              <div class="model-list">
+                <div class="model-option" data-model="claude-3-opus">
+                  <div>Claude 3 Opus</div>
+                  <div class="provider">Anthropic</div>
+                </div>
+                <div class="model-option" data-model="claude-3-sonnet">
+                  <div>Claude 3 Sonnet</div>
+                  <div class="provider">Anthropic</div>
+                </div>
+                <div class="model-option" data-model="claude-3-haiku">
+                  <div>Claude 3 Haiku</div>
+                  <div class="provider">Anthropic</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Step 4: Scoring & Evaluation -->
+        <div class="wizard-panel" data-panel="4" style="display: none;">
+          <div class="config-section">
+            <h3>Scoring Configuration</h3>
+            <p class="text-muted">Choose how to evaluate and score the competition.</p>
+            
+            <div class="form-stack">
+              <div class="form-group">
+                <label>Scoring Method</label>
+                <select id="scoring-method">
+                  <option value="default">Default Game Scoring</option>
+                  <option value="custom">Custom Evaluation Metrics</option>
+                  <option value="composite">Composite Score (Multiple Metrics)</option>
+                </select>
+              </div>
+              
+              <div id="custom-scoring" style="display: none;">
+                <h4>Select Evaluation Metrics</h4>
+                <button type="button" class="button button-secondary" onclick="showEvaluationSelector()">
+                  Configure Evaluations
+                </button>
+                <div id="selected-evaluations-summary" class="text-sm text-muted mt-2">
+                  No evaluations selected
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label>Time Limits</label>
+                <select id="time-limit">
+                  <option value="none">No time limit</option>
+                  <option value="30">30 seconds per move</option>
+                  <option value="60">1 minute per move</option>
+                  <option value="300">5 minutes per game</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>
+                  <input type="checkbox" id="track-reasoning">
+                  Track and display AI reasoning
+                </label>
+              </div>
+              
+              <div class="form-group">
+                <label>
+                  <input type="checkbox" id="public-results" checked>
+                  Make results publicly visible
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Step 5: Review & Create -->
+        <div class="wizard-panel" data-panel="5" style="display: none;">
+          <div class="config-section">
+            <h3>Review Your Competition</h3>
+            
+            <div class="summary-section">
+              <div class="summary-item">
+                <span class="summary-label">Competition Name</span>
+                <span class="summary-value" id="summary-name">-</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Game</span>
+                <span class="summary-value" id="summary-game">-</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Format</span>
+                <span class="summary-value" id="summary-format">-</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Difficulty</span>
+                <span class="summary-value" id="summary-difficulty">-</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Max Players</span>
+                <span class="summary-value" id="summary-max-players">-</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">AI Models</span>
+                <span class="summary-value" id="summary-models">-</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Scoring</span>
+                <span class="summary-value" id="summary-scoring">-</span>
+              </div>
+            </div>
+            
+            <div id="creation-result" style="display: none;">
+              <div class="join-code-display">
+                <h3>Competition Created!</h3>
+                <p>Share this code with players:</p>
+                <div class="code" id="join-code">-</div>
+                <button class="button button-primary" onclick="goToLobby()">Go to Lobby</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="wizard-actions">
+        <button class="button button-secondary" id="prev-button" onclick="prevStep()" style="display: none;">Previous</button>
+        <button class="button button-primary" id="next-button" onclick="nextStep()">Next</button>
+        <button class="button button-primary" id="create-button" onclick="createCompetition()" style="display: none;">Create Competition</button>
+      </div>
+    </div>
+    
+    <!-- Evaluation Selector Modal -->
+    <div id="evaluation-selector-modal" class="modal-overlay">
+      <div class="modal-content modal-large">
+        <div class="modal-header">
+          <h2>Configure Competition Evaluations</h2>
+          <button class="modal-close" onclick="hideEvaluationSelector()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div id="evaluation-selector-container"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="button button-secondary" onclick="hideEvaluationSelector()">Cancel</button>
+          <button class="button button-primary" onclick="saveEvaluationSelection()">Save Selection</button>
+        </div>
+      </div>
+    </div>
+    
+    <script src="/static/evaluation-selector.js"></script>
+    <script src="/static/host-wizard.js"></script>
+  </body>
+</html>

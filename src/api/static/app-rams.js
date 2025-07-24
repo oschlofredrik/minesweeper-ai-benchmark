@@ -558,7 +558,8 @@ async function handleCreateSession(e) {
             difficulty: 'medium',
             mode: 'mixed',
             scoring_profile: 'balanced',
-            time_limit: 300
+            time_limit: 300,
+            evaluations: selectedEvaluations  // Include selected evaluations
         }],
         creator_id: creatorId,
         max_players: parseInt(formData.get('max-players')),
@@ -870,6 +871,66 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
+// Global evaluation selector instance
+let evaluationSelector = null;
+let selectedEvaluations = [];
+
+// Show evaluation selector modal
+function showEvaluationSelector() {
+    const modal = document.getElementById('evaluation-selector-modal');
+    modal.classList.add('active');
+    
+    // Initialize selector if not already done
+    if (!evaluationSelector) {
+        evaluationSelector = new EvaluationSelector('evaluation-selector-container', {
+            maxEvaluations: 5,
+            allowCustomWeights: true,
+            showPresets: true,
+            onUpdate: (evaluations) => {
+                selectedEvaluations = evaluations;
+                updateEvaluationSummary();
+            }
+        });
+    }
+}
+
+// Hide evaluation selector modal
+function hideEvaluationSelector() {
+    const modal = document.getElementById('evaluation-selector-modal');
+    modal.classList.remove('active');
+}
+
+// Save evaluation selection
+function saveEvaluationSelection() {
+    if (evaluationSelector) {
+        const validation = evaluationSelector.validateSelection();
+        if (!validation.valid) {
+            alert(validation.message);
+            return;
+        }
+        
+        selectedEvaluations = evaluationSelector.getSelectedEvaluations();
+        updateEvaluationSummary();
+        hideEvaluationSelector();
+    }
+}
+
+// Update evaluation summary display
+function updateEvaluationSummary() {
+    const summary = document.getElementById('selected-evaluations-summary');
+    if (!summary) return;
+    
+    if (selectedEvaluations.length === 0) {
+        summary.textContent = 'No evaluations selected (using default scoring)';
+    } else {
+        const names = selectedEvaluations.map(e => {
+            const percent = (e.weight * 100).toFixed(0);
+            return `${e.evaluation_id.substring(0, 8)}... (${percent}%)`;
+        });
+        summary.textContent = `${selectedEvaluations.length} evaluations: ${names.join(', ')}`;
+    }
+}
 
 // Update difficulty options based on selected game
 function updateDifficultyOptions() {

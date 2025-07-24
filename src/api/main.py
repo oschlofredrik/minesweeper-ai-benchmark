@@ -246,6 +246,16 @@ async def admin_interface(current_user: str = get_current_user()):
         return RedirectResponse(url="/")
 
 
+@app.get("/host", response_class=HTMLResponse)
+async def host_interface(current_user: str = get_current_user()):
+    """Serve the host competition wizard interface."""
+    host_file = static_dir / "host.html"
+    if host_file.exists():
+        return FileResponse(host_file)
+    else:
+        return RedirectResponse(url="/")
+
+
 @app.get("/api/leaderboard", response_model=List[LeaderboardEntry])
 async def get_leaderboard(
     task_type: Optional[str] = Query(None, description="Filter by task type (static/interactive)"),

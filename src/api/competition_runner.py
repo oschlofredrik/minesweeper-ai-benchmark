@@ -11,6 +11,7 @@ from src.tasks.generator import TaskGenerator
 from src.evaluation.streaming_runner import StreamingGameRunner
 from src.models import create_model
 from src.core.types import ModelConfig
+from src.evaluation.realtime_evaluator import realtime_evaluator
 try:
     from src.api.event_streaming import publish_event, EventType
 except ImportError:
@@ -90,6 +91,14 @@ class CompetitionRunner:
     async def run_round(self, round_config: Dict[str, Any]):
         """Run a single round of competition."""
         logger.info(f"Starting round {self.current_round} for competition {self.session_id}")
+        
+        # Initialize evaluations for this round if configured
+        evaluations = round_config.get("evaluations", [])
+        if evaluations:
+            await realtime_evaluator.start_session_evaluation(
+                session_id=f"{self.session_id}_r{self.current_round}",
+                evaluations=evaluations
+            )
         
         # Publish round started event
         await publish_event(self.session_id, EventType.STATUS_UPDATE, {
@@ -236,24 +245,58 @@ class CompetitionRunner:
             stats = transcript.final_state
             won = stats.status.value == "won"
             
-            # Basic scoring
-            score = 0.0
-            if won:
-                score += 100.0  # Base score for winning
+            # Check if we have custom evaluations for this round
+            evaluations = round_config.get("evaluations", [])
+            if evaluations:
+                # Use dynamic evaluation system
+                round_data = {
+                    "initial_prompt": task.description,
+                    "moves": [
+                        {
+                            "action": move.action,
+                            "position": move.position,
+                            "response_time": getattr(move, 'response_time', 0)
+                        } 
+                        for move in transcript.moves
+                    ],
+                    "result": "won" if won else "lost",
+                    "total_moves": len(transcript.moves),
+                    "duration": getattr(transcript, 'duration', 0),
+                    "final_state": {
+                        "status": stats.status.value,
+                        "board_coverage": getattr(stats, 'board_coverage', 0.0),
+                        "mines_flagged": getattr(stats, 'mines_correctly_flagged', 0)
+                    }
+                }
                 
-                # Bonus for efficiency (fewer moves)
-                if len(transcript.moves) < 50:
-                    score += 20.0
-                elif len(transcript.moves) < 100:
-                    score += 10.0
+                # Evaluate the round
+                eval_results = await realtime_evaluator.evaluate_round(
+                    session_id=f"{self.session_id}_r{self.current_round}",
+                    player_id=player_id,
+                    round_data=round_data
+                )
                 
-                # Bonus for coverage (for Minesweeper)
-                if hasattr(stats, 'board_coverage'):
-                    score += stats.board_coverage * 50.0
+                score = eval_results.get("total_score", 0.0) * 100  # Scale to 0-100
+                
             else:
-                # Partial score based on progress
-                if hasattr(stats, 'board_coverage'):
-                    score += stats.board_coverage * 30.0
+                # Basic scoring if no evaluations configured
+                score = 0.0
+                if won:
+                    score += 100.0  # Base score for winning
+                    
+                    # Bonus for efficiency (fewer moves)
+                    if len(transcript.moves) < 50:
+                        score += 20.0
+                    elif len(transcript.moves) < 100:
+                        score += 10.0
+                    
+                    # Bonus for coverage (for Minesweeper)
+                    if hasattr(stats, 'board_coverage'):
+                        score += stats.board_coverage * 50.0
+                else:
+                    # Partial score based on progress
+                    if hasattr(stats, 'board_coverage'):
+                        score += stats.board_coverage * 30.0
             
             return {
                 "player_id": player_id,

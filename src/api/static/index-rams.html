@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/static/rams-design.css" />
     <link rel="stylesheet" href="/static/event-stream.css" />
     <link rel="stylesheet" href="/static/tilts.css" />
+    <link rel="stylesheet" href="/static/evaluation-selector.css" />
   </head>
   <body>
     <div class="layout">
@@ -50,7 +51,7 @@
         
         <div class="mt-4">
           <h4 class="text-sm text-muted">Quick Actions</h4>
-          <button class="button button-small" onclick="showCreateSession()">Create Session</button>
+          <a href="/host" class="button button-small">Create Session</a>
           <button class="button button-small" onclick="showJoinSession()">Join Session</button>
         </div>
 
@@ -93,7 +94,7 @@
               develop and test your own AI strategies.
             </p>
             <div class="button-group mt-4">
-              <button class="button button-primary" onclick="showCreateSession()">Host a Competition</button>
+              <a href="/host" class="button button-primary">Host a Competition</a>
               <button class="button" onclick="showJoinSession()">Join with Code</button>
               <button class="button" onclick="navigateTo('benchmark')">Benchmark AI</button>
             </div>
@@ -135,6 +136,18 @@
                   <label>Max Players</label>
                   <input type="number" name="max-players" id="max-players" value="20" min="2" max="100">
                 </div>
+                
+                <!-- Evaluation Selection -->
+                <div class="form-group">
+                  <label>Evaluation Settings</label>
+                  <button type="button" class="button button-secondary" onclick="showEvaluationSelector()">
+                    Configure Evaluations
+                  </button>
+                  <div id="selected-evaluations-summary" class="text-sm text-muted mt-2">
+                    No evaluations selected (using default scoring)
+                  </div>
+                </div>
+                
                 <button type="submit" class="button button-primary">Create Session</button>
               </form>
             </div>
@@ -530,6 +543,12 @@ played by this model">Games</span>
             <!-- Players will be added here -->
           </div>
           
+          <!-- Evaluation Scores Display -->
+          <div id="lobby-evaluations" class="lobby-evaluations" style="display: none;">
+            <h4>Live Evaluation Scores</h4>
+            <div id="evaluation-viz-container"></div>
+          </div>
+          
           <!-- Host Controls -->
           <div class="lobby-controls">
             <div id="host-message" style="display: none;" class="host-info">
@@ -542,9 +561,28 @@ played by this model">Games</span>
       </div>
     </div>
 
+    <!-- Evaluation Selector Modal -->
+    <div id="evaluation-selector-modal" class="modal-overlay">
+      <div class="modal-content modal-large">
+        <div class="modal-header">
+          <h2>Configure Competition Evaluations</h2>
+          <button class="modal-close" onclick="hideEvaluationSelector()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div id="evaluation-selector-container"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="button button-secondary" onclick="hideEvaluationSelector()">Cancel</button>
+          <button class="button button-primary" onclick="saveEvaluationSelection()">Save Selection</button>
+        </div>
+      </div>
+    </div>
+    
     <script src="/static/event-stream.js"></script>
     <script src="/static/tilts-viz.js"></script>
     <script src="/static/competition.js"></script>
+    <script src="/static/evaluation-selector.js"></script>
+    <script src="/static/evaluation-viz.js"></script>
     <script src="/static/app-rams.js"></script>
   </body>
 </html>

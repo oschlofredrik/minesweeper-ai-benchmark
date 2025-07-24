@@ -205,6 +205,19 @@ async def publish_game_completed(job_id: str, game_num: int, won: bool, moves: i
     })
 
 
+async def publish_evaluation_update(evaluation_data: Dict[str, Any]):
+    """Publish evaluation score update."""
+    session_id = evaluation_data.get("session_id", "global")
+    await publish_event(session_id, EventType.METRICS_UPDATE, {
+        "type": "evaluation_update",
+        "player_id": evaluation_data.get("player_id"),
+        "timestamp": evaluation_data.get("timestamp"),
+        "scores": evaluation_data.get("scores", {}),
+        "breakdown": evaluation_data.get("breakdown", []),
+        "current_total": evaluation_data.get("current_total", 0)
+    })
+
+
 async def publish_metrics_update(job_id: str, games_completed: int, games_total: int, 
                                win_rate: float, avg_moves: float):
     """Publish metrics update event."""

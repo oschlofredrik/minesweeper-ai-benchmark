@@ -8,6 +8,7 @@ class CompetitionManager {
         this.eventSource = null;
         this.isHost = false;
         this.playerId = null;
+        this.evaluationViz = null;
     }
     
     /**
@@ -61,6 +62,12 @@ class CompetitionManager {
                 this.handleCompetitionCompleted(event.data);
                 break;
                 
+            case 'metrics_update':
+                if (event.data.type === 'evaluation_update') {
+                    this.handleEvaluationUpdate(event.data);
+                }
+                break;
+                
             case 'error':
                 this.handleError(event.data);
                 break;
@@ -103,6 +110,11 @@ class CompetitionManager {
                         <strong>Difficulty:</strong> ${data.difficulty}
                     </div>
                 `;
+                
+                // Update evaluation viz round
+                if (this.evaluationViz) {
+                    this.evaluationViz.updateRound(data.round);
+                }
                 break;
                 
             case 'player_game_started':
@@ -182,6 +194,31 @@ class CompetitionManager {
                     Error: ${data.message}
                 </div>
             `;
+        }
+    }
+    
+    /**
+     * Handle evaluation updates
+     */
+    handleEvaluationUpdate(data) {
+        // Initialize evaluation viz if needed
+        if (!this.evaluationViz) {
+            const container = document.getElementById('evaluation-viz-container');
+            if (container) {
+                this.evaluationViz = new EvaluationViz('evaluation-viz-container');
+                this.evaluationViz.setCompetitionMode(true);
+                
+                // Show evaluation section
+                const evalSection = document.getElementById('lobby-evaluations');
+                if (evalSection) {
+                    evalSection.style.display = 'block';
+                }
+            }
+        }
+        
+        // Forward update to visualization
+        if (this.evaluationViz) {
+            this.evaluationViz.handleEvaluationUpdate(data);
         }
     }
     
