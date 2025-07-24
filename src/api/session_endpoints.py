@@ -450,6 +450,27 @@ async def websocket_endpoint(
         pass
 
 
+@router.get("/check-join-code/{join_code}")
+async def check_join_code(
+    join_code: str,
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """Check if a join code is valid."""
+    db_session = db.query(DBSession).filter_by(join_code=join_code.upper()).first()
+    
+    if not db_session:
+        raise HTTPException(status_code=404, detail="Invalid join code")
+    
+    return {
+        "valid": True,
+        "session_id": db_session.session_id,
+        "session_name": db_session.name,
+        "status": db_session.status,
+        "player_count": len(db_session.players) if hasattr(db_session, 'players') else 0,
+        "max_players": db_session.max_players
+    }
+
+
 @router.get("/templates/quick-match")
 async def get_quick_match_templates() -> List[Dict[str, Any]]:
     """Get quick match session templates."""

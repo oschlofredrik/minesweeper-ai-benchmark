@@ -22,6 +22,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize event stream UI
     eventStreamUI = new EventStreamUI('event-stream-ui');
+    
+    // Check for join code in URL
+    handleJoinFromURL();
 });
 
 // Navigation
@@ -725,4 +728,27 @@ document.addEventListener('DOMContentLoaded', () => {
 function formatTime(timestamp) {
     if (!timestamp) return 'Now';
     return new Date(timestamp).toLocaleTimeString();
+}
+
+// Handle join from URL
+function handleJoinFromURL() {
+    const path = window.location.pathname;
+    const joinMatch = path.match(/^\/join\/([A-Z0-9]+)$/i);
+    
+    if (joinMatch) {
+        const joinCode = joinMatch[1].toUpperCase();
+        
+        // Show join modal with pre-filled code
+        document.getElementById('quick-join-code').value = joinCode;
+        document.getElementById('join-session-modal').classList.add('active');
+        
+        // Auto-submit after a brief delay to show the code
+        setTimeout(() => {
+            const form = document.getElementById('quick-join-form');
+            form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        }, 500);
+        
+        // Update URL to remove join code
+        window.history.replaceState({}, document.title, '/');
+    }
 }

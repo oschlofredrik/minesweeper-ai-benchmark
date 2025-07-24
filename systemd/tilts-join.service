@@ -1,0 +1,20 @@
+[Unit]
+Description=Tilts Join Service
+After=network.target
+
+[Service]
+Type=simple
+User=tilts
+WorkingDirectory=/home/tilts/minesweeper-benchmark
+Environment="PATH=/home/tilts/minesweeper-benchmark/venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONPATH=/home/tilts/minesweeper-benchmark"
+ExecStart=/home/tilts/minesweeper-benchmark/venv/bin/python -m uvicorn src.api.join_service:app --host 0.0.0.0 --port 8001
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

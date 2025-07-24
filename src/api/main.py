@@ -48,7 +48,15 @@ app = FastAPI(
 # Configure CORS for API access
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
+    allow_origins=[
+        "https://join.tilts.com",
+        "https://tilts.com",
+        "https://www.tilts.com",
+        "http://localhost:8001",
+        "http://localhost:8000",
+        "http://localhost:3000",
+        "*"  # Keep for development, remove in production
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -204,6 +212,16 @@ async def root(current_user: str = get_current_user()):
             </body>
         </html>
         """
+
+
+@app.get("/join/{pin}", response_class=HTMLResponse)
+async def join_with_pin(pin: str):
+    """Handle join URLs by serving the main app."""
+    index_file = static_dir / "index-rams.html"
+    if index_file.exists():
+        return FileResponse(index_file)
+    else:
+        return RedirectResponse(url="/")
 
 
 @app.get("/summary/{job_id}", response_class=HTMLResponse)

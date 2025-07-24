@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # Main Tilts platform
+  tilts-main:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=${DATABASE_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    command: python -m uvicorn src.api.main:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+    networks:
+      - tilts-network
+
+  # Join service
+  tilts-join:
+    build: .
+    ports:
+      - "8001:8001"
+    environment:
+      - PYTHONPATH=/app
+      - MAIN_API_URL=http://tilts-main:8000
+      - ENV=production
+    command: python -m uvicorn src.api.join_service:app --host 0.0.0.0 --port 8001
+    restart: unless-stopped
+    depends_on:
+      - tilts-main
+    networks:
+      - tilts-network
+
+  # Nginx reverse proxy (optional, for local testing)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/tilts-join.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx/ssl:/etc/letsencrypt
+    depends_on:
+      - tilts-main
+      - tilts-join
+    networks:
+      - tilts-network
+
+networks:
+  tilts-network:
+    driver: bridge
