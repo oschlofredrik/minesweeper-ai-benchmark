@@ -14,6 +14,7 @@ from src.core.config import settings
 from src.core.logging_config import setup_logging
 from src.core.database import init_db
 from src.core.storage import StorageBackend
+import logging
 from .models import (
     LeaderboardEntry, ModelResult, TaskInfo, 
     EvaluationRequest, ComparisonResult
@@ -252,6 +253,18 @@ async def get_leaderboard(
     limit: int = Query(50, description="Number of entries to return"),
 ):
     """Get current leaderboard rankings."""
+    logger = logging.getLogger("api.leaderboard")
+    logger.info(
+        "Leaderboard viewed",
+        extra={
+            "task_type": task_type,
+            "metric": metric,
+            "limit": limit,
+            "event_type": "user_activity",
+            "activity": "leaderboard_view",
+            "endpoint": "/api/leaderboard"
+        }
+    )
     try:
         data = await get_leaderboard_data(task_type, metric, limit)
         return data
@@ -391,7 +404,4 @@ async def get_available_metrics():
     }
 
 
-@app.get("/health")
-async def health_check():
-    """Health check endpoint."""
-    return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
+# Duplicate health check removed - already defined above

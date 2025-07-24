@@ -168,6 +168,15 @@ model_configs = {
 @router.get("/prompts")
 async def list_prompts():
     """List all prompt templates."""
+    logger.info(
+        "Admin prompts list viewed",
+        extra={
+            "event_type": "admin_activity",
+            "activity": "admin_prompts_list",
+            "endpoint": "/api/admin/prompts"
+        }
+    )
+    
     templates = prompt_manager.list_templates()
     return {
         "prompts": [
@@ -208,6 +217,17 @@ async def get_prompt(prompt_id: str):
 @router.put("/prompts/{prompt_id}")
 async def update_prompt(prompt_id: str, request: PromptUpdateRequest):
     """Update a prompt template."""
+    logger.info(
+        "Admin prompt updated",
+        extra={
+            "prompt_id": prompt_id,
+            "prompt_name": request.name,
+            "event_type": "admin_activity",
+            "activity": "admin_prompt_update",
+            "endpoint": "/api/admin/prompts/{prompt_id}"
+        }
+    )
+    
     template = prompt_manager.get_template(prompt_id)
     if not template:
         raise HTTPException(status_code=404, detail="Prompt template not found")
@@ -322,7 +342,16 @@ async def toggle_feature(key: str, enabled: bool):
     feature_toggles[key].enabled = enabled
     feature_toggles[key].updated_at = datetime.now(timezone.utc)
     
-    logger.info(f"Toggled feature {key} to {enabled}")
+    logger.info(
+        f"Admin feature toggled",
+        extra={
+            "feature_key": key,
+            "enabled": enabled,
+            "event_type": "admin_activity",
+            "activity": "admin_feature_toggle",
+            "endpoint": "/api/admin/features/{key}"
+        }
+    )
     
     return {
         "message": "Feature toggle updated successfully",
@@ -552,6 +581,15 @@ async def update_api_key(provider: str, api_key: str):
 @router.get("/database/stats")
 async def get_database_stats():
     """Get database statistics."""
+    logger.info(
+        "Admin database stats viewed",
+        extra={
+            "event_type": "admin_activity",
+            "activity": "admin_database_stats",
+            "endpoint": "/api/admin/database/stats"
+        }
+    )
+    
     try:
         db = next(get_db())
         

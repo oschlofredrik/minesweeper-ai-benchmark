@@ -187,7 +187,12 @@ async def create_session(request: CreateSessionRequest):
             "session_id": session_id,
             "session_name": request.name,
             "format": request.format,
-            "creator": request.creator_id
+            "creator": request.creator_id,
+            "max_players": request.max_players,
+            "rounds_count": len(request.rounds_config),
+            "event_type": "user_activity",
+            "activity": "competition_created",
+            "endpoint": "/api/sessions/create"
         })
         
         # Create session
@@ -239,7 +244,12 @@ async def join_session(request: JoinSessionRequest):
     logger.info(f"Player joined session", extra={
         "session_id": session_id,
         "player_id": request.player_id,
-        "player_name": request.player_name
+        "player_name": request.player_name,
+        "ai_model": request.ai_model,
+        "join_code": join_code,
+        "event_type": "user_activity",
+        "activity": "competition_joined",
+        "endpoint": "/api/sessions/join"
     })
     
     return {
@@ -304,7 +314,12 @@ async def start_competition(session_id: str, player_id: str, background_tasks: B
     
     logger.info(f"Competition started", extra={
         "session_id": session_id,
-        "num_players": len(session.players)
+        "num_players": len(session.players),
+        "format": session.format,
+        "rounds_count": len(session.rounds_config),
+        "event_type": "user_activity",
+        "activity": "competition_started",
+        "endpoint": "/api/sessions/start"
     })
     
     return {
@@ -331,7 +346,12 @@ async def leave_session(session_id: str, player_id: str):
     if len(session.players) == 0:
         del sessions[session_id]
         del join_codes[session.join_code]
-        logger.info(f"Session deleted (no players)", extra={"session_id": session_id})
+        logger.info(f"Session deleted (no players)", extra={
+            "session_id": session_id,
+            "event_type": "user_activity",
+            "activity": "session_deleted_empty",
+            "endpoint": "/api/sessions/leave"
+        })
     
     return {
         "status": "left",
@@ -342,6 +362,15 @@ async def leave_session(session_id: str, player_id: str):
 @router.get("/templates/quick-match")
 async def get_quick_match_templates():
     """Get quick match templates for easy session creation."""
+    logger.info(
+        "Quick match templates viewed",
+        extra={
+            "event_type": "user_activity",
+            "activity": "quick_match_templates_view",
+            "endpoint": "/api/sessions/templates/quick-match"
+        }
+    )
+    
     # Ensure games are registered
     if not game_registry.list_games():
         register_builtin_games()
@@ -422,4 +451,9 @@ async def cleanup_old_sessions():
             session = sessions[session_id]
             del join_codes[session.join_code]
             del sessions[session_id]
-            logger.info(f"Cleaned up old session", extra={"session_id": session_id})
+            logger.info(f"Cleaned up old session", extra={
+                "session_id": session_id,
+                "age_seconds": age,
+                "event_type": "system_activity",
+                "activity": "session_cleanup"
+            })

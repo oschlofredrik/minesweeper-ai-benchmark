@@ -70,38 +70,6 @@ class EpisodeLogger:
         logger.info(f"Saved episode log: {filepath}")
         return str(filepath)
     
-    def save_batch_results(
-        self,
-        results: Dict[str, Any],
-        run_id: str,
-        model_id: str
-    ) -> str:
-        """
-        Save batch evaluation results.
-        
-        Args:
-            results: Evaluation results dictionary
-            run_id: Unique run identifier
-            model_id: Model identifier
-        
-        Returns:
-            Path to saved results file
-        """
-        # Add metadata
-        results["run_id"] = run_id
-        results["model_id"] = model_id
-        results["timestamp"] = datetime.now(timezone.utc).isoformat()
-        
-        # Save results
-        filename = f"results_{run_id}_{model_id}.json"
-        filepath = self.output_dir.parent / "results" / filename
-        filepath.parent.mkdir(parents=True, exist_ok=True)
-        
-        with open(filepath, 'w') as f:
-            json.dump(results, f, indent=2)
-        
-        logger.info(f"Saved batch results: {filepath}")
-        return str(filepath)
 
 
 class MineBenchFormatter:

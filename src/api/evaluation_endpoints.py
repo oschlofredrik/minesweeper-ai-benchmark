@@ -97,7 +97,10 @@ async def generate_tasks(
             "job_id": job_id,
             "num_tasks": request.num_tasks,
             "difficulty": request.difficulty,
-            "task_type": request.task_type
+            "task_type": request.task_type,
+            "event_type": "user_activity",
+            "activity": "task_generation",
+            "endpoint": "/api/evaluation/generate-tasks"
         }
     )
     

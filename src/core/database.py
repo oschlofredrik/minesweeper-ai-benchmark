@@ -260,22 +260,3 @@ def game_to_dict(game: Game) -> Dict[str, Any]:
     }
 
 
-def evaluation_to_dict(evaluation: Evaluation) -> Dict[str, Any]:
-    """Convert Evaluation model to dictionary."""
-    return {
-        'game_id': evaluation.game_id,
-        'metrics': {
-            'win_rate': evaluation.win_rate,
-            'valid_move_rate': evaluation.valid_move_rate,
-            'mine_identification_precision': evaluation.mine_identification_precision,
-            'mine_identification_recall': evaluation.mine_identification_recall,
-            'board_coverage': evaluation.board_coverage,
-            'efficiency_score': evaluation.efficiency_score,
-            'strategic_score': evaluation.strategic_score,
-            'reasoning_score': evaluation.reasoning_score,
-            'composite_score': evaluation.composite_score
-        },
-        'total_time_seconds': evaluation.total_time_seconds,
-        'reasoning_analysis': evaluation.reasoning_analysis,
-        'created_at': evaluation.created_at.isoformat() if evaluation.created_at else None
-    }

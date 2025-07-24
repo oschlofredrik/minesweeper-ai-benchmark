@@ -106,7 +106,10 @@ async def start_play(
             "game_type": request.game_type,
             "difficulty": request.difficulty,
             "has_api_key": bool(request.api_key),
-            "user": current_user
+            "user": current_user,
+            "event_type": "user_activity",
+            "activity": "play_session_start",
+            "endpoint": "/api/play"
         }
     )
     
@@ -571,10 +574,16 @@ async def run_play_session(
         logger.info(
             f"Play session completed",
             extra={
+                "job_id": job_id,
+                "model_name": model_name,
+                "provider": model_provider,
                 "duration": duration,
                 "games_played": len(generated_tasks),
                 "win_rate": metrics.get("win_rate", 0.0),
-                "metrics": games[job_id].current_metrics
+                "metrics": games[job_id].current_metrics,
+                "event_type": "user_activity",
+                "activity": "play_session_complete",
+                "endpoint": "/api/play"
             }
         )
         
@@ -587,9 +596,15 @@ async def run_play_session(
         logger.error(
             f"Play session failed",
             extra={
+                "job_id": job_id,
+                "model_name": model_name,
+                "provider": model_provider,
                 "duration": duration,
                 "error_type": type(e).__name__,
-                "error_details": traceback.format_exc()
+                "error_details": traceback.format_exc(),
+                "event_type": "user_activity",
+                "activity": "play_session_failed",
+                "endpoint": "/api/play"
             },
             exc_info=True
         )

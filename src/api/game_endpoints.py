@@ -31,6 +31,17 @@ async def list_games(
     db: Session = Depends(get_db)
 ) -> GameListResponse:
     """List all available games."""
+    logger.info(
+        "Games list viewed",
+        extra={
+            "mode_filter": mode,
+            "active_only": active_only,
+            "event_type": "user_activity",
+            "activity": "games_list_view",
+            "endpoint": "/api/games"
+        }
+    )
+    
     try:
         # Get games from registry
         games = game_registry.list_games()
@@ -116,6 +127,21 @@ async def play_game(
     db: Session = Depends(get_db)
 ) -> GamePlayResponse:
     """Start a new game instance."""
+    logger.info(
+        "Game play started",
+        extra={
+            "game_name": game_name,
+            "player_id": request.player_id,
+            "ai_model": request.ai_model,
+            "difficulty": request.difficulty,
+            "mode": request.mode,
+            "session_id": request.session_id,
+            "event_type": "user_activity",
+            "activity": "game_play_start",
+            "endpoint": "/api/games/{game_name}/play"
+        }
+    )
+    
     # Verify game exists
     game = game_registry.get_game(game_name)
     if not game:
@@ -168,6 +194,19 @@ async def get_game_leaderboard(
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """Get leaderboard for a specific game."""
+    logger.info(
+        "Game leaderboard viewed",
+        extra={
+            "game_name": game_name,
+            "scoring_profile": scoring_profile,
+            "limit": limit,
+            "offset": offset,
+            "event_type": "user_activity",
+            "activity": "game_leaderboard_view",
+            "endpoint": "/api/games/{game_name}/leaderboard"
+        }
+    )
+    
     # Verify game exists
     if not game_registry.get_game(game_name):
         raise HTTPException(status_code=404, detail=f"Game '{game_name}' not found")
@@ -218,6 +257,18 @@ async def get_game_templates(
 ) -> List[Dict[str, Any]]:
     """Get prompt templates for a specific game."""
     from src.prompts.template_system import PromptAssistant, TemplateLevel, TemplateCategory
+    
+    logger.info(
+        "Game templates viewed",
+        extra={
+            "game_name": game_name,
+            "level": level,
+            "category": category,
+            "event_type": "user_activity",
+            "activity": "game_templates_view",
+            "endpoint": "/api/games/{game_name}/templates"
+        }
+    )
     
     # Verify game exists
     if not game_registry.get_game(game_name):

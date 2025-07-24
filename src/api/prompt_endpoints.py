@@ -35,6 +35,21 @@ async def save_prompt(
 ) -> Dict[str, Any]:
     """Save a new prompt to the library."""
     try:
+        logger.info(
+            "Prompt saved",
+            extra={
+                "owner_id": owner_id,
+                "game_name": game_name,
+                "visibility": visibility,
+                "has_template": bool(template_id),
+                "has_parent": bool(parent_id),
+                "tags_count": len(tags) if tags else 0,
+                "event_type": "user_activity",
+                "activity": "prompt_saved",
+                "endpoint": "/api/prompts/save"
+            }
+        )
+        
         # Save to in-memory library
         prompt_id = prompt_library.save_prompt(
             owner_id=owner_id,
@@ -88,6 +103,22 @@ async def search_prompts(
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """Search prompts with filters."""
+    logger.info(
+        "Prompt search",
+        extra={
+            "user_id": user_id,
+            "game_name": game_name,
+            "has_tags": bool(tags),
+            "template_id": template_id,
+            "owner_id": owner_id,
+            "sort_by": sort_by,
+            "limit": limit,
+            "event_type": "user_activity",
+            "activity": "prompt_search",
+            "endpoint": "/api/prompts/search"
+        }
+    )
+    
     # Build query
     query = db.query(DBPromptLibrary)
     
@@ -172,6 +203,17 @@ async def get_prompt_details(
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """Get detailed information about a prompt."""
+    logger.info(
+        "Prompt details viewed",
+        extra={
+            "prompt_id": prompt_id,
+            "user_id": user_id,
+            "event_type": "user_activity",
+            "activity": "prompt_view",
+            "endpoint": "/api/prompts/{prompt_id}"
+        }
+    )
+    
     prompt = db.query(DBPromptLibrary).filter_by(prompt_id=prompt_id).first()
     
     if not prompt:
@@ -212,6 +254,17 @@ async def fork_prompt(
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """Fork someone else's prompt."""
+    logger.info(
+        "Prompt forked",
+        extra={
+            "original_prompt_id": prompt_id,
+            "forking_user_id": user_id,
+            "event_type": "user_activity",
+            "activity": "prompt_fork",
+            "endpoint": "/api/prompts/{prompt_id}/fork"
+        }
+    )
+    
     # Get original prompt
     original = db.query(DBPromptLibrary).filter_by(prompt_id=prompt_id).first()
     if not original:
@@ -269,6 +322,17 @@ async def like_prompt(
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """Like a prompt."""
+    logger.info(
+        "Prompt liked",
+        extra={
+            "prompt_id": prompt_id,
+            "user_id": user_id,
+            "event_type": "user_activity",
+            "activity": "prompt_like",
+            "endpoint": "/api/prompts/{prompt_id}/like"
+        }
+    )
+    
     prompt = db.query(DBPromptLibrary).filter_by(prompt_id=prompt_id).first()
     if not prompt:
         raise HTTPException(status_code=404, detail="Prompt not found")
@@ -292,6 +356,19 @@ async def record_prompt_usage(
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """Record usage of a prompt."""
+    logger.info(
+        "Prompt usage recorded",
+        extra={
+            "prompt_id": prompt_id,
+            "score": score,
+            "won": won,
+            "has_game_details": bool(game_details),
+            "event_type": "user_activity",
+            "activity": "prompt_usage",
+            "endpoint": "/api/prompts/{prompt_id}/record-usage"
+        }
+    )
+    
     prompt = db.query(DBPromptLibrary).filter_by(prompt_id=prompt_id).first()
     if not prompt:
         raise HTTPException(status_code=404, detail="Prompt not found")
@@ -335,6 +412,18 @@ async def get_prompt_recommendations(
     db: Session = Depends(get_db)
 ) -> List[Dict[str, Any]]:
     """Get prompt recommendations for a user and game."""
+    logger.info(
+        "Prompt recommendations requested",
+        extra={
+            "game_name": game_name,
+            "user_id": user_id,
+            "limit": limit,
+            "event_type": "user_activity",
+            "activity": "prompt_recommendations",
+            "endpoint": "/api/prompts/recommendations/{game_name}"
+        }
+    )
+    
     # Get user's prompt history
     user_prompts = db.query(DBPromptLibrary).filter_by(
         owner_id=user_id,
@@ -406,6 +495,17 @@ async def analyze_prompt_quality(
     game_name: str = Query(...)
 ) -> Dict[str, Any]:
     """Analyze the quality of a prompt."""
+    logger.info(
+        "Prompt quality analysis requested",
+        extra={
+            "game_name": game_name,
+            "prompt_length": len(prompt),
+            "event_type": "user_activity",
+            "activity": "prompt_analysis",
+            "endpoint": "/api/prompts/templates/analyze"
+        }
+    )
+    
     analysis = prompt_assistant.analyze_prompt_quality(prompt, game_name)
     
     return {
@@ -423,6 +523,18 @@ async def get_prompt_suggestions(
     cursor_position: int = Query(...)
 ) -> List[Dict[str, Any]]:
     """Get auto-completion suggestions for a partial prompt."""
+    logger.info(
+        "Prompt suggestions requested",
+        extra={
+            "game_name": game_name,
+            "prompt_length": len(partial_prompt),
+            "cursor_position": cursor_position,
+            "event_type": "user_activity",
+            "activity": "prompt_suggestions",
+            "endpoint": "/api/prompts/templates/suggestions"
+        }
+    )
+    
     game_context = {"game_name": game_name}
     
     suggestions = prompt_assistant.suggest_completion(

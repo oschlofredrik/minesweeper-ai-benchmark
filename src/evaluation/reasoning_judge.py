@@ -235,41 +235,6 @@ Focus on the logical validity of the reasoning, not just whether the action is c
         
         return judgments
     
-    async def judge_batch(
-        self,
-        items: List[Dict[str, Any]],
-        max_concurrent: int = 5
-    ) -> List[ReasoningJudgment]:
-        """
-        Judge multiple items concurrently.
-        
-        Args:
-            items: List of items to judge, each with required fields
-            max_concurrent: Maximum concurrent judge calls
-        
-        Returns:
-            List of judgments
-        """
-        semaphore = asyncio.Semaphore(max_concurrent)
-        
-        async def judge_with_semaphore(item):
-            async with semaphore:
-                return await self.judge_reasoning(
-                    task_uid=item["task_uid"],
-                    board_state=item["board_state"],
-                    action=item["action"],
-                    reasoning=item["reasoning"],
-                    task_type=item.get("task_type", "interactive"),
-                    correct_action=item.get("correct_action")
-                )
-        
-        # Create tasks
-        tasks = [judge_with_semaphore(item) for item in items]
-        
-        # Run concurrently
-        judgments = await asyncio.gather(*tasks)
-        
-        return judgments
     
     def calculate_aggregate_score(
         self,
@@ -319,64 +284,5 @@ Focus on the logical validity of the reasoning, not just whether the action is c
         else:
             raise ValueError(f"Unknown weighting method: {weighting}")
     
-    def generate_feedback_summary(
-        self,
-        judgments: List[ReasoningJudgment]
-    ) -> Dict[str, Any]:
-        """
-        Generate summary of reasoning feedback.
-        
-        Args:
-            judgments: List of judgments
-        
-        Returns:
-            Summary dictionary
-        """
-        if not judgments:
-            return {
-                "total_judged": 0,
-                "average_score": 0.0,
-                "score_distribution": {0: 0, 1: 0, 2: 0},
-                "common_issues": []
-            }
-        
-        # Score distribution
-        score_dist = {0: 0, 1: 0, 2: 0}
-        for j in judgments:
-            score_dist[j.raw_score] += 1
-        
-        # Common issues (simplified - could use NLP for better analysis)
-        issues = []
-        for j in judgments:
-            if j.raw_score < 2:
-                issues.append(j.feedback)
-        
-        return {
-            "total_judged": len(judgments),
-            "average_score": self.calculate_aggregate_score(judgments),
-            "score_distribution": score_dist,
-            "confidence_distribution": {
-                "high": sum(1 for j in judgments if j.confidence == "high"),
-                "medium": sum(1 for j in judgments if j.confidence == "medium"),
-                "low": sum(1 for j in judgments if j.confidence == "low")
-            },
-            "common_issues": issues[:5]  # Top 5 issues
-        }
 
 
-# Convenience function
-async def judge_game_reasoning(
-    transcript: Any,
-    judge_model: str = "gpt-4o"
-) -> Tuple[float, List[ReasoningJudgment]]:
-    """
-    Judge reasoning for a complete game.
-    
-    Returns:
-        Tuple of (aggregate_score, individual_judgments)
-    """
-    judge = ReasoningJudge(judge_model=judge_model)
-    judgments = await judge.judge_transcript(transcript)
-    score = judge.calculate_aggregate_score(judgments)
-    
-    return score, judgments
