@@ -5,6 +5,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
+import os
 
 app = FastAPI(
     title="Tilts Join",
@@ -26,10 +27,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files
+# Mount static files if directory exists
 static_dir = Path(__file__).parent / "static" / "join"
-static_dir.mkdir(exist_ok=True, parents=True)
-app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -42,7 +43,7 @@ async def root():
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Join - Tilts</title>
-    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23111'/%3E%3Ctext x='50' y='50' text-anchor='middle' dy='.35em' fill='white' font-family='system-ui' font-size='40' font-weight='bold'%3ET%3C/text%3E%3C/svg%3E">
     <style>
         * {
             margin: 0;
@@ -274,9 +275,16 @@ async def root():
                 
                 if (response.ok && data.valid) {
                     // Redirect to main platform with join code
-                    const mainUrl = window.location.hostname === 'localhost' 
-                        ? 'http://localhost:8000' 
-                        : 'https://tilts.com';
+                    let mainUrl = 'https://tilts.com';
+                    
+                    // Handle different environments
+                    if (window.location.hostname === 'localhost') {
+                        mainUrl = 'http://localhost:8000';
+                    } else if (window.location.hostname.includes('onrender.com')) {
+                        // If we're on Render, use the main platform URL from backend
+                        mainUrl = 'https://minesweeper-ai-benchmark.onrender.com';
+                    }
+                    
                     window.location.href = `${mainUrl}/join/${pin}`;
                 } else {
                     throw new Error(data.message || 'Invalid game PIN');
@@ -349,10 +357,25 @@ async def check_pin(pin: str):
 @app.get("/api/join/{pin}")
 async def join_redirect(pin: str):
     """Redirect to main platform with PIN"""
-    return RedirectResponse(url=f"https://tilts.com/join/{pin}")
+    main_url = os.getenv("MAIN_API_URL", "https://tilts.com")
+    # Remove /api suffix if present
+    if main_url.endswith("/api"):
+        main_url = main_url[:-4]
+    return RedirectResponse(url=f"{main_url}/join/{pin}")
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Render."""
+    return {
+        "status": "healthy",
+        "service": "tilts-join",
+        "port": os.getenv("PORT", "8001")
+    }
 
 
 if __name__ == "__main__":
     import uvicorn
-    # Run on different port than main app
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    # Run on port from environment or default to 8001
+    port = int(os.getenv("PORT", "8001"))
+    uvicorn.run(app, host="0.0.0.0", port=port)

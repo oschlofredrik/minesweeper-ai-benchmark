@@ -1,0 +1,35 @@
+name: Deploy Join Service
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/api/join_service.py'
+      - 'render-join.yaml'
+      - 'requirements-render.txt'
+      - '.github/workflows/deploy-join.yml'
+  workflow_dispatch:
+
+jobs:
+  notify-render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render Deploy
+        run: |
+          echo "Render auto-deploys from GitHub pushes"
+          echo "Join service will update automatically"
+      
+      - name: Health Check After Deploy
+        run: |
+          echo "Waiting for deployment..."
+          sleep 60
+          
+          # Check if service is healthy
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://tilts-join.onrender.com/health || echo "000")
+          
+          if [ "$response" = "200" ]; then
+            echo "✅ Join service is healthy!"
+          else
+            echo "⚠️ Join service returned status: $response"
+            echo "Check Render dashboard for deployment status"
+          fi
