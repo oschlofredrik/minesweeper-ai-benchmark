@@ -11,7 +11,16 @@ from src.tasks.generator import TaskGenerator
 from src.evaluation.streaming_runner import StreamingGameRunner
 from src.models import create_model
 from src.core.types import ModelConfig
-from src.api.event_streaming import publish_event, EventType
+try:
+    from src.api.event_streaming import publish_event, EventType
+except ImportError:
+    # Fallback for when event streaming is not available
+    async def publish_event(session_id: str, event_type: str, data: Dict[str, Any]):
+        logger.warning(f"Event streaming not available: {event_type} for session {session_id}")
+    
+    class EventType:
+        STATUS_UPDATE = "status_update"
+        ERROR = "error"
 
 logger = get_logger("api.competition")
 
