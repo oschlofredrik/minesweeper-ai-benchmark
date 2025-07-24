@@ -12,6 +12,7 @@ from pydantic import BaseModel
 
 from src.core.logging_config import get_logger
 from src.games.registry import game_registry, register_builtin_games
+from .competition_runner import run_competition
 
 # Initialize logger
 logger = get_logger("api.sessions")
@@ -276,8 +277,8 @@ async def start_competition(session_id: str, player_id: str, background_tasks: B
     session.status = "in_progress"
     session.started_at = datetime.utcnow()
     
-    # TODO: Start the actual competition in background
-    # background_tasks.add_task(run_competition, session_id)
+    # Start the actual competition in background
+    background_tasks.add_task(run_competition, session_id, session.to_dict())
     
     logger.info(f"Competition started", extra={
         "session_id": session_id,
@@ -362,6 +363,23 @@ async def get_active_sessions(limit: int = 10):
     active_sessions.sort(key=lambda x: x["created_at"], reverse=True)
     
     return active_sessions[:limit]
+
+
+@router.get("/{session_id}/status")
+async def get_competition_status(session_id: str):
+    """Get the current competition status."""
+    session = sessions.get(session_id)
+    
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    return {
+        "session_id": session_id,
+        "status": session.status,
+        "started_at": session.started_at.isoformat() if session.started_at else None,
+        "completed_at": session.completed_at.isoformat() if session.completed_at else None,
+        "players": [p.name for p in session.players]
+    }
 
 
 # Background task to clean up old sessions
