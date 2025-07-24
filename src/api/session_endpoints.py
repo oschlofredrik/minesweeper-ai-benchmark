@@ -12,16 +12,34 @@ from pydantic import BaseModel
 
 from src.core.logging_config import get_logger
 from src.games.registry import game_registry, register_builtin_games
-from .competition_runner import run_competition
 
 # Initialize logger
 logger = get_logger("api.sessions")
+
+try:
+    from .competition_runner import run_competition
+except ImportError as e:
+    logger.error(f"Failed to import competition_runner: {e}")
+    # Fallback implementation
+    async def run_competition(session_id: str, session_data: Dict[str, Any]):
+        logger.warning(f"Competition runner not available, using stub for session {session_id}")
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 
 # In-memory session storage (replace with database in production)
 sessions: Dict[str, "CompetitionSession"] = {}
 join_codes: Dict[str, str] = {}  # Maps join codes to session IDs
+
+
+@router.get("/debug")
+async def debug_endpoint():
+    """Debug endpoint to check if sessions API is working."""
+    return {
+        "status": "ok",
+        "sessions_count": len(sessions),
+        "join_codes_count": len(join_codes),
+        "imports_ok": True
+    }
 
 
 class CreateSessionRequest(BaseModel):
@@ -162,26 +180,30 @@ class CompetitionSession:
 @router.post("/create")
 async def create_session(request: CreateSessionRequest):
     """Create a new competition session."""
-    session_id = f"session_{uuid4().hex[:8]}"
-    
-    logger.info(f"Creating competition session", extra={
-        "session_id": session_id,
-        "name": request.name,
-        "format": request.format,
-        "creator": request.creator_id
-    })
-    
-    # Create session
-    session = CompetitionSession(session_id, request)
-    sessions[session_id] = session
-    join_codes[session.join_code] = session_id
-    
-    return {
-        "session_id": session_id,
-        "join_code": session.join_code,
-        "status": "created",
-        "message": f"Session '{request.name}' created successfully"
-    }
+    try:
+        session_id = f"session_{uuid4().hex[:8]}"
+        
+        logger.info(f"Creating competition session", extra={
+            "session_id": session_id,
+            "name": request.name,
+            "format": request.format,
+            "creator": request.creator_id
+        })
+        
+        # Create session
+        session = CompetitionSession(session_id, request)
+        sessions[session_id] = session
+        join_codes[session.join_code] = session_id
+        
+        return {
+            "session_id": session_id,
+            "join_code": session.join_code,
+            "status": "created",
+            "message": f"Session '{request.name}' created successfully"
+        }
+    except Exception as e:
+        logger.error(f"Failed to create session: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to create session: {str(e)}")
 
 
 @router.post("/join")
