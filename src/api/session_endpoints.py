@@ -1,520 +1,385 @@
-"""Competition session API endpoints."""
+"""API endpoints for competition sessions."""
 
-from fastapi import APIRouter, HTTPException, Depends, Query, WebSocket, WebSocketDisconnect
-from fastapi.responses import JSONResponse
-from typing import List, Optional, Dict, Any
-from datetime import datetime
 import asyncio
-import json
+from datetime import datetime
+from typing import Dict, List, Optional, Any
+from uuid import uuid4
+import random
+import string
 
-from src.competition.session import (
-    CompetitionSession, SessionConfig, SessionBuilder,
-    CompetitionFormat, RoundConfig
-)
-from src.competition.lobby import CompetitionLobby, PracticeMode
-from src.competition.async_flow import AsyncGameFlowManager, FlowMode
-from src.competition.showcase import RoundShowcase
-from src.competition.realtime_queue import RealTimeEvaluationQueue, QueuePriority
-from src.competition.spectator_mode import SpectatorMode, SpectatorPermission
-from src.games.registry import game_registry
-from src.games.base import GameConfig, GameMode
-from src.scoring.framework import StandardScoringProfiles, ScoringProfile, ScoringWeight
-from src.core.database import get_db
-from src.core.database_models import CompetitionSession as DBSession, SessionPlayer, SessionRound
-from sqlalchemy.orm import Session
-import logging
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
+from pydantic import BaseModel
 
-logger = logging.getLogger(__name__)
+from src.core.logging_config import get_logger
+from src.games.registry import game_registry, register_builtin_games
+
+# Initialize logger
+logger = get_logger("api.sessions")
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 
-# In-memory storage for active sessions (in production, use Redis)
-active_lobbies: Dict[str, CompetitionLobby] = {}
-active_flows: Dict[str, AsyncGameFlowManager] = {}
-active_showcases: Dict[str, RoundShowcase] = {}
-evaluation_queue: Optional[RealTimeEvaluationQueue] = None
+# In-memory session storage (replace with database in production)
+sessions: Dict[str, "CompetitionSession"] = {}
+join_codes: Dict[str, str] = {}  # Maps join codes to session IDs
 
-def get_evaluation_queue():
-    """Get or create the evaluation queue."""
-    global evaluation_queue
-    if evaluation_queue is None:
-        evaluation_queue = RealTimeEvaluationQueue(max_workers=5)
-    return evaluation_queue
+
+class CreateSessionRequest(BaseModel):
+    """Request to create a new competition session."""
+    name: str
+    description: str
+    format: str  # single_round, best_of_three, tournament
+    rounds_config: List[Dict[str, Any]]
+    creator_id: str
+    max_players: int = 20
+    is_public: bool = True
+    flow_mode: str = "asynchronous"
+
+
+class JoinSessionRequest(BaseModel):
+    """Request to join a session."""
+    join_code: str
+    player_id: str
+    player_name: str
+    ai_model: str
+
+
+class Player(BaseModel):
+    """A player in a competition session."""
+    player_id: str
+    name: str
+    ai_model: Optional[str] = None
+    is_ready: bool = False
+    is_host: bool = False
+    joined_at: datetime = None
+    
+    def __init__(self, **data):
+        if 'joined_at' not in data:
+            data['joined_at'] = datetime.utcnow()
+        super().__init__(**data)
+
+
+class CompetitionSession:
+    """A competition session."""
+    
+    def __init__(self, session_id: str, config: CreateSessionRequest):
+        self.session_id = session_id
+        self.name = config.name
+        self.description = config.description
+        self.format = config.format
+        self.rounds_config = config.rounds_config
+        self.creator_id = config.creator_id
+        self.max_players = config.max_players
+        self.is_public = config.is_public
+        self.flow_mode = config.flow_mode
+        
+        # Generate a join code
+        self.join_code = self._generate_join_code()
+        
+        # Session state
+        self.players: List[Player] = []
+        self.status = "waiting"  # waiting, in_progress, completed
+        self.created_at = datetime.utcnow()
+        self.started_at: Optional[datetime] = None
+        self.completed_at: Optional[datetime] = None
+        
+        # Add creator as first player
+        creator = Player(
+            player_id=config.creator_id,
+            name="Host",
+            is_host=True,
+            is_ready=False
+        )
+        self.players.append(creator)
+    
+    def _generate_join_code(self) -> str:
+        """Generate a unique 6-character join code."""
+        while True:
+            code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+            if code not in join_codes:
+                return code
+    
+    def add_player(self, player: Player) -> bool:
+        """Add a player to the session."""
+        if len(self.players) >= self.max_players:
+            return False
+        
+        # Check if player already in session
+        if any(p.player_id == player.player_id for p in self.players):
+            return False
+        
+        self.players.append(player)
+        return True
+    
+    def remove_player(self, player_id: str) -> bool:
+        """Remove a player from the session."""
+        for i, player in enumerate(self.players):
+            if player.player_id == player_id:
+                del self.players[i]
+                return True
+        return False
+    
+    def set_player_ready(self, player_id: str, ready: bool) -> bool:
+        """Set a player's ready status."""
+        for player in self.players:
+            if player.player_id == player_id:
+                player.is_ready = ready
+                return True
+        return False
+    
+    def can_start(self) -> bool:
+        """Check if the session can start."""
+        if len(self.players) < 2:
+            return False
+        return all(p.is_ready for p in self.players)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert session to dictionary."""
+        return {
+            "session_id": self.session_id,
+            "name": self.name,
+            "description": self.description,
+            "format": self.format,
+            "rounds_config": self.rounds_config,
+            "join_code": self.join_code,
+            "players": [
+                {
+                    "player_id": p.player_id,
+                    "name": p.name,
+                    "ai_model": p.ai_model,
+                    "is_ready": p.is_ready,
+                    "is_host": p.is_host
+                }
+                for p in self.players
+            ],
+            "status": self.status,
+            "max_players": self.max_players,
+            "created_at": self.created_at.isoformat(),
+            "started_at": self.started_at.isoformat() if self.started_at else None
+        }
 
 
 @router.post("/create")
-async def create_session(
-    name: str,
-    description: str,
-    format: str,
-    rounds_config: List[Dict[str, Any]],
-    creator_id: str,
-    max_players: int = 50,
-    is_public: bool = True,
-    flow_mode: str = "synchronous",
-    db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+async def create_session(request: CreateSessionRequest):
     """Create a new competition session."""
-    try:
-        # Parse format
-        competition_format = CompetitionFormat(format)
-        
-        # Create rounds
-        rounds = []
-        for i, round_data in enumerate(rounds_config):
-            # Validate game exists
-            if not game_registry.get_game(round_data["game_name"]):
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Game '{round_data['game_name']}' not found"
-                )
-            
-            # Get scoring profile
-            profile_name = round_data.get("scoring_profile", "balanced")
-            scoring_profile = None
-            
-            # Try standard profiles first
-            for profile in StandardScoringProfiles.get_all_profiles():
-                if profile.name.lower().replace(" ", "_") == profile_name:
-                    scoring_profile = profile
-                    break
-            
-            if not scoring_profile:
-                # Default to balanced
-                scoring_profile = StandardScoringProfiles.BALANCED
-            
-            round_config = RoundConfig(
-                round_number=i + 1,
-                game_name=round_data["game_name"],
-                game_config=GameConfig(
-                    difficulty=round_data.get("difficulty", "medium"),
-                    mode=GameMode(round_data.get("mode", "mixed")),
-                    custom_settings=round_data.get("custom_settings", {})
-                ),
-                scoring_profile=scoring_profile,
-                time_limit=round_data.get("time_limit", 300)
-            )
-            rounds.append(round_config)
-        
-        # Create session config
-        session_config = SessionConfig(
-            name=name,
-            description=description,
-            format=competition_format,
-            rounds=rounds,
-            max_players=max_players,
-            is_public=is_public,
-            creator_id=creator_id
-        )
-        
-        # Save to database
-        db_session = DBSession(
-            session_id=session_config.session_id,
-            name=name,
-            description=description,
-            format=format,
-            join_code=session_config.join_code,
-            is_public=is_public,
-            max_players=max_players,
-            creator_id=creator_id,
-            status="waiting",
-            config=session_config.to_dict()
-        )
-        db.add(db_session)
-        
-        # Add rounds to database
-        for round_config in rounds:
-            db_round = SessionRound(
-                round_id=f"{session_config.session_id}_r{round_config.round_number}",
-                session_id=session_config.session_id,
-                round_number=round_config.round_number,
-                game_name=round_config.game_name,
-                game_config={
-                    "difficulty": round_config.game_config.difficulty,
-                    "mode": round_config.game_config.mode.value,
-                    "custom_settings": round_config.game_config.custom_settings
-                },
-                scoring_profile={
-                    "name": round_config.scoring_profile.name,
-                    "weights": [
-                        {"component": w.component_name, "weight": w.weight}
-                        for w in round_config.scoring_profile.weights
-                    ]
-                },
-                time_limit=round_config.time_limit
-            )
-            db.add(db_round)
-        
-        db.commit()
-        
-        # Create lobby
-        lobby = CompetitionLobby(session_config)
-        active_lobbies[session_config.session_id] = lobby
-        
-        # Create flow manager
-        flow_manager = AsyncGameFlowManager(
-            evaluation_engine=None,  # Will be set when needed
-            flow_mode=FlowMode(flow_mode)
-        )
-        active_flows[session_config.session_id] = flow_manager
-        
-        # Create showcase manager
-        showcase = RoundShowcase()
-        active_showcases[session_config.session_id] = showcase
-        
-        return {
-            "session_id": session_config.session_id,
-            "join_code": session_config.join_code,
-            "status": "created",
-            "lobby_url": f"/api/sessions/{session_config.session_id}/lobby"
-        }
-        
-    except Exception as e:
-        logger.error(f"Error creating session: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    session_id = f"session_{uuid4().hex[:8]}"
+    
+    logger.info(f"Creating competition session", extra={
+        "session_id": session_id,
+        "name": request.name,
+        "format": request.format,
+        "creator": request.creator_id
+    })
+    
+    # Create session
+    session = CompetitionSession(session_id, request)
+    sessions[session_id] = session
+    join_codes[session.join_code] = session_id
+    
+    return {
+        "session_id": session_id,
+        "join_code": session.join_code,
+        "status": "created",
+        "message": f"Session '{request.name}' created successfully"
+    }
 
 
 @router.post("/join")
-async def join_session(
-    join_code: str,
-    player_id: str,
-    player_name: str,
-    ai_model: Optional[str] = None,
-    db: Session = Depends(get_db)
-) -> Dict[str, Any]:
-    """Join a competition session using join code."""
+async def join_session(request: JoinSessionRequest):
+    """Join an existing session."""
     # Find session by join code
-    db_session = db.query(DBSession).filter_by(join_code=join_code).first()
-    if not db_session:
+    join_code = request.join_code.upper()
+    
+    if join_code not in join_codes:
         raise HTTPException(status_code=404, detail="Invalid join code")
     
-    # Get lobby
-    lobby = active_lobbies.get(db_session.session_id)
-    if not lobby:
-        raise HTTPException(status_code=404, detail="Session lobby not found")
+    session_id = join_codes[join_code]
+    session = sessions.get(session_id)
     
-    # Add player
-    result = await lobby.add_player(player_id, player_name)
-    if not result["success"]:
-        raise HTTPException(status_code=400, detail=result["error"])
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
     
-    # Save to database
-    db_player = SessionPlayer(
-        session_id=db_session.session_id,
-        player_id=player_id,
-        player_name=player_name,
-        ai_model=ai_model or "gpt-4"
+    if session.status != "waiting":
+        raise HTTPException(status_code=400, detail="Session already started")
+    
+    # Create player
+    player = Player(
+        player_id=request.player_id,
+        name=request.player_name,
+        ai_model=request.ai_model,
+        is_ready=False
     )
-    db.add(db_player)
-    db.commit()
+    
+    # Add to session
+    if not session.add_player(player):
+        raise HTTPException(status_code=400, detail="Session is full or player already joined")
+    
+    logger.info(f"Player joined session", extra={
+        "session_id": session_id,
+        "player_id": request.player_id,
+        "player_name": request.player_name
+    })
     
     return {
-        "success": True,
-        "session_id": db_session.session_id,
-        "session_name": db_session.name,
-        "lobby_info": result["lobby_info"],
-        "practice_activities": result["practice_activities"]
+        "session_id": session_id,
+        "status": "joined",
+        "message": f"Joined session '{session.name}'"
     }
 
 
 @router.get("/{session_id}/lobby")
-async def get_lobby_info(
-    session_id: str,
-    db: Session = Depends(get_db)
-) -> Dict[str, Any]:
-    """Get current lobby information."""
-    lobby = active_lobbies.get(session_id)
-    if not lobby:
-        raise HTTPException(status_code=404, detail="Lobby not found")
+async def get_lobby_status(session_id: str):
+    """Get the current lobby status."""
+    session = sessions.get(session_id)
     
-    return lobby.get_lobby_info()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    return session.to_dict()
 
 
 @router.post("/{session_id}/ready")
-async def set_player_ready(
-    session_id: str,
-    player_id: str,
-    ready: bool = True,
-    db: Session = Depends(get_db)
-) -> Dict[str, Any]:
-    """Set player ready status."""
-    lobby = active_lobbies.get(session_id)
-    if not lobby:
-        raise HTTPException(status_code=404, detail="Lobby not found")
+async def set_ready_status(session_id: str, player_id: str, ready: bool = True):
+    """Set a player's ready status."""
+    session = sessions.get(session_id)
     
-    result = await lobby.set_player_ready(player_id, ready)
-    
-    # Update database
-    db_player = db.query(SessionPlayer).filter_by(
-        session_id=session_id,
-        player_id=player_id
-    ).first()
-    
-    if db_player:
-        db_player.is_ready = ready
-        db.commit()
-    
-    return result
-
-
-@router.post("/{session_id}/practice/{activity_id}")
-async def start_practice_activity(
-    session_id: str,
-    player_id: str,
-    activity_id: str
-) -> Dict[str, Any]:
-    """Start a practice activity in the lobby."""
-    lobby = active_lobbies.get(session_id)
-    if not lobby:
-        raise HTTPException(status_code=404, detail="Lobby not found")
-    
-    return await lobby.start_practice_activity(player_id, activity_id)
-
-
-@router.post("/{session_id}/chat")
-async def send_chat_message(
-    session_id: str,
-    player_id: str,
-    message: str
-) -> Dict[str, Any]:
-    """Send a chat message in the lobby."""
-    lobby = active_lobbies.get(session_id)
-    if not lobby:
-        raise HTTPException(status_code=404, detail="Lobby not found")
-    
-    return await lobby.send_chat_message(player_id, message)
-
-
-@router.post("/{session_id}/submit-prompt")
-async def submit_prompt(
-    session_id: str,
-    player_id: str,
-    round_number: int,
-    prompt: str,
-    game_config: Dict[str, Any]
-) -> Dict[str, Any]:
-    """Submit a prompt for evaluation."""
-    flow_manager = active_flows.get(session_id)
-    if not flow_manager:
+    if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     
-    # Submit to flow manager
-    result = await flow_manager.submit_prompt(
-        player_id, round_number, prompt, game_config
-    )
-    
-    # Also submit to evaluation queue
-    queue_id = await get_evaluation_queue().submit(
-        player_id=player_id,
-        session_id=session_id,
-        round_number=round_number,
-        game_name=game_config["game_name"],
-        prompt=prompt,
-        priority=QueuePriority.NORMAL
-    )
-    
-    result["queue_id"] = queue_id
-    return result
-
-
-@router.get("/{session_id}/round/{round_number}/status")
-async def get_round_status(
-    session_id: str,
-    round_number: int
-) -> Dict[str, Any]:
-    """Get status of a specific round."""
-    flow_manager = active_flows.get(session_id)
-    if not flow_manager:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
-    return flow_manager.get_round_status(round_number)
-
-
-@router.get("/{session_id}/showcase/{round_number}")
-async def get_round_showcase(
-    session_id: str,
-    round_number: int,
-    db: Session = Depends(get_db)
-) -> List[Dict[str, Any]]:
-    """Get showcase content for between rounds."""
-    showcase = active_showcases.get(session_id)
-    if not showcase:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
-    # Get round results (mock for now)
-    round_results = []  # Would get from database
-    
-    # Prepare showcase
-    items = await showcase.prepare_showcase(
-        round_number, round_results, "minesweeper"  # Would get game from round config
-    )
-    
-    return [
-        {
-            "item_id": item.item_id,
-            "type": item.showcase_type.value,
-            "title": item.title,
-            "description": item.description,
-            "duration": item.duration,
-            "content": item.content
-        }
-        for item in items
-    ]
-
-
-@router.post("/{session_id}/spectate")
-async def join_as_spectator(
-    session_id: str,
-    spectator_id: str,
-    name: str,
-    access_token: Optional[str] = None
-) -> Dict[str, Any]:
-    """Join a session as a spectator."""
-    # Get or create spectator mode
-    if session_id not in active_lobbies:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
-    # For now, create spectator mode on demand
-    spectator_mode = SpectatorMode(session_id)
-    
-    result = await spectator_mode.add_spectator(
-        spectator_id, name, access_token
-    )
-    
-    if not result["success"]:
-        raise HTTPException(status_code=403, detail=result["error"])
-    
-    return result
-
-
-@router.get("/queue/status")
-async def get_queue_status() -> Dict[str, Any]:
-    """Get global evaluation queue status."""
-    return get_evaluation_queue().get_queue_status()
-
-
-@router.get("/queue/item/{item_id}")
-async def get_queue_item_status(item_id: str) -> Dict[str, Any]:
-    """Get status of a specific queue item."""
-    status = get_evaluation_queue().get_item_status(item_id)
-    if not status:
-        raise HTTPException(status_code=404, detail="Queue item not found")
-    return status
-
-
-@router.websocket("/ws/{session_id}")
-async def websocket_endpoint(
-    websocket: WebSocket,
-    session_id: str,
-    player_id: str
-):
-    """WebSocket endpoint for real-time updates."""
-    await websocket.accept()
-    
-    # Subscribe to relevant events
-    flow_manager = active_flows.get(session_id)
-    if not flow_manager:
-        await websocket.close(code=4004, reason="Session not found")
-        return
-    
-    # Event handler
-    async def handle_event(event: str, data: Dict[str, Any]):
-        try:
-            await websocket.send_json({
-                "event": event,
-                "data": data,
-                "timestamp": datetime.utcnow().isoformat()
-            })
-        except:
-            pass  # Connection closed
-    
-    # Register handlers
-    flow_manager.register_callback("round_started", lambda d: handle_event("round_started", d))
-    flow_manager.register_callback("prompt_submitted", lambda d: handle_event("prompt_submitted", d))
-    flow_manager.register_callback("evaluation_completed", lambda d: handle_event("evaluation_completed", d))
-    flow_manager.register_callback("round_completed", lambda d: handle_event("round_completed", d))
-    
-    # Also subscribe to queue updates
-    get_evaluation_queue().subscribe("item_queued", lambda e, d: handle_event(e, d))
-    get_evaluation_queue().subscribe("item_processing", lambda e, d: handle_event(e, d))
-    get_evaluation_queue().subscribe("item_completed", lambda e, d: handle_event(e, d))
-    
-    try:
-        # Keep connection alive
-        while True:
-            data = await websocket.receive_text()
-            # Handle incoming messages if needed
-            
-    except WebSocketDisconnect:
-        # Clean up subscriptions
-        pass
-
-
-@router.get("/check-join-code/{join_code}")
-async def check_join_code(
-    join_code: str,
-    db: Session = Depends(get_db)
-) -> Dict[str, Any]:
-    """Check if a join code is valid."""
-    db_session = db.query(DBSession).filter_by(join_code=join_code.upper()).first()
-    
-    if not db_session:
-        raise HTTPException(status_code=404, detail="Invalid join code")
+    if not session.set_player_ready(player_id, ready):
+        raise HTTPException(status_code=404, detail="Player not found in session")
     
     return {
-        "valid": True,
-        "session_id": db_session.session_id,
-        "session_name": db_session.name,
-        "status": db_session.status,
-        "player_count": len(db_session.players) if hasattr(db_session, 'players') else 0,
-        "max_players": db_session.max_players
+        "status": "updated",
+        "ready": ready,
+        "can_start": session.can_start()
+    }
+
+
+@router.post("/{session_id}/start")
+async def start_competition(session_id: str, player_id: str, background_tasks: BackgroundTasks):
+    """Start the competition (host only)."""
+    session = sessions.get(session_id)
+    
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Check if player is host
+    host = next((p for p in session.players if p.is_host), None)
+    if not host or host.player_id != player_id:
+        raise HTTPException(status_code=403, detail="Only the host can start the competition")
+    
+    # Check if can start
+    if not session.can_start():
+        raise HTTPException(status_code=400, detail="Not all players are ready")
+    
+    # Update session status
+    session.status = "in_progress"
+    session.started_at = datetime.utcnow()
+    
+    # TODO: Start the actual competition in background
+    # background_tasks.add_task(run_competition, session_id)
+    
+    logger.info(f"Competition started", extra={
+        "session_id": session_id,
+        "num_players": len(session.players)
+    })
+    
+    return {
+        "status": "started",
+        "message": "Competition has started!"
+    }
+
+
+@router.post("/{session_id}/leave")
+async def leave_session(session_id: str, player_id: str):
+    """Leave a session."""
+    session = sessions.get(session_id)
+    
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    if session.status != "waiting":
+        raise HTTPException(status_code=400, detail="Cannot leave a session in progress")
+    
+    if not session.remove_player(player_id):
+        raise HTTPException(status_code=404, detail="Player not found in session")
+    
+    # If no players left, delete session
+    if len(session.players) == 0:
+        del sessions[session_id]
+        del join_codes[session.join_code]
+        logger.info(f"Session deleted (no players)", extra={"session_id": session_id})
+    
+    return {
+        "status": "left",
+        "message": "Left the session"
     }
 
 
 @router.get("/templates/quick-match")
-async def get_quick_match_templates() -> List[Dict[str, Any]]:
-    """Get quick match session templates."""
-    games = game_registry.list_games()
+async def get_quick_match_templates():
+    """Get quick match templates for easy session creation."""
+    # Ensure games are registered
+    if not game_registry.list_games():
+        register_builtin_games()
     
     templates = []
-    for game in games[:5]:  # Top 5 games
+    
+    # Add templates for each available game
+    for game_info in game_registry.list_games():
+        game_name = game_info["name"]
+        display_name = game_info["display_name"]
+        
         templates.append({
-            "name": f"Quick {game['display_name']}",
-            "description": f"Single round of {game['display_name']}",
-            "game": game['name'],
-            "format": "single_round",
-            "estimated_duration": 5,  # minutes
-            "difficulty": "medium"
+            "name": f"Quick {display_name}",
+            "game": game_name,
+            "description": f"Jump into a quick {display_name} match",
+            "difficulty": "medium",
+            "estimated_duration": 5 if game_name == "minesweeper" else 10
         })
     
     return templates
 
 
-@router.post("/templates/use/{template_id}")
-async def use_session_template(
-    template_id: str,
-    creator_id: str,
-    customizations: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
-    """Create a session from a template."""
-    # This would have pre-defined templates
-    # For now, create a simple single-game session
+@router.get("/active")
+async def get_active_sessions(limit: int = 10):
+    """Get list of active public sessions."""
+    active_sessions = []
     
-    game_name = template_id.replace("quick_", "")
-    if not game_registry.get_game(game_name):
-        game_name = "minesweeper"  # Default
+    for session in sessions.values():
+        if session.is_public and session.status == "waiting":
+            active_sessions.append({
+                "session_id": session.session_id,
+                "name": session.name,
+                "format": session.format,
+                "players_count": len(session.players),
+                "max_players": session.max_players,
+                "join_code": session.join_code,
+                "created_at": session.created_at.isoformat()
+            })
     
-    return await create_session(
-        name=f"Quick {game_name.title()} Match",
-        description="A quick competition",
-        format="single_round",
-        rounds_config=[{
-            "game_name": game_name,
-            "difficulty": customizations.get("difficulty", "medium") if customizations else "medium",
-            "mode": "mixed",
-            "time_limit": 300
-        }],
-        creator_id=creator_id,
-        max_players=20,
-        is_public=True
-    )
+    # Sort by creation time, newest first
+    active_sessions.sort(key=lambda x: x["created_at"], reverse=True)
+    
+    return active_sessions[:limit]
+
+
+# Background task to clean up old sessions
+async def cleanup_old_sessions():
+    """Remove sessions older than 1 hour."""
+    while True:
+        await asyncio.sleep(300)  # Check every 5 minutes
+        
+        now = datetime.utcnow()
+        to_delete = []
+        
+        for session_id, session in sessions.items():
+            age = (now - session.created_at).total_seconds()
+            if age > 3600 and session.status != "in_progress":  # 1 hour
+                to_delete.append(session_id)
+        
+        for session_id in to_delete:
+            session = sessions[session_id]
+            del join_codes[session.join_code]
+            del sessions[session_id]
+            logger.info(f"Cleaned up old session", extra={"session_id": session_id})
