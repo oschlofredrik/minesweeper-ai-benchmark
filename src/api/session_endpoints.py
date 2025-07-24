@@ -65,7 +65,7 @@ class JoinSessionRequest(BaseModel):
 class Player(BaseModel):
     """A player in a competition session."""
     player_id: str
-    name: str
+    player_name: str  # Changed from 'name' to avoid logging conflicts
     ai_model: Optional[str] = None
     is_ready: bool = False
     is_host: bool = False
@@ -104,7 +104,7 @@ class CompetitionSession:
         # Add creator as first player
         creator = Player(
             player_id=config.creator_id,
-            name="Host",
+            player_name="Host",
             is_host=True,
             is_ready=False
         )
@@ -163,7 +163,7 @@ class CompetitionSession:
             "players": [
                 {
                     "player_id": p.player_id,
-                    "name": p.name,
+                    "name": p.player_name,
                     "ai_model": p.ai_model,
                     "is_ready": p.is_ready,
                     "is_host": p.is_host
@@ -227,7 +227,7 @@ async def join_session(request: JoinSessionRequest):
     # Create player
     player = Player(
         player_id=request.player_id,
-        name=request.player_name,
+        player_name=request.player_name,
         ai_model=request.ai_model,
         is_ready=False
     )
@@ -400,7 +400,7 @@ async def get_competition_status(session_id: str):
         "status": session.status,
         "started_at": session.started_at.isoformat() if session.started_at else None,
         "completed_at": session.completed_at.isoformat() if session.completed_at else None,
-        "players": [p.name for p in session.players]
+        "players": [p.player_name for p in session.players]
     }
 
 
