@@ -346,6 +346,60 @@ class StorageBackend:
         finally:
             db.close()
     
+    def _load_task_from_db(self, task_id: str) -> Optional[Dict[str, Any]]:
+        """Load task from database."""
+        try:
+            db = next(get_db())
+            task = db.query(Task).filter(Task.id == task_id).first()
+            
+            if not task:
+                return None
+            
+            return {
+                'task_id': task.id,
+                'difficulty': task.difficulty,
+                'board_size': [task.rows, task.cols],
+                'mine_count': task.mines,
+                'mine_positions': task.mine_positions,
+                'initial_state': task.initial_state or {}
+            }
+            
+        except SQLAlchemyError as e:
+            logger.error(f"Database error loading task: {e}")
+            return None
+        finally:
+            db.close()
+    
+    def _list_tasks_from_db(self, difficulty: Optional[str] = None) -> List[Dict[str, Any]]:
+        """List tasks from database."""
+        try:
+            db = next(get_db())
+            query = db.query(Task)
+            
+            if difficulty:
+                query = query.filter(Task.difficulty == difficulty)
+            
+            tasks = query.all()
+            
+            result = []
+            for task in tasks:
+                result.append({
+                    'task_id': task.id,
+                    'difficulty': task.difficulty,
+                    'board_size': [task.rows, task.cols],
+                    'mine_count': task.mines,
+                    'mine_positions': task.mine_positions,
+                    'initial_state': task.initial_state or {}
+                })
+            
+            return result
+            
+        except SQLAlchemyError as e:
+            logger.error(f"Database error listing tasks: {e}")
+            return []
+        finally:
+            db.close()
+    
     def _list_tasks_from_files(self, difficulty: Optional[str]) -> List[Dict[str, Any]]:
         """List tasks from files."""
         tasks_dir = Path("data/tasks")
