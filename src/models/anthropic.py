@@ -125,7 +125,10 @@ class AnthropicModel(BaseModel):
             }
             
             # Add tools if requested and not using thinking mode
-            if use_tools and not self.supports_thinking:
+            if kwargs.get('use_game_functions') and kwargs.get('game_tools') and not self.supports_thinking:
+                # Use game-specific tools
+                request_params["tools"] = [kwargs['game_tools']]
+            elif use_tools and not self.supports_thinking:
                 request_params["tools"] = self._get_minesweeper_tools()
             
             # Create completion with timeout

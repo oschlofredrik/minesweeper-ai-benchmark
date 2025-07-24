@@ -4,6 +4,7 @@ import asyncio
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Any
+import random
 from uuid import uuid4
 import json
 import time
@@ -38,6 +39,7 @@ class PlayRequest(BaseModel):
     model_name: str
     model_provider: str  # "openai" or "anthropic"
     num_games: int = 10
+    game: str = "minesweeper"  # Which game to play
     game_type: Optional[str] = None  # "static" or "interactive"
     difficulty: Optional[str] = None  # "beginner", "intermediate", "expert"
     api_key: Optional[str] = None  # Optional API key
@@ -126,6 +128,7 @@ async def start_play(
         request.model_name,
         request.model_provider,
         request.num_games,
+        request.game,
         request.game_type,
         request.difficulty,
         request.api_key
@@ -277,6 +280,7 @@ async def run_play_session(
     model_name: str,
     model_provider: str,
     num_games: int,
+    game: str,
     game_type: Optional[str],
     difficulty: Optional[str],
     api_key: Optional[str]
@@ -312,7 +316,24 @@ async def run_play_session(
         
         # Generate ONLY the first game to start immediately
         logger.info(f"Generating first game for immediate play")
-        if game_type == "static":
+        
+        # For non-Minesweeper games, create generic tasks
+        if game != "minesweeper":
+            # Create a generic task for other games
+            from src.core.types import Task, TaskType
+            first_task = Task.create(
+                task_type=TaskType.INTERACTIVE,
+                difficulty=diff_enum,
+                board_config={
+                    "game": game,
+                    "difficulty": difficulty,
+                    "scenario": difficulty.split(":")[1] if difficulty and ":" in difficulty else None,
+                    "seed": random.randint(0, 2**31 - 1)
+                },
+                description=f"Play a game of {game}",
+                metadata={"game": game}
+            )
+        elif game_type == "static":
             first_task = generator.generate_static_task(difficulty=diff_enum)
         elif game_type == "interactive":
             first_task = generator.generate_interactive_task(difficulty=diff_enum)
@@ -330,7 +351,22 @@ async def run_play_session(
             async def generate_remaining():
                 for i in range(1, num_games):
                     try:
-                        if game_type == "static":
+                        if game != "minesweeper":
+                            # Create generic task for other games
+                            from src.core.types import Task, TaskType
+                            task = Task.create(
+                                task_type=TaskType.INTERACTIVE,
+                                difficulty=diff_enum,
+                                board_config={
+                                    "game": game,
+                                    "difficulty": difficulty,
+                                    "scenario": difficulty.split(":")[1] if difficulty and ":" in difficulty else None,
+                                    "seed": random.randint(0, 2**31 - 1)
+                                },
+                                description=f"Play a game of {game}",
+                                metadata={"game": game}
+                            )
+                        elif game_type == "static":
                             task = generator.generate_static_task(difficulty=diff_enum)
                         elif game_type == "interactive":
                             task = generator.generate_interactive_task(difficulty=diff_enum)
@@ -387,7 +423,8 @@ async def run_play_session(
                 tasks=generated_tasks,
                 job_id=job_id,
                 prompt_format="auto",
-                verbose=False
+                verbose=False,
+                game_name=game
             )
             
             # Update to completed

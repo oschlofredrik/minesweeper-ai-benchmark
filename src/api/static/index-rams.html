@@ -118,6 +118,7 @@
                   <label>Game Type</label>
                   <select name="game-type" id="game-type">
                     <option value="minesweeper">Minesweeper</option>
+                    <option value="risk">Risk</option>
                     <option value="sudoku">Sudoku</option>
                     <option value="number_puzzle">Number Puzzle</option>
                   </select>
@@ -232,6 +233,15 @@
               </div>
               
               <form id="play-form">
+                <div class="form-group">
+                  <label class="label" for="game-select">Game</label>
+                  <select class="select" id="game-select" required>
+                    <option value="minesweeper">Minesweeper</option>
+                    <option value="risk">Risk</option>
+                    <option value="number_puzzle">Number Puzzle</option>
+                  </select>
+                </div>
+
                 <div class="form-group">
                   <label class="label" for="model-provider"
                     >Model Provider</label

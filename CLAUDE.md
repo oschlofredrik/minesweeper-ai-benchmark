@@ -1,7 +1,7 @@
 # Claude Memory - Tilts
 
 ## Project Overview
-This is a comprehensive benchmark platform for evaluating Large Language Models (LLMs) on logic-based reasoning tasks through expert-level Tilts gameplay. The platform is now feature-complete and ready for deployment.
+This is a comprehensive benchmark platform for evaluating Large Language Models (LLMs) on logic-based reasoning tasks through games like Minesweeper and Risk. The platform features a flexible plugin architecture supporting multiple games and is ready for deployment.
 
 ## Current Status (Completed ✅)
 1. **Core Game Engine**: Full Tilts implementation with solver
@@ -33,7 +33,13 @@ This is a comprehensive benchmark platform for evaluating Large Language Models 
 tilts/
 ├── src/
 │   ├── core/              # Types, config, utilities
-│   ├── games/             # Tilts implementation
+│   ├── games/             # Game implementations
+│   │   ├── base.py        # Base game interfaces
+│   │   ├── registry.py    # Game discovery and registration
+│   │   ├── tilts.py       # Minesweeper implementation
+│   │   └── implementations/
+│   │       ├── risk/      # Risk game plugin
+│   │       └── number_puzzle/
 │   ├── models/            # LLM interfaces
 │   ├── evaluation/        # Metrics and scoring
 │   ├── tasks/             # Task generation
@@ -301,5 +307,66 @@ Games now have four possible statuses:
 - `LOST`: Hit a mine
 - `ERROR`: Technical failure (not counted in stats)
 
+## Risk Game Plugin Implementation (July 24, 2025)
+
+### Overview
+Successfully implemented Risk as a complete game plugin for the Tilts platform, demonstrating the flexibility of the plugin architecture.
+
+### Risk Implementation Details
+1. **Complete Game Logic**
+   - 42 territories across 6 continents
+   - Full reinforcement, attack, and fortify phases
+   - Dice-based combat system following official Risk rules
+   - Territory connections and continent bonuses
+
+2. **AI Integration**
+   - Optimized board state representations for LLMs
+   - Function calling schema for structured moves
+   - Clear phase-based prompting
+   - Territory grouping by continent for readability
+
+3. **Scenarios**
+   - North America Conquest
+   - Defend Australia
+   - Europe vs Asia
+   - Blitzkrieg (rapid expansion)
+   - Last Stand (survival mode)
+
+### Platform Updates for Multi-Game Support
+1. **Streaming Runner**
+   - Now accepts game_name parameter
+   - Dynamically loads appropriate game class
+   - Supports game-specific function schemas
+
+2. **Game Adapter**
+   - Created adapter pattern for non-Minesweeper games
+   - Translates between game-specific and platform interfaces
+   - Handles function call data for complex moves
+
+3. **Model Updates**
+   - OpenAI and Anthropic models handle game-specific tools
+   - Function schemas dynamically loaded based on game
+   - Proper move parsing for each game type
+
+4. **UI Integration**
+   - Added game selection dropdown
+   - Dynamic difficulty options per game
+   - Risk scenarios available as difficulty settings
+
+### Key Files Added/Modified
+- `src/games/implementations/risk/` - Complete Risk implementation
+- `src/games/game_adapter.py` - Universal game adapter
+- `src/evaluation/streaming_runner.py` - Multi-game support
+- `src/models/base.py` - Game-aware function calling
+- `src/api/static/app-rams.js` - UI game selection
+
+### Testing
+Risk game successfully:
+- Registers with game registry
+- Creates game instances with scenarios
+- Generates AI-friendly board representations
+- Provides function calling schemas
+- Integrates with evaluation pipeline
+
 ## Final State
-The Minesweeper AI Benchmark is production-ready with robust error handling and fair scoring. Technical failures are distinguished from game losses, ensuring accurate model evaluation. The platform features comprehensive database administration, consistent Dieter Rams design, and detailed debugging capabilities. All models are properly supported with appropriate message formatting and timeout configurations.
+The Tilts platform is now a true multi-game AI evaluation system. The successful Risk implementation demonstrates that new games can be added as plugins without modifying core infrastructure. The platform maintains robust error handling, fair scoring, and comprehensive debugging while supporting diverse game types. Both Minesweeper and Risk (and other games) work seamlessly with OpenAI and Anthropic models using native function calling for reliable, structured gameplay.

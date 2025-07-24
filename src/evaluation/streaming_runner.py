@@ -11,6 +11,7 @@ from src.core.exceptions import (
 )
 from src.core.logging_config import get_logger
 from src.games.tilts import TiltsGame
+from src.games.registry import GameRegistry
 from src.models import create_model
 from src.api.event_streaming import (
     publish_game_started, publish_move_thinking, publish_move_reasoning,
@@ -36,7 +37,8 @@ class StreamingGameRunner:
         game_num: int,
         max_moves: int = 500,
         prompt_format: str = "auto",
-        verbose: bool = False
+        verbose: bool = False,
+        game_name: str = "minesweeper"
     ) -> GameTranscript:
         """
         Run a single game with live streaming.
@@ -54,14 +56,33 @@ class StreamingGameRunner:
         """
         # Create game from task
         board_config = task.board_config
-        game = TiltsGame(
-            rows=board_config.get("rows", 16),
-            cols=board_config.get("cols", 30),
-            mines=board_config.get("mines", 99),
-            seed=board_config.get("seed"),
-            task_id=task.task_id,
-            model_name=self.model_config.name,
-        )
+        
+        # Get game class from registry or default to Minesweeper
+        if game_name == "minesweeper":
+            game = TiltsGame(
+                rows=board_config.get("rows", 16),
+                cols=board_config.get("cols", 30),
+                mines=board_config.get("mines", 99),
+                seed=board_config.get("seed"),
+                task_id=task.task_id,
+                model_name=self.model_config.name,
+            )
+        else:
+            # Use game registry for other games
+            game_class = GameRegistry.get_game(game_name)
+            if not game_class:
+                raise ValueError(f"Unknown game: {game_name}")
+            
+            # Create game instance with appropriate config
+            game_instance = game_class.create_instance(
+                players=["AI", "Computer"],
+                seed=board_config.get("seed"),
+                scenario=board_config.get("scenario")
+            )
+            
+            # Wrap in a compatibility layer to match TiltsGame interface
+            from src.games.game_adapter import GameAdapter
+            game = GameAdapter(game_instance, task_id=task.task_id, model_name=self.model_config.name)
         
         # Make first move if specified
         if "first_move" in board_config:
@@ -155,6 +176,13 @@ class StreamingGameRunner:
                 if hasattr(self.model, 'supports_streaming') and self.model.supports_streaming:
                     kwargs["stream_callback"] = stream_reasoning
                 
+                # Pass game context for proper function schema
+                if game_name != "minesweeper":
+                    kwargs["game_context"] = {
+                        "game_name": game_name,
+                        "game_instance": game
+                    }
+                
                 response = await self.model.play_move(
                     board_state, 
                     prompt_format, 
@@ -189,17 +217,28 @@ class StreamingGameRunner:
                 
                 # Parse action
                 if not response.action:
-                    logger.error(f"Game {game_num} - No action found in response. Content preview: {response.content[:200] if response.content else 'No content'}", extra={
-                        "model_name": self.model_config.name,
-                        "model_provider": self.model_config.provider,
-                        "game_num": game_num,
-                        "move_num": move_count
-                    })
-                    # Try to help by showing what patterns we're looking for
-                    logger.info("Expected action format examples: 'reveal (2, 3)', 'flag 1,2', 'Action: reveal Position: (2,3)'")
-                    raise InvalidModelResponseError("No action found in response")
-                
-                action = response.action
+                    # For non-Minesweeper games with function calling, try to create action from function call
+                    if game_name != "minesweeper" and response.function_call:
+                        try:
+                            # Create a special action that carries the function call data
+                            from src.core.types import Action, ActionType, Position
+                            action = Action(ActionType.REVEAL, Position(0, 0))  # Dummy action
+                            action.function_data = response.function_call  # Attach function data
+                        except Exception as e:
+                            logger.error(f"Failed to create action from function call: {e}")
+                            raise InvalidModelResponseError("No action found in response")
+                    else:
+                        logger.error(f"Game {game_num} - No action found in response. Content preview: {response.content[:200] if response.content else 'No content'}", extra={
+                            "model_name": self.model_config.name,
+                            "model_provider": self.model_config.provider,
+                            "game_num": game_num,
+                            "move_num": move_count
+                        })
+                        # Try to help by showing what patterns we're looking for
+                        logger.info("Expected action format examples: 'reveal (2, 3)', 'flag 1,2', 'Action: reveal Position: (2,3)'")
+                        raise InvalidModelResponseError("No action found in response")
+                else:
+                    action = response.action
                 logger.info(f"Game {game_num} - Parsed action: {action.to_string()}", extra={
                     "model_name": self.model_config.name,
                     "model_provider": self.model_config.provider,
@@ -435,7 +474,8 @@ class StreamingGameRunner:
         job_id: str,
         max_moves: int = 500,
         prompt_format: str = "auto",
-        verbose: bool = False
+        verbose: bool = False,
+        game_name: str = "minesweeper"
     ) -> Dict[str, Any]:
         """
         Run multiple games with live streaming.
@@ -469,7 +509,7 @@ class StreamingGameRunner:
                 # Run single game
                 transcript = await self.run_single_game(
                     task, job_id, game_num,
-                    max_moves, prompt_format, verbose
+                    max_moves, prompt_format, verbose, game_name
                 )
                 
                 transcripts.append(transcript)

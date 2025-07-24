@@ -68,9 +68,16 @@ function showSection(sectionId) {
 function initializePlayForm() {
     const form = document.getElementById('play-form');
     const modelProvider = document.getElementById('model-provider');
+    const gameSelect = document.getElementById('game-select');
     
     // Update model options when provider changes
     modelProvider.addEventListener('change', updateModelOptions);
+    
+    // Update difficulty options when game changes
+    if (gameSelect) {
+        gameSelect.addEventListener('change', updateDifficultyOptions);
+        updateDifficultyOptions();
+    }
     
     // Initialize model options on page load
     updateModelOptions();
@@ -183,7 +190,9 @@ async function startEvaluation() {
     submitButton.disabled = true;
     statusDiv.innerHTML = '<div class="text-muted">Starting evaluation...</div>';
     
+    const gameSelect = document.getElementById('game-select');
     const data = {
+        game: gameSelect ? gameSelect.value : 'minesweeper',
         model_provider: document.getElementById('model-provider').value,
         model_name: document.getElementById('model-name').value,
         num_games: parseInt(document.getElementById('num-games').value),
@@ -723,6 +732,46 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
+// Update difficulty options based on selected game
+function updateDifficultyOptions() {
+    const gameSelect = document.getElementById('game-select');
+    const difficultySelect = document.getElementById('difficulty');
+    
+    if (!gameSelect || !difficultySelect) return;
+    
+    const game = gameSelect.value;
+    
+    // Clear existing options
+    difficultySelect.innerHTML = '';
+    
+    // Add options based on game
+    if (game === 'minesweeper') {
+        difficultySelect.innerHTML = `
+            <option value="">Auto</option>
+            <option value="beginner">Beginner (9×9, 10 mines)</option>
+            <option value="intermediate">Intermediate (16×16, 40 mines)</option>
+            <option value="expert">Expert (16×30, 99 mines)</option>
+        `;
+    } else if (game === 'risk') {
+        difficultySelect.innerHTML = `
+            <option value="">Standard</option>
+            <option value="scenario:north_america_conquest">Scenario: North America Conquest</option>
+            <option value="scenario:defend_australia">Scenario: Defend Australia</option>
+            <option value="scenario:europe_vs_asia">Scenario: Europe vs Asia</option>
+            <option value="scenario:blitzkrieg">Scenario: Blitzkrieg</option>
+            <option value="scenario:last_stand">Scenario: Last Stand</option>
+        `;
+    } else if (game === 'number_puzzle') {
+        difficultySelect.innerHTML = `
+            <option value="easy">Easy (1-10)</option>
+            <option value="medium">Medium (1-100)</option>
+            <option value="hard">Hard (1-1000)</option>
+        `;
+    } else {
+        difficultySelect.innerHTML = '<option value="">Default</option>';
+    }
+}
 
 // Utility functions
 function formatTime(timestamp) {

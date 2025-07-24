@@ -283,7 +283,7 @@ class BaseModel(ABC):
         else:
             return "standard"
     
-    async def play_move(self, board_state: str, prompt_format: str = "auto", use_functions: bool = True, stream_callback=None) -> ModelResponse:
+    async def play_move(self, board_state: str, prompt_format: str = "auto", use_functions: bool = True, stream_callback=None, game_context: Optional[Dict[str, Any]] = None) -> ModelResponse:
         """
         High-level method to get a move from the model.
         
@@ -292,6 +292,7 @@ class BaseModel(ABC):
             prompt_format: Format type for the prompt ("auto" to auto-detect)
             use_functions: Whether to use function calling (if supported)
             stream_callback: Optional callback for streaming responses (ignored by models that don't support it)
+            game_context: Optional game context for non-Minesweeper games
         
         Returns:
             ModelResponse with parsed action
@@ -304,10 +305,22 @@ class BaseModel(ABC):
         
         # Pass use_functions to generate method
         kwargs = {}
-        if hasattr(self, '_get_minesweeper_tools'):  # Check if model supports functions
-            kwargs['use_functions'] = use_functions
-            if hasattr(self, 'client') and hasattr(self.client, 'messages'):  # Anthropic
-                kwargs['use_tools'] = use_functions
+        
+        # Handle game-specific function schemas
+        if game_context and game_context.get('game_name') != 'minesweeper':
+            # Get function schema from game instance
+            game_instance = game_context.get('game_instance')
+            if hasattr(game_instance, 'game_instance') and hasattr(game_instance.game_instance.get_state(), 'ai_representation'):
+                ai_rep = game_instance.game_instance.get_state().ai_representation
+                if hasattr(ai_rep, 'get_function_calling_schema'):
+                    kwargs['game_tools'] = ai_rep.get_function_calling_schema()
+                    kwargs['use_game_functions'] = use_functions
+        else:
+            # Minesweeper functions
+            if hasattr(self, '_get_minesweeper_tools'):  # Check if model supports functions
+                kwargs['use_functions'] = use_functions
+                if hasattr(self, 'client') and hasattr(self.client, 'messages'):  # Anthropic
+                    kwargs['use_tools'] = use_functions
         
         response = await self.generate(prompt, **kwargs)
         

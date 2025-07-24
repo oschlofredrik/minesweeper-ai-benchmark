@@ -256,7 +256,11 @@ class OpenAIModel(BaseModel):
                 request_params["max_tokens"] = max_tokens
             
             # Add tools if requested and model supports it
-            if use_functions and self.supports_function_calling:
+            if kwargs.get('use_game_functions') and kwargs.get('game_tools') and self.supports_function_calling:
+                # Use game-specific tools
+                request_params["tools"] = [kwargs['game_tools']]
+                logger.info(f"Using game-specific function calling for model {self.model_id}")
+            elif use_functions and self.supports_function_calling:
                 request_params["tools"] = self._get_minesweeper_tools()
                 # Use auto tool_choice to allow reasoning in content field
                 # Can be overridden with force_tool_choice kwarg if needed
