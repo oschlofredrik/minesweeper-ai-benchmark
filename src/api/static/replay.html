@@ -3,31 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Replay - Minesweeper AI Benchmark</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <title>Game Replay - Tilts</title>
+    <link rel="stylesheet" href="/static/rams-design.css">
+    <link rel="stylesheet" href="/static/rams-components.css">
     <style>
+        body {
+            padding-top: 80px;
+        }
+        
+        .page-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+        
         .board-container {
-            margin: 2rem auto;
+            margin: 32px auto;
             max-width: 800px;
         }
         
         .board {
             display: inline-grid;
             gap: 1px;
-            background-color: #5a5550;
+            background-color: var(--border-color);
             padding: 1px;
-            font-family: monospace;
-            font-size: 14px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 13px;
+            border-radius: 4px;
+            overflow: hidden;
         }
         
         .cell {
-            width: 24px;
-            height: 24px;
+            width: 28px;
+            height: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: #e5e2dc;
+            background-color: var(--bg-light);
             cursor: default;
+            transition: background-color 0.15s ease;
         }
         
         .cell.hidden { background-color: #999999; }

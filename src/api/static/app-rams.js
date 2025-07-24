@@ -505,6 +505,222 @@ function startGameUpdates() {
     }, 3000);
 }
 
+// Competition Functions
+function showCreateSession() {
+    const modal = document.getElementById('create-session-modal');
+    const result = document.getElementById('create-session-result');
+    
+    // Copy form from compete section
+    const form = document.getElementById('create-session-form');
+    result.innerHTML = form.outerHTML;
+    
+    // Add event listener to copied form
+    const newForm = result.querySelector('form');
+    newForm.addEventListener('submit', handleCreateSession);
+    
+    modal.classList.add('active');
+}
+
+function showJoinSession() {
+    const modal = document.getElementById('join-session-modal');
+    modal.classList.add('active');
+}
+
+function hideModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+}
+
+async function handleCreateSession(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const sessionData = {
+        name: formData.get('session-name'),
+        description: `${formData.get('game-type')} competition`,
+        format: formData.get('competition-format'),
+        rounds_config: [{
+            game_name: formData.get('game-type'),
+            difficulty: 'medium',
+            mode: 'mixed',
+            scoring_profile: 'balanced',
+            time_limit: 300
+        }],
+        creator_id: 'user-' + Math.random().toString(36).substr(2, 9),
+        max_players: parseInt(formData.get('max-players')),
+        is_public: true,
+        flow_mode: 'asynchronous'
+    };
+    
+    try {
+        const response = await fetch('/api/sessions/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(sessionData)
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showLobby(result.session_id, result.join_code, true);
+            hideModal('create-session-modal');
+        } else {
+            alert('Failed to create session');
+        }
+    } catch (error) {
+        console.error('Error creating session:', error);
+        alert('Error creating session');
+    }
+}
+
+async function handleJoinSession(e) {
+    e.preventDefault();
+    
+    const joinCode = document.getElementById('quick-join-code').value.toUpperCase();
+    const playerName = 'Player-' + Math.random().toString(36).substr(2, 5);
+    const playerId = 'player-' + Math.random().toString(36).substr(2, 9);
+    
+    try {
+        const response = await fetch('/api/sessions/join', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                join_code: joinCode,
+                player_id: playerId,
+                player_name: playerName,
+                ai_model: 'gpt-4'
+            })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showLobby(result.session_id, joinCode, false);
+            hideModal('join-session-modal');
+        } else {
+            alert('Invalid join code');
+        }
+    } catch (error) {
+        console.error('Error joining session:', error);
+        alert('Error joining session');
+    }
+}
+
+function showLobby(sessionId, joinCode, isHost) {
+    const modal = document.getElementById('session-lobby-modal');
+    document.getElementById('lobby-join-code').textContent = joinCode;
+    
+    if (isHost) {
+        document.getElementById('start-competition-btn').style.display = 'block';
+    }
+    
+    modal.classList.add('active');
+    
+    // Start polling for lobby updates
+    updateLobby(sessionId);
+    setInterval(() => updateLobby(sessionId), 2000);
+}
+
+async function updateLobby(sessionId) {
+    try {
+        const response = await fetch(`/api/sessions/${sessionId}/lobby`);
+        if (response.ok) {
+            const data = await response.json();
+            renderLobbyPlayers(data.players);
+        }
+    } catch (error) {
+        console.error('Error updating lobby:', error);
+    }
+}
+
+function renderLobbyPlayers(players) {
+    const container = document.getElementById('lobby-players');
+    container.innerHTML = players.map(player => `
+        <div class="player-card ${player.is_ready ? 'ready' : ''}">
+            <div class="player-name">${player.name}</div>
+            <div class="player-model">${player.ai_model || 'Not selected'}</div>
+            ${player.is_ready ? '<div class="text-sm text-success">Ready</div>' : '<div class="text-sm text-muted">Waiting</div>'}
+        </div>
+    `).join('');
+}
+
+function leaveLobby() {
+    hideModal('session-lobby-modal');
+}
+
+function navigateTo(section) {
+    showSection(section);
+    
+    // Update nav
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === '#' + section) {
+            link.classList.add('active');
+        }
+    });
+}
+
+// Session Management
+async function loadActiveSessions() {
+    try {
+        const response = await fetch('/api/sessions/templates/quick-match');
+        if (response.ok) {
+            const templates = await response.json();
+            renderSessionTemplates(templates);
+        }
+    } catch (error) {
+        console.error('Error loading sessions:', error);
+    }
+}
+
+function renderSessionTemplates(templates) {
+    const container = document.getElementById('active-sessions-list');
+    if (templates.length === 0) {
+        container.innerHTML = '<p class="text-muted">No active sessions. Create one to get started!</p>';
+        return;
+    }
+    
+    container.innerHTML = templates.map(template => `
+        <div class="session-card" onclick="useTemplate('${template.game}')">
+            <div class="session-header">
+                <div>
+                    <h4>${template.name}</h4>
+                    <p class="text-sm text-muted">${template.description}</p>
+                </div>
+                <span class="session-status waiting">Quick Match</span>
+            </div>
+            <div class="session-meta">
+                <span>Duration: ~${template.estimated_duration} min</span>
+                <span>Difficulty: ${template.difficulty}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function useTemplate(gameName) {
+    // Pre-fill create form with template
+    document.getElementById('session-name').value = `Quick ${gameName.charAt(0).toUpperCase() + gameName.slice(1)} Match`;
+    document.getElementById('game-type').value = gameName;
+    document.getElementById('competition-format').value = 'single_round';
+    showCreateSession();
+}
+
+// Initialize new competition features
+document.addEventListener('DOMContentLoaded', () => {
+    // Set up form handlers
+    const joinForm = document.getElementById('quick-join-form');
+    if (joinForm) {
+        joinForm.addEventListener('submit', handleJoinSession);
+    }
+    
+    // Load sections when navigated to
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', () => {
+            const section = link.getAttribute('href').substring(1);
+            if (section === 'compete') {
+                loadActiveSessions();
+            }
+        });
+    });
+});
+
 // Utility functions
 function formatTime(timestamp) {
     if (!timestamp) return 'Now';

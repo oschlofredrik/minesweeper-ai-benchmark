@@ -219,7 +219,22 @@ a:hover {
   color: var(--text-secondary);
 }
 
+/* Additional Layout */
+.grid-cols-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-cols-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
 /* Forms */
+.form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .form-group {
   margin-bottom: calc(var(--unit) * 3);
 }
@@ -424,6 +439,254 @@ details pre {
     --bg-secondary: var(--dark-bg-secondary);
     --border: var(--dark-border);
   }
+}
+
+/* Modals */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal-content {
+  background: white;
+  padding: 32px;
+  border-radius: 4px;
+  max-width: 480px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-large {
+  max-width: 800px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.modal-header h3 {
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Competition Specific */
+.join-code-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.join-code-display strong {
+  font-size: 20px;
+  letter-spacing: 2px;
+  color: var(--text-primary);
+  font-family: 'SF Mono', Monaco, monospace;
+}
+
+.sessions-list,
+.sessions-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.session-card {
+  border: 1px solid var(--border);
+  padding: 20px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.session-card:hover {
+  border-color: var(--text-primary);
+}
+
+.session-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 12px;
+}
+
+.session-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 3px;
+}
+
+.session-status.active {
+  background: #f0fdf4;
+  color: #059862;
+}
+
+.session-status.waiting {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.session-status.completed {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.players-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.player-card {
+  padding: 16px;
+  background: var(--bg-light);
+  border-radius: 4px;
+  text-align: center;
+}
+
+.player-card.ready {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+.player-name {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.player-model {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.lobby-controls {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.button-large {
+  padding: 16px 32px;
+  font-size: 16px;
+}
+
+.prompts-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.prompt-card {
+  border: 1px solid var(--border);
+  padding: 16px;
+  border-radius: 4px;
+}
+
+.prompt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 8px;
+}
+
+.prompt-title {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.prompt-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.prompt-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.search-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+
+.tab {
+  padding: 12px 24px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab:hover {
+  color: var(--text-primary);
+}
+
+.tab.active {
+  color: var(--text-primary);
+  border-bottom-color: var(--text-primary);
+}
+
+/* Button Variations */
+.button-small {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.button-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 /* Responsive */

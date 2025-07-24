@@ -121,7 +121,7 @@ The web interface uses a clean, modern design with:
 - Responsive layout for mobile devices
 - Color-coded score badges
 
-To customize styling, edit `src/api/static/style.css`
+To customize styling, edit `src/api/static/rams-design.css` and `src/api/static/rams-components.css`
 
 ## Development
 
