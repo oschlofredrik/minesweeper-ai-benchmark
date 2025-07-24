@@ -185,7 +185,7 @@ async def create_session(request: CreateSessionRequest):
         
         logger.info(f"Creating competition session", extra={
             "session_id": session_id,
-            "name": request.name,
+            "session_name": request.name,
             "format": request.format,
             "creator": request.creator_id
         })
