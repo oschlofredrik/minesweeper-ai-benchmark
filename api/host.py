@@ -5,28 +5,27 @@ from pathlib import Path
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         # Serve the host wizard HTML
-        base_path = Path(__file__).parent.parent
+        # In Vercel, __file__ points to the deployed location
+        static_path = Path(__file__).parent / 'static' / 'host.html'
         
-        # Try to find the host.html file
-        possible_paths = [
-            base_path / 'serverless-migration' / 'src' / 'api' / 'static' / 'host.html',
-            base_path / 'src' / 'api' / 'static' / 'host.html',
-            base_path / 'vercel' / 'static' / 'host.html',
-            '/tmp/host_backup.html'  # The backup we created
-        ]
-        
-        for file_path in possible_paths:
-            file_path = Path(file_path)
-            if file_path.exists():
-                self.send_response(200)
-                self.send_header('Content-type', 'text/html')
-                self.end_headers()
-                
-                with open(file_path, 'rb') as f:
-                    self.wfile.write(f.read())
-                return
-        
-        # If no host.html found, redirect to compete as fallback
-        self.send_response(301)
-        self.send_header('Location', '/compete')
+        if static_path.exists():
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            
+            with open(static_path, 'rb') as f:
+                self.wfile.write(f.read())
+        else:
+            # If file not found, show error
+            self.send_response(404)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write(f"<h1>Host page not found</h1><p>Looking for: {static_path}</p>".encode())
+    
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         self.end_headers()
