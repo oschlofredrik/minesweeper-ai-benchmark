@@ -50,53 +50,10 @@
                 <h2>AI Competitions</h2>
                 <p class="text-muted mb-4">Host or join Kahoot-style AI competitions with friends</p>
                 
-                <div class="grid grid-cols-2 mb-4">
-                    <div class="card">
-                        <h3>Create Competition</h3>
-                        <p class="text-muted">Host a new competition session</p>
-                        <form id="create-session-form" class="form-stack">
-                            <div class="form-group">
-                                <label>Session Name</label>
-                                <input type="text" name="session-name" placeholder="Friday AI Challenge" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Game Type</label>
-                                <select name="game-type">
-                                    <option value="minesweeper">Minesweeper</option>
-                                    <option value="risk">Risk</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Max Players</label>
-                                <input type="number" name="max-players" value="20" min="2" max="100">
-                            </div>
-                            <button type="submit" class="button button-primary">Create Session</button>
-                        </form>
-                    </div>
-                    
-                    <div class="card">
-                        <h3>Join Competition</h3>
-                        <p class="text-muted">Enter a code to join an existing session</p>
-                        <form id="join-session-form" class="form-stack">
-                            <div class="form-group">
-                                <label>Join Code</label>
-                                <input type="text" name="join-code" placeholder="PLAY123" maxlength="10" style="text-transform: uppercase;" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Your Name</label>
-                                <input type="text" name="player-name" placeholder="Enter your name" required>
-                            </div>
-                            <div class="form-group">
-                                <label>AI Model</label>
-                                <select name="player-model">
-                                    <option value="gpt-4">GPT-4</option>
-                                    <option value="claude-3-opus">Claude 3 Opus</option>
-                                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                                </select>
-                            </div>
-                            <button type="submit" class="button button-primary">Join Session</button>
-                        </form>
-                    </div>
+                <div class="card mb-4">
+                    <h3>Create Competition</h3>
+                    <p class="text-muted">Set up a new AI competition with custom evaluation metrics</p>
+                    <a href="/compete-wizard" class="button button-primary">Create New Competition</a>
                 </div>
                 
                 <div class="card">

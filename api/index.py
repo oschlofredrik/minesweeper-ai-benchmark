@@ -17,8 +17,18 @@ class handler(BaseHTTPRequestHandler):
             self.serve_page('leaderboard.html')
         elif path == '/compete':
             self.serve_page('compete.html')
+        elif path == '/compete-wizard':
+            self.serve_page('compete-wizard.html')
         elif path == '/benchmark':
             self.serve_page('benchmark.html')
+        elif path == '/host':
+            self.serve_page('host.html')
+        elif path == '/sessions':
+            self.serve_page('sessions.html')
+        elif path == '/prompts':
+            self.serve_page('prompts.html')
+        elif path == '/admin':
+            self.serve_page('admin.html')
             
         # Serve static files
         elif path.startswith('/static/'):

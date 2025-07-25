@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Competition - Tilts</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/rams-design.css">
+    <link rel="stylesheet" href="/static/tilts.css">
+    <style>
+        /* Wizard specific styles */
+        .wizard-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .wizard-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: calc(var(--unit) * 6);
+            position: relative;
+        }
+        
+        .wizard-steps::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--color-border);
+            z-index: 0;
+        }
+        
+        .wizard-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid var(--color-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-bottom: var(--unit);
+        }
+        
+        .wizard-step.active .step-number {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+        
+        .wizard-step.completed .step-number {
+            background: var(--color-success);
+            color: white;
+            border-color: var(--color-success);
+        }
+        
+        .step-title {
+            font-size: var(--font-size-small);
+            color: var(--color-text-muted);
+        }
+        
+        .wizard-step.active .step-title {
+            color: var(--color-text);
+            font-weight: 600;
+        }
+        
+        .wizard-content {
+            min-height: 400px;
+        }
+        
+        .evaluation-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: calc(var(--unit) * 3);
+            margin-bottom: calc(var(--unit) * 4);
+        }
+        
+        .evaluation-card {
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius);
+            padding: calc(var(--unit) * 3);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .evaluation-card:hover {
+            border-color: var(--color-primary);
+            transform: translateY(-2px);
+        }
+        
+        .evaluation-card.selected {
+            border-color: var(--color-primary);
+            background: rgba(0, 0, 0, 0.02);
+        }
+        
+        .evaluation-card h4 {
+            margin-bottom: var(--unit);
+        }
+        
+        .evaluation-card .description {
+            font-size: var(--font-size-small);
+            color: var(--color-text-muted);
+            margin-bottom: calc(var(--unit) * 2);
+        }
+        
+        .evaluation-card .metrics {
+            font-size: var(--font-size-small);
+        }
+        
+        .evaluation-card .metrics strong {
+            display: block;
+            margin-bottom: calc(var(--unit) * 0.5);
+        }
+        
+        .wizard-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: calc(var(--unit) * 6);
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <h1 class="logo-text">Tilts</h1>
+            </div>
+            
+            <nav>
+                <ul class="nav">
+                    <li class="nav-item">
+                        <a href="/" class="nav-link">Overview</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/compete" class="nav-link active">Compete</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/benchmark" class="nav-link">Benchmark</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/sessions" class="nav-link">My Sessions</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/leaderboard" class="nav-link">Leaderboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/prompts" class="nav-link">Prompt Library</a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div style="position: absolute; bottom: calc(var(--unit) * 3); left: calc(var(--unit) * 3); right: calc(var(--unit) * 3);">
+                <a href="/admin" class="button button-secondary" style="width: 100%; text-align: center;">Admin</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <div class="wizard-container">
+                <h2>Create Competition</h2>
+                <p class="text-muted mb-4">Set up a new AI competition session</p>
+                
+                <!-- Wizard Steps -->
+                <div class="wizard-steps">
+                    <div class="wizard-step active" data-step="1">
+                        <div class="step-number">1</div>
+                        <div class="step-title">Basic Info</div>
+                    </div>
+                    <div class="wizard-step" data-step="2">
+                        <div class="step-number">2</div>
+                        <div class="step-title">Game Settings</div>
+                    </div>
+                    <div class="wizard-step" data-step="3">
+                        <div class="step-number">3</div>
+                        <div class="step-title">Evaluation</div>
+                    </div>
+                    <div class="wizard-step" data-step="4">
+                        <div class="step-number">4</div>
+                        <div class="step-title">Review</div>
+                    </div>
+                </div>
+                
+                <!-- Wizard Content -->
+                <form id="competition-wizard-form">
+                    <div class="wizard-content">
+                        <!-- Step 1: Basic Info -->
+                        <div class="wizard-page" data-page="1">
+                            <div class="card">
+                                <h3>Competition Details</h3>
+                                <div class="form-stack">
+                                    <div class="form-group">
+                                        <label>Competition Name</label>
+                                        <input type="text" name="name" placeholder="Friday AI Challenge" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Description (optional)</label>
+                                        <textarea name="description" rows="3" placeholder="Weekly team competition to test our AI models"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Max Players</label>
+                                        <input type="number" name="max_players" value="20" min="2" max="100">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Step 2: Game Settings -->
+                        <div class="wizard-page" data-page="2" style="display: none;">
+                            <div class="card">
+                                <h3>Game Configuration</h3>
+                                <div class="form-stack">
+                                    <div class="form-group">
+                                        <label>Game Type</label>
+                                        <select name="game_type" onchange="updateGameSettings(this.value)">
+                                            <option value="minesweeper">Minesweeper</option>
+                                            <option value="risk">Risk</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Difficulty</label>
+                                        <select name="difficulty">
+                                            <option value="easy">Easy (9x9, 10 mines)</option>
+                                            <option value="medium" selected>Medium (16x16, 40 mines)</option>
+                                            <option value="hard">Hard (16x30, 99 mines)</option>
+                                            <option value="expert">Expert (20x30, 145 mines)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Number of Games</label>
+                                        <input type="number" name="num_games" value="5" min="1" max="20">
+                                        <small class="text-muted">Each player will play this many games</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Time Limit per Move</label>
+                                        <select name="move_timeout">
+                                            <option value="10">10 seconds</option>
+                                            <option value="30" selected>30 seconds</option>
+                                            <option value="60">1 minute</option>
+                                            <option value="120">2 minutes</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Step 3: Evaluation -->
+                        <div class="wizard-page" data-page="3" style="display: none;">
+                            <div class="card">
+                                <h3>Evaluation Method</h3>
+                                <p class="text-muted mb-4">Choose how to score and rank players</p>
+                                
+                                <div class="evaluation-options">
+                                    <div class="evaluation-card" onclick="selectEvaluation('standard')" data-evaluation="standard">
+                                        <h4>Standard Competition</h4>
+                                        <p class="description">Traditional scoring based on wins and performance</p>
+                                        <div class="metrics">
+                                            <strong>Scoring:</strong>
+                                            • Win: 100 points<br>
+                                            • Loss: 0 points<br>
+                                            • Bonus for speed<br>
+                                            • Penalty for invalid moves
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="evaluation-card" onclick="selectEvaluation('minebench')" data-evaluation="minebench">
+                                        <h4>MineBench Official</h4>
+                                        <p class="description">Academic benchmark with comprehensive metrics</p>
+                                        <div class="metrics">
+                                            <strong>Metrics:</strong>
+                                            • MS-S Score (40%)<br>
+                                            • MS-I Score (30%)<br>
+                                            • Valid Move Rate (20%)<br>
+                                            • Coverage Ratio (10%)
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="evaluation-card" onclick="selectEvaluation('speed')" data-evaluation="speed">
+                                        <h4>Speed Run</h4>
+                                        <p class="description">Fastest completion time wins</p>
+                                        <div class="metrics">
+                                            <strong>Focus:</strong>
+                                            • Time to completion<br>
+                                            • Move efficiency<br>
+                                            • No penalty for losses<br>
+                                            • Best time counts
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <input type="hidden" name="evaluation_type" value="standard">
+                            </div>
+                        </div>
+                        
+                        <!-- Step 4: Review -->
+                        <div class="wizard-page" data-page="4" style="display: none;">
+                            <div class="card">
+                                <h3>Review & Launch</h3>
+                                <div id="review-summary">
+                                    <!-- Will be populated by JavaScript -->
+                                </div>
+                                
+                                <div class="alert alert-info mt-4">
+                                    <strong>Join Code:</strong> Will be generated after creation
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Wizard Actions -->
+                    <div class="wizard-actions">
+                        <button type="button" class="button" onclick="previousStep()" id="prev-btn" style="visibility: hidden;">Previous</button>
+                        <button type="button" class="button button-primary" onclick="nextStep()" id="next-btn">Next</button>
+                        <button type="submit" class="button button-primary" id="submit-btn" style="display: none;">Create Competition</button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 4;
+        
+        function updateWizardUI() {
+            // Update step indicators
+            document.querySelectorAll('.wizard-step').forEach((step, index) => {
+                const stepNum = index + 1;
+                step.classList.remove('active', 'completed');
+                if (stepNum < currentStep) {
+                    step.classList.add('completed');
+                } else if (stepNum === currentStep) {
+                    step.classList.add('active');
+                }
+            });
+            
+            // Show/hide pages
+            document.querySelectorAll('.wizard-page').forEach(page => {
+                page.style.display = 'none';
+            });
+            document.querySelector(`[data-page="${currentStep}"]`).style.display = 'block';
+            
+            // Update buttons
+            document.getElementById('prev-btn').style.visibility = currentStep === 1 ? 'hidden' : 'visible';
+            document.getElementById('next-btn').style.display = currentStep === totalSteps ? 'none' : 'block';
+            document.getElementById('submit-btn').style.display = currentStep === totalSteps ? 'block' : 'none';
+            
+            // Update review if on last step
+            if (currentStep === totalSteps) {
+                updateReview();
+            }
+        }
+        
+        function nextStep() {
+            if (validateCurrentStep()) {
+                if (currentStep < totalSteps) {
+                    currentStep++;
+                    updateWizardUI();
+                }
+            }
+        }
+        
+        function previousStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateWizardUI();
+            }
+        }
+        
+        function validateCurrentStep() {
+            const currentPage = document.querySelector(`[data-page="${currentStep}"]`);
+            const requiredFields = currentPage.querySelectorAll('[required]');
+            
+            for (let field of requiredFields) {
+                if (!field.value.trim()) {
+                    field.focus();
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        function selectEvaluation(type) {
+            document.querySelectorAll('.evaluation-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.querySelector(`[data-evaluation="${type}"]`).classList.add('selected');
+            document.querySelector('[name="evaluation_type"]').value = type;
+        }
+        
+        function updateGameSettings(gameType) {
+            const difficultySelect = document.querySelector('[name="difficulty"]');
+            
+            if (gameType === 'risk') {
+                difficultySelect.innerHTML = `
+                    <option value="easy">Easy - Small map</option>
+                    <option value="medium" selected>Medium - Standard map</option>
+                    <option value="hard">Hard - Large map</option>
+                `;
+            } else {
+                difficultySelect.innerHTML = `
+                    <option value="easy">Easy (9x9, 10 mines)</option>
+                    <option value="medium" selected>Medium (16x16, 40 mines)</option>
+                    <option value="hard">Hard (16x30, 99 mines)</option>
+                    <option value="expert">Expert (20x30, 145 mines)</option>
+                `;
+            }
+        }
+        
+        function updateReview() {
+            const form = document.getElementById('competition-wizard-form');
+            const formData = new FormData(form);
+            
+            const evaluationLabels = {
+                'standard': 'Standard Competition',
+                'minebench': 'MineBench Official',
+                'speed': 'Speed Run'
+            };
+            
+            const summary = `
+                <dl class="review-list">
+                    <dt>Competition Name</dt>
+                    <dd>${formData.get('name')}</dd>
+                    
+                    <dt>Game Type</dt>
+                    <dd>${formData.get('game_type').charAt(0).toUpperCase() + formData.get('game_type').slice(1)}</dd>
+                    
+                    <dt>Difficulty</dt>
+                    <dd>${formData.get('difficulty').charAt(0).toUpperCase() + formData.get('difficulty').slice(1)}</dd>
+                    
+                    <dt>Number of Games</dt>
+                    <dd>${formData.get('num_games')}</dd>
+                    
+                    <dt>Max Players</dt>
+                    <dd>${formData.get('max_players')}</dd>
+                    
+                    <dt>Evaluation Method</dt>
+                    <dd>${evaluationLabels[formData.get('evaluation_type')]}</dd>
+                </dl>
+            `;
+            
+            document.getElementById('review-summary').innerHTML = summary;
+        }
+        
+        // Form submission
+        document.getElementById('competition-wizard-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('/api/sessions/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: data.name,
+                        description: data.description,
+                        game_type: data.game_type,
+                        max_players: parseInt(data.max_players),
+                        config: {
+                            difficulty: data.difficulty,
+                            num_games: parseInt(data.num_games),
+                            move_timeout: parseInt(data.move_timeout),
+                            evaluation_type: data.evaluation_type
+                        },
+                        creator_id: 'user-' + Math.random().toString(36).substr(2, 9),
+                        creator_name: 'Host'
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    // Redirect to host page with session info
+                    window.location.href = `/host?session=${result.session_id}&code=${result.join_code}`;
+                } else {
+                    alert('Failed to create competition');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error creating competition');
+            }
+        });
+        
+        // Initialize
+        updateWizardUI();
+        selectEvaluation('standard');
+    </script>
+</body>
+</html>
