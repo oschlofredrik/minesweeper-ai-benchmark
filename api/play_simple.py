@@ -1,9 +1,18 @@
 """Play endpoint - simplified for Vercel."""
+print("[PLAY_SIMPLE] Module loading...")
+
 from http.server import BaseHTTPRequestHandler
 import json
 import os
+import sys
 import uuid
 from datetime import datetime
+
+print(f"[PLAY_SIMPLE] Python version: {sys.version}")
+print(f"[PLAY_SIMPLE] __file__ = {__file__}")
+
+# Add current directory to path for imports
+sys.path.append(os.path.dirname(__file__))
 
 # Supabase configuration
 SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
@@ -115,21 +124,64 @@ class handler(BaseHTTPRequestHandler):
             })
         
         elif path == '/api/benchmark/run':
+            print(f"[BENCHMARK] Received POST to {path}")
             # Handle benchmark run here
-            content_length = int(self.headers['Content-Length'])
-            post_data = self.rfile.read(content_length)
-            config = json.loads(post_data)
+            try:
+                content_length = int(self.headers['Content-Length'])
+                post_data = self.rfile.read(content_length)
+                config = json.loads(post_data)
+                
+                # Log the benchmark request
+                print(f"[BENCHMARK] Config received: {json.dumps(config)}")
+                print(f"[BENCHMARK] Environment check - OPENAI_API_KEY exists: {'OPENAI_API_KEY' in os.environ}")
+                print(f"[BENCHMARK] Environment check - ANTHROPIC_API_KEY exists: {'ANTHROPIC_API_KEY' in os.environ}")
+            except Exception as e:
+                print(f"[BENCHMARK] Error parsing request: {e}")
+                self.send_json_response({"error": str(e)}, 400)
+                return
             
-            # For now, return a simple response
             job_id = "bench_" + str(uuid.uuid4())[:8]
             
-            self.send_json_response({
-                "job_id": job_id,
-                "status": "started",
-                "config": config,
-                "games": [],
-                "message": "Benchmark started (simplified mode)"
-            })
+            # Try to run a simple game
+            try:
+                result = self.run_benchmark_game(config)
+                print(f"[BENCHMARK] Game completed: won={result.get('won')}, moves={result.get('total_moves')}")
+                
+                response = {
+                    "job_id": job_id,
+                    "status": "completed",
+                    "config": config,
+                    "games": [{
+                        "game_id": result['game_id'],
+                        "game_number": 1,
+                        "status": "completed",
+                        "won": result.get('won', False),
+                        "total_moves": result.get('total_moves', 0),
+                        "duration": result.get('duration', 0),
+                        "final_state": result.get('final_state'),
+                        "moves": result.get('moves', [])
+                    }],
+                    "summary": {
+                        "games_completed": 1,
+                        "wins": 1 if result.get('won') else 0,
+                        "win_rate": 1.0 if result.get('won') else 0.0,
+                        "avg_moves": result.get('total_moves', 0)
+                    }
+                }
+            except Exception as e:
+                print(f"[BENCHMARK] Error running game: {str(e)}")
+                import traceback
+                traceback.print_exc()
+                
+                response = {
+                    "job_id": job_id,
+                    "status": "error",
+                    "config": config,
+                    "games": [],
+                    "error": str(e)
+                }
+            
+            self.send_json_response(response)
             
         else:
             self.send_error(404)
@@ -156,8 +208,61 @@ class handler(BaseHTTPRequestHandler):
             except:
                 pass
     
-    def send_json_response(self, data):
-        self.send_response(200)
+    def run_benchmark_game(self, config):
+        """Run a single benchmark game with AI."""
+        print(f"[GAME] Starting game with model={config.get('model')} provider={config.get('provider')}")
+        
+        game_id = str(uuid.uuid4())
+        game_type = config.get('game', 'minesweeper')
+        model_name = config.get('model', 'gpt-4')
+        provider = config.get('provider', 'openai')
+        
+        # Try to import AI models
+        try:
+            from ai_models import call_ai_model, format_game_messages, extract_function_call
+            print(f"[GAME] Successfully imported ai_models")
+        except ImportError as e:
+            print(f"[GAME] Failed to import ai_models: {e}")
+            raise
+        
+        # Simple test: try to call the AI with a basic prompt
+        try:
+            messages = [{"role": "user", "content": "Say 'hello world' and nothing else"}]
+            print(f"[GAME] Calling AI model {model_name} via {provider}")
+            
+            response = call_ai_model(
+                provider=provider,
+                model=model_name,
+                messages=messages,
+                temperature=0.7
+            )
+            
+            print(f"[GAME] AI Response: {response}")
+            
+            # Return a simple result
+            return {
+                'game_id': game_id,
+                'game_type': game_type,
+                'status': 'completed',
+                'won': False,
+                'total_moves': 1,
+                'moves': [{
+                    'move_number': 1,
+                    'action': {'test': 'response'},
+                    'valid': True,
+                    'message': str(response),
+                    'timestamp': datetime.utcnow().isoformat()
+                }],
+                'final_state': {'test': 'completed'},
+                'duration': 1.0
+            }
+            
+        except Exception as e:
+            print(f"[GAME] Error calling AI: {str(e)}")
+            raise
+    
+    def send_json_response(self, data, status_code=200):
+        self.send_response(status_code)
         self.send_header('Content-type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
