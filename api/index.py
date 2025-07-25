@@ -67,6 +67,37 @@ class handler(BaseHTTPRequestHandler):
         elif path == '/api/games/active':
             self.send_json({"games": []})
             
+        elif path == '/api/stats':
+            self.send_json({
+                "total_sessions": 0,
+                "active_sessions": 0,
+                "total_players": 0
+            })
+            
+        elif path == '/api/play/games':
+            self.send_json({
+                "games": [
+                    {"id": "minesweeper", "name": "Minesweeper", "description": "Classic mine detection game"},
+                    {"id": "risk", "name": "Risk", "description": "Strategic conquest game"}
+                ]
+            })
+            
+        elif path == '/api/sessions/templates/quick-match':
+            self.send_json({
+                "template": {
+                    "name": "Quick Match",
+                    "game_type": "minesweeper",
+                    "format": "single_round",
+                    "max_players": 10
+                }
+            })
+            
+        elif path == '/robots.txt':
+            self.send_response(200)
+            self.send_header('Content-type', 'text/plain')
+            self.end_headers()
+            self.wfile.write(b"User-agent: *\nAllow: /")
+            
         else:
             self.send_error(404)
     
