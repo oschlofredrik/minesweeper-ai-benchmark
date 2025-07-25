@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Game Execution - Tilts</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/rams-design.css">
+    <link rel="stylesheet" href="/static/tilts.css">
+    <style>
+        .test-section {
+            margin-bottom: calc(var(--unit) * 4);
+        }
+        
+        .test-result {
+            margin-top: calc(var(--unit) * 2);
+            padding: calc(var(--unit) * 2);
+            background: var(--color-bg-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius);
+            font-family: 'Berkeley Mono', monospace;
+            font-size: var(--font-size-small);
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .test-result.success {
+            border-color: var(--color-success);
+        }
+        
+        .test-result.error {
+            border-color: var(--color-error);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: var(--unit);
+        }
+        
+        .status-indicator.success {
+            background: var(--color-success);
+        }
+        
+        .status-indicator.error {
+            background: var(--color-error);
+        }
+        
+        .status-indicator.pending {
+            background: var(--color-warning);
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <h1 class="logo-text">Tilts</h1>
+            </div>
+            
+            <nav>
+                <ul class="nav">
+                    <li class="nav-item">
+                        <a href="/" class="nav-link">Overview</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/compete" class="nav-link">Compete</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/benchmark" class="nav-link">Benchmark</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/leaderboard" class="nav-link">Leaderboard</a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div style="position: absolute; bottom: calc(var(--unit) * 3); left: calc(var(--unit) * 3); right: calc(var(--unit) * 3);">
+                <a href="/admin" class="button button-secondary" style="width: 100%; text-align: center;">Admin</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <section class="section">
+                <h2>Test Game Execution</h2>
+                <p class="text-muted mb-4">Test the end-to-end game execution flow</p>
+                
+                <!-- Test 1: Create Game Job -->
+                <div class="test-section card">
+                    <h3><span class="status-indicator pending" id="test1-status"></span>Test 1: Create Game Job</h3>
+                    <p class="text-muted">Creates a new game job with /api/play endpoint</p>
+                    <button class="button button-primary" onclick="runTest1()">Run Test</button>
+                    <div id="test1-result" class="test-result" style="display: none;"></div>
+                </div>
+                
+                <!-- Test 2: Check Job Status -->
+                <div class="test-section card">
+                    <h3><span class="status-indicator pending" id="test2-status"></span>Test 2: Check Job Status</h3>
+                    <p class="text-muted">Polls job status with /api/play/games/{id} endpoint</p>
+                    <button class="button button-primary" onclick="runTest2()" disabled id="test2-btn">Run Test</button>
+                    <div id="test2-result" class="test-result" style="display: none;"></div>
+                </div>
+                
+                <!-- Test 3: Run Demo Game -->
+                <div class="test-section card">
+                    <h3><span class="status-indicator pending" id="test3-status"></span>Test 3: Run Demo Game</h3>
+                    <p class="text-muted">Executes a demo game with /api/run_game endpoint</p>
+                    <button class="button button-primary" onclick="runTest3()">Run Test</button>
+                    <div id="test3-result" class="test-result" style="display: none;"></div>
+                </div>
+                
+                <!-- Test 4: Session Management -->
+                <div class="test-section card">
+                    <h3><span class="status-indicator pending" id="test4-status"></span>Test 4: Session Management</h3>
+                    <p class="text-muted">Tests session creation and listing</p>
+                    <button class="button button-primary" onclick="runTest4()">Run Test</button>
+                    <div id="test4-result" class="test-result" style="display: none;"></div>
+                </div>
+                
+                <!-- Test 5: Full Game Flow -->
+                <div class="test-section card">
+                    <h3><span class="status-indicator pending" id="test5-status"></span>Test 5: Full Game Flow</h3>
+                    <p class="text-muted">Tests complete game execution from start to finish</p>
+                    <button class="button button-primary" onclick="runTest5()">Run All Tests</button>
+                    <div id="test5-result" class="test-result" style="display: none;"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        let currentJobId = null;
+        
+        async function runTest1() {
+            const statusEl = document.getElementById('test1-status');
+            const resultEl = document.getElementById('test1-result');
+            
+            statusEl.className = 'status-indicator pending';
+            resultEl.style.display = 'block';
+            resultEl.className = 'test-result';
+            resultEl.textContent = 'Running test...';
+            
+            try {
+                const response = await fetch('/api/play', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        game: 'minesweeper',
+                        model: 'gpt-4',
+                        provider: 'openai',
+                        num_games: 1,
+                        difficulty: 'easy'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentJobId = data.job_id;
+                    statusEl.className = 'status-indicator success';
+                    resultEl.className = 'test-result success';
+                    resultEl.textContent = JSON.stringify(data, null, 2);
+                    
+                    // Enable test 2
+                    document.getElementById('test2-btn').disabled = false;
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${JSON.stringify(data)}`);
+                }
+            } catch (error) {
+                statusEl.className = 'status-indicator error';
+                resultEl.className = 'test-result error';
+                resultEl.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        async function runTest2() {
+            if (!currentJobId) {
+                alert('Please run Test 1 first');
+                return;
+            }
+            
+            const statusEl = document.getElementById('test2-status');
+            const resultEl = document.getElementById('test2-result');
+            
+            statusEl.className = 'status-indicator pending';
+            resultEl.style.display = 'block';
+            resultEl.className = 'test-result';
+            resultEl.textContent = 'Running test...';
+            
+            try {
+                const response = await fetch(`/api/play/games/${currentJobId}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    statusEl.className = 'status-indicator success';
+                    resultEl.className = 'test-result success';
+                    resultEl.textContent = JSON.stringify(data, null, 2);
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${JSON.stringify(data)}`);
+                }
+            } catch (error) {
+                statusEl.className = 'status-indicator error';
+                resultEl.className = 'test-result error';
+                resultEl.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        async function runTest3() {
+            const statusEl = document.getElementById('test3-status');
+            const resultEl = document.getElementById('test3-result');
+            
+            statusEl.className = 'status-indicator pending';
+            resultEl.style.display = 'block';
+            resultEl.className = 'test-result';
+            resultEl.textContent = 'Running test...';
+            
+            try {
+                const response = await fetch('/api/run_game', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        game_id: 'test-game-' + Date.now()
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    statusEl.className = 'status-indicator success';
+                    resultEl.className = 'test-result success';
+                    resultEl.textContent = JSON.stringify(data, null, 2);
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${JSON.stringify(data)}`);
+                }
+            } catch (error) {
+                statusEl.className = 'status-indicator error';
+                resultEl.className = 'test-result error';
+                resultEl.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        async function runTest4() {
+            const statusEl = document.getElementById('test4-status');
+            const resultEl = document.getElementById('test4-result');
+            
+            statusEl.className = 'status-indicator pending';
+            resultEl.style.display = 'block';
+            resultEl.className = 'test-result';
+            resultEl.textContent = 'Running test...';
+            
+            try {
+                // Create session
+                const createResponse = await fetch('/api/sessions/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: 'Test Session ' + Date.now(),
+                        game_type: 'minesweeper',
+                        max_players: 10,
+                        creator_id: 'test-user',
+                        creator_name: 'Test User'
+                    })
+                });
+                
+                const createData = await createResponse.json();
+                
+                // List sessions
+                const listResponse = await fetch('/api/sessions?active=true');
+                const listData = await listResponse.json();
+                
+                if (createResponse.ok && listResponse.ok) {
+                    statusEl.className = 'status-indicator success';
+                    resultEl.className = 'test-result success';
+                    resultEl.textContent = `Created Session:\n${JSON.stringify(createData, null, 2)}\n\nActive Sessions:\n${JSON.stringify(listData, null, 2)}`;
+                } else {
+                    throw new Error('Session test failed');
+                }
+            } catch (error) {
+                statusEl.className = 'status-indicator error';
+                resultEl.className = 'test-result error';
+                resultEl.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        async function runTest5() {
+            // Run all tests in sequence
+            await runTest1();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await runTest2();
+            await runTest3();
+            await runTest4();
+            
+            const statusEl = document.getElementById('test5-status');
+            const resultEl = document.getElementById('test5-result');
+            
+            statusEl.className = 'status-indicator success';
+            resultEl.style.display = 'block';
+            resultEl.className = 'test-result success';
+            resultEl.textContent = 'All tests completed! Check individual test results above.';
+        }
+    </script>
+</body>
+</html>
