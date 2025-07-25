@@ -258,12 +258,9 @@ async function handleStartEvaluation(e) {
                 `;
             }
             
-            // Process results immediately (sync execution)
-            if (result.status === 'completed' && result.games) {
+            // Always process results immediately since we get them sync
+            if (result.games) {
                 updateBenchmarkResults(result);
-            } else {
-                // Fallback to polling
-                startGameUpdates(result.job_id);
             }
         } else {
             const errorText = await response.text();
@@ -434,24 +431,7 @@ function updateGameStats(data) {
 }
 
 function showCompletionSummary(data) {
-    const summary = data.summary || {};
-    const summaryHtml = `
-        <div class="completion-summary">
-            <h3>Evaluation Complete</h3>
-            <p>Total Games: ${summary.games_completed || 0}</p>
-            <p>Wins: ${summary.wins || 0}</p>
-            <p>Win Rate: ${((summary.win_rate || 0) * 100).toFixed(1)}%</p>
-            <p>Average Moves: ${(summary.avg_moves || 0).toFixed(1)}</p>
-            <a href="/leaderboard" class="button">View Leaderboard</a>
-        </div>
-    `;
-    
-    if (eventStreamUI && eventStreamUI.streamList) {
-        const eventDiv = document.createElement('div');
-        eventDiv.className = 'event-item event-system';
-        eventDiv.innerHTML = summaryHtml;
-        eventStreamUI.streamList.appendChild(eventDiv);
-    }
+    // Removed - completion is shown in the stats above
 }
 
 async function generateTasksIfNeeded(evalConfig) {

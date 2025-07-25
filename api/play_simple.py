@@ -18,6 +18,9 @@ sys.path.append(os.path.dirname(__file__))
 SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
 SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY', '')
 
+# Simple in-memory game state storage
+GAME_STATES = {}
+
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = self.path.split('?')[0]
