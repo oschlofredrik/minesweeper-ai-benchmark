@@ -1,10 +1,15 @@
 """Benchmark runner endpoint for Vercel."""
+print("benchmark_runner.py: Module loading...")
+
 from http.server import BaseHTTPRequestHandler
 import json
 import os
 import sys
 import uuid
 from datetime import datetime
+
+print(f"benchmark_runner.py: Current directory: {os.getcwd()}")
+print(f"benchmark_runner.py: __file__ = {__file__}")
 
 # Import dependencies
 sys.path.append(os.path.dirname(__file__))
@@ -31,28 +36,27 @@ SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY', '')
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
-        path_parts = self.path.split('/')
+        print(f"benchmark_runner.py: Received POST request to {self.path}")
+        path = self.path.split('?')[0]
+        print(f"benchmark_runner.py: Clean path: {path}")
         
-        if len(path_parts) >= 4 and path_parts[2] == 'benchmark':
-            if path_parts[3] == 'run':
-                self.handle_benchmark_run()
-            elif path_parts[3] == 'status':
-                self.handle_benchmark_status()
-            else:
-                self.send_error(404)
+        if path == '/api/benchmark/run':
+            self.handle_benchmark_run()
+        elif path == '/api/benchmark/status':
+            self.handle_benchmark_status()
         else:
+            print(f"benchmark_runner.py: Path not matched, sending 404")
             self.send_error(404)
     
     def do_GET(self):
-        path_parts = self.path.split('/')
+        print(f"benchmark_runner.py: Received GET request to {self.path}")
+        path = self.path.split('?')[0]
         
-        if len(path_parts) >= 4 and path_parts[2] == 'benchmark':
-            if path_parts[3] == 'jobs' and len(path_parts) > 4:
-                job_id = path_parts[4]
-                self.handle_job_status(job_id)
-            else:
-                self.send_error(404)
+        if path.startswith('/api/benchmark/jobs/'):
+            job_id = path.replace('/api/benchmark/jobs/', '')
+            self.handle_job_status(job_id)
         else:
+            print(f"benchmark_runner.py: GET path not matched, sending 404")
             self.send_error(404)
     
     def handle_benchmark_run(self):
