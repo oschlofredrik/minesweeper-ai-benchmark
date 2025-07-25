@@ -305,14 +305,22 @@ function updateBenchmarkResults(data) {
     
     // Process completed games
     data.games?.forEach((game, idx) => {
-        if (game.status === 'completed') {
+        if (game.status === 'completed' || game.status === 'error') {
             // Add completion event
             if (eventStreamUI && eventStreamUI.streamList) {
                 const eventDiv = document.createElement('div');
-                eventDiv.className = 'event-item event-system';
+                eventDiv.className = `event-item ${game.status === 'error' ? 'event-error' : 'event-system'}`;
+                
+                let message = '';
+                if (game.status === 'error') {
+                    message = `Game ${idx + 1} failed: ${game.error || 'Unknown error'}`;
+                } else {
+                    message = `Game ${idx + 1} completed: ${game.won ? 'Won' : 'Lost'} in ${game.total_moves} moves`;
+                }
+                
                 eventDiv.innerHTML = `
                     <div class="event-content">
-                        <p>Game ${idx + 1} completed: ${game.won ? 'Won' : 'Lost'} in ${game.total_moves} moves</p>
+                        <p>${message}</p>
                     </div>
                 `;
                 eventStreamUI.streamList.appendChild(eventDiv);

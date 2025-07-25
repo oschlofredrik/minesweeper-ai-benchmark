@@ -201,33 +201,61 @@ class handler(BaseHTTPRequestHandler):
             # Call AI
             messages = format_game_messages(game_type, prompt)
             
-            response = call_ai_api(
-                provider=provider,
-                model=model_name,
-                messages=messages,
-                functions=[function_schema],
-                temperature=0.7
-            )
-            
-            # Extract move
-            ai_move = extract_function_call(response)
-            if not ai_move:
-                # Try to parse from content
-                content = response.get('content', '')
-                if game_type == 'minesweeper':
-                    ai_move = {
-                        'action': 'reveal',
-                        'row': move_num % game.rows,
-                        'col': move_num % game.cols,
-                        'reasoning': content or 'Could not parse AI response'
+            try:
+                response = call_ai_api(
+                    provider=provider,
+                    model=model_name,
+                    messages=messages,
+                    functions=[function_schema],
+                    temperature=0.7
+                )
+                
+                # Check for error in response
+                if isinstance(response, dict) and 'error' in response:
+                    print(f"AI API Error: {response['error']}")
+                    # Return early with error
+                    return {
+                        'game_id': game_id,
+                        'game_type': game_type,
+                        'status': 'error',
+                        'error': f"AI API Error: {response.get('error', 'Unknown error')}",
+                        'won': False,
+                        'total_moves': move_num,
+                        'moves': moves,
+                        'final_state': game.to_json_state(),
+                        'duration': (datetime.utcnow() - start_time).total_seconds()
                     }
-                else:
-                    ai_move = {
-                        'action': 'reinforce',
-                        'territory': 'alaska',
-                        'armies': 3,
-                        'reasoning': content or 'Could not parse AI response'
+                
+                # Extract move
+                ai_move = extract_function_call(response)
+                if not ai_move:
+                    # Log the actual response for debugging
+                    print(f"Could not extract function call from response: {response}")
+                    # Return with error instead of using dummy moves
+                    return {
+                        'game_id': game_id,
+                        'game_type': game_type,
+                        'status': 'error',
+                        'error': 'Could not parse AI response - check API keys',
+                        'won': False,
+                        'total_moves': move_num,
+                        'moves': moves,
+                        'final_state': game.to_json_state(),
+                        'duration': (datetime.utcnow() - start_time).total_seconds()
                     }
+            except Exception as e:
+                print(f"Exception calling AI: {str(e)}")
+                return {
+                    'game_id': game_id,
+                    'game_type': game_type,
+                    'status': 'error',
+                    'error': f'AI call failed: {str(e)}',
+                    'won': False,
+                    'total_moves': move_num,
+                    'moves': moves,
+                    'final_state': game.to_json_state(),
+                    'duration': (datetime.utcnow() - start_time).total_seconds()
+                }
             
             # Execute move
             valid, message = execute_move(game, ai_move)
