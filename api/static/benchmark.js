@@ -238,12 +238,16 @@ async function handleStartEvaluation(e) {
             currentGameType = evalConfig.game;
             initializeGameVisualization(evalConfig);
             
-            // Clear event stream
-            eventStreamUI.clear();
-            eventStreamUI.addEvent({
-                type: 'system',
-                message: `Starting ${evalConfig.num_games} ${evalConfig.game} games with ${evalConfig.model}...`
-            });
+            // Initialize event stream (clear happens automatically)
+            if (eventStreamUI && eventStreamUI.streamList) {
+                eventStreamUI.streamList.innerHTML = `
+                    <div class="event-item event-system">
+                        <div class="event-content">
+                            <p>Starting ${evalConfig.num_games} ${evalConfig.game} games with ${evalConfig.model}...</p>
+                        </div>
+                    </div>
+                `;
+            }
             
             // Process results immediately (sync execution)
             if (result.status === 'completed' && result.games) {
@@ -303,10 +307,16 @@ function updateBenchmarkResults(data) {
     data.games?.forEach((game, idx) => {
         if (game.status === 'completed') {
             // Add completion event
-            eventStreamUI.addEvent({
-                type: 'system',
-                message: `Game ${idx + 1} completed: ${game.won ? 'Won' : 'Lost'} in ${game.total_moves} moves`
-            });
+            if (eventStreamUI && eventStreamUI.streamList) {
+                const eventDiv = document.createElement('div');
+                eventDiv.className = 'event-item event-system';
+                eventDiv.innerHTML = `
+                    <div class="event-content">
+                        <p>Game ${idx + 1} completed: ${game.won ? 'Won' : 'Lost'} in ${game.total_moves} moves</p>
+                    </div>
+                `;
+                eventStreamUI.streamList.appendChild(eventDiv);
+            }
             
             // Update visualization with final state
             if (game.final_state && gameVisualizer) {
@@ -353,15 +363,18 @@ function updateGameStats(data) {
         }
         
         // Add move to event stream
-        if (currentGame.moves?.length > 0) {
+        if (currentGame.moves?.length > 0 && eventStreamUI && eventStreamUI.streamList) {
             const lastMove = currentGame.moves[currentGame.moves.length - 1];
-            eventStreamUI.addEvent({
-                type: 'move',
-                action: lastMove.action,
-                position: lastMove.parameters?.position,
-                reasoning: lastMove.reasoning,
-                valid: lastMove.valid
-            });
+            const eventDiv = document.createElement('div');
+            eventDiv.className = 'event-item event-move';
+            eventDiv.innerHTML = `
+                <div class="event-content">
+                    <p><strong>Move:</strong> ${lastMove.action} at ${lastMove.parameters?.position || 'unknown'}</p>
+                    ${lastMove.reasoning ? `<p class="text-muted">${lastMove.reasoning}</p>` : ''}
+                    ${lastMove.valid === false ? '<p class="text-error">Invalid move</p>' : ''}
+                </div>
+            `;
+            eventStreamUI.streamList.appendChild(eventDiv);
         }
     }
 }
@@ -379,10 +392,12 @@ function showCompletionSummary(data) {
         </div>
     `;
     
-    eventStreamUI.addEvent({
-        type: 'system',
-        message: summaryHtml
-    });
+    if (eventStreamUI && eventStreamUI.streamList) {
+        const eventDiv = document.createElement('div');
+        eventDiv.className = 'event-item event-system';
+        eventDiv.innerHTML = summaryHtml;
+        eventStreamUI.streamList.appendChild(eventDiv);
+    }
 }
 
 async function generateTasksIfNeeded(evalConfig) {
