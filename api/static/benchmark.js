@@ -1,6 +1,56 @@
 // Benchmark page functionality
 let eventStreamUI = null;
 let currentJobId = null;
+let gameVisualizer = null;
+let currentGameType = 'minesweeper';
+
+// Initialize game visualization
+function initializeGameVisualization(config) {
+    try {
+        // Clean up existing visualizer
+        if (gameVisualizer) {
+            gameVisualizer.clear();
+        }
+        
+        // Create new visualizer
+        gameVisualizer = createGameVisualizer(config.game, 'game-board');
+        
+        // Initialize with game config
+        const gameConfig = {
+            rows: 16,
+            cols: 16,
+            mines: 40
+        };
+        
+        // Override with difficulty settings
+        if (config.game === 'minesweeper') {
+            const difficultySettings = {
+                easy: { rows: 9, cols: 9, mines: 10 },
+                medium: { rows: 16, cols: 16, mines: 40 },
+                hard: { rows: 16, cols: 30, mines: 99 }
+            };
+            Object.assign(gameConfig, difficultySettings[config.difficulty] || difficultySettings.medium);
+        }
+        
+        gameVisualizer.initialize(gameConfig);
+    } catch (error) {
+        console.error('Failed to initialize game visualization:', error);
+    }
+}
+
+// Handle game state updates
+function handleGameStateUpdate(gameState) {
+    if (gameVisualizer && gameState) {
+        gameVisualizer.updateState(gameState);
+    }
+}
+
+// Handle move highlights
+function handleMoveHighlight(move) {
+    if (gameVisualizer && move) {
+        gameVisualizer.highlightMove(move);
+    }
+}
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -9,6 +59,15 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Set up form handler
     document.getElementById('eval-form').addEventListener('submit', handleStartEvaluation);
+    
+    // Listen for game events
+    document.addEventListener('game-state-update', (e) => {
+        handleGameStateUpdate(e.detail);
+    });
+    
+    document.addEventListener('move-completed', (e) => {
+        handleMoveHighlight(e.detail);
+    });
 });
 
 function showEvalModal() {
@@ -70,9 +129,8 @@ async function handleStartEvaluation(e) {
             document.getElementById('game-stats').style.display = 'flex';
             
             // Initialize visualization
-            if (evalConfig.game === 'minesweeper') {
-                window.initMinesweeperBoard();
-            }
+            currentGameType = evalConfig.game;
+            initializeGameVisualization(evalConfig);
             
             // Start polling for updates
             startGameUpdates(result.job_id);

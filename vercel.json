@@ -32,6 +32,10 @@
     {
       "src": "api/games_config.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "api/game_runner.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
@@ -62,6 +66,10 @@
     {
       "src": "/api/games(.*)",
       "dest": "/api/games_config.py"
+    },
+    {
+      "src": "/api/game_runner(.*)",
+      "dest": "/api/game_runner.py"
     },
     {
       "src": "/(.*)",
