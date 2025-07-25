@@ -1,0 +1,26 @@
+{
+  "name": "tilts-platform",
+  "version": 2,
+  "public": false,
+  "builds": [
+    {
+      "src": "src/api/static/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "https://api.tilts.workers.dev/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/src/api/static/$1"
+    }
+  ],
+  "env": {
+    "VITE_API_URL": "@tilts-api-url",
+    "VITE_PUSHER_KEY": "@pusher-key",
+    "VITE_PUSHER_CLUSTER": "@pusher-cluster"
+  }
+}

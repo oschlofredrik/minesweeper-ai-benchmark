@@ -1,0 +1,124 @@
+service: tilts-api
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.11
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+  timeout: 30
+  memorySize: 512
+  environment:
+    STAGE: ${self:provider.stage}
+    DYNAMODB_TABLE_PREFIX: ${self:service}-${self:provider.stage}
+    S3_BUCKET_NAME: ${self:service}-data-${self:provider.stage}
+    OPENAI_API_KEY: ${env:OPENAI_API_KEY}
+    ANTHROPIC_API_KEY: ${env:ANTHROPIC_API_KEY}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:*
+          Resource:
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE_PREFIX}-*
+        - Effect: Allow
+          Action:
+            - s3:*
+          Resource:
+            - arn:aws:s3:::${self:provider.environment.S3_BUCKET_NAME}/*
+
+functions:
+  api:
+    handler: src.main.handler
+    events:
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors: true
+      - http:
+          path: /
+          method: ANY
+          cors: true
+    layers:
+      - arn:aws:lambda:${self:provider.region}:017000801446:layer:AWSLambdaPowertoolsPythonV2:46
+
+  evaluateModel:
+    handler: src.workers.evaluate.handler
+    timeout: 900  # 15 minutes for long evaluations
+    memorySize: 1024
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - EvaluationQueue
+              - Arn
+
+resources:
+  Resources:
+    GamesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_PREFIX}-games
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: model_name
+            AttributeType: S
+          - AttributeName: created_at
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: model-created-index
+            KeySchema:
+              - AttributeName: model_name
+                KeyType: HASH
+              - AttributeName: created_at
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+
+    LeaderboardTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_PREFIX}-leaderboard
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: model_name
+            AttributeType: S
+        KeySchema:
+          - AttributeName: model_name
+            KeyType: HASH
+
+    DataBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.S3_BUCKET_NAME}
+        LifecycleConfiguration:
+          Rules:
+            - Id: ArchiveOldGames
+              Status: Enabled
+              Transitions:
+                - TransitionInDays: 30
+                  StorageClass: STANDARD_IA
+                - TransitionInDays: 90
+                  StorageClass: GLACIER
+
+    EvaluationQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-evaluation-${self:provider.stage}
+        VisibilityTimeout: 960  # 16 minutes
+
+plugins:
+  - serverless-python-requirements
+  - serverless-offline
+
+custom:
+  pythonRequirements:
+    dockerizePip: non-linux
+    layer: true
