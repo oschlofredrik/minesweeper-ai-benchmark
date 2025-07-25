@@ -6,6 +6,7 @@ import random
 import time
 from datetime import datetime
 import uuid
+import sys
 
 # Import game implementations inline to avoid complex imports
 class SimpleMinesweeper:
@@ -493,24 +494,98 @@ def get_function_schema(game_type):
         }
 
 
-def call_ai_model(prompt, function_schema, model_name, provider):
+# Import AI models module
+sys.path.append(os.path.dirname(__file__))
+try:
+    from ai_models import call_ai_model as call_ai_api, format_game_messages, extract_function_call
+except ImportError:
+    # Fallback if import fails
+    def call_ai_api(*args, **kwargs):
+        return {"error": "AI models module not available"}
+    def format_game_messages(*args, **kwargs):
+        return []
+    def extract_function_call(*args, **kwargs):
+        return None
+
+
+def call_ai_model(prompt, function_schema, model_name, provider, game_type):
     """Call AI model with function calling."""
-    # This is where you'd integrate with OpenAI/Anthropic APIs
-    # For now, return a demo move
+    # Format messages
+    messages = format_game_messages(game_type, prompt)
     
-    if 'minesweeper' in function_schema['name']:
+    # Call AI API
+    response = call_ai_api(
+        provider=provider,
+        model=model_name,
+        messages=messages,
+        functions=[function_schema],
+        temperature=0.7
+    )
+    
+    # Check for errors
+    if "error" in response:
+        print(f"AI API Error: {response['error']}")
+        # Fallback to demo move
+        if game_type == 'minesweeper':
+            return {
+                "action": "reveal",
+                "row": random.randint(0, 8),
+                "col": random.randint(0, 8),
+                "reasoning": "Demo move due to API error"
+            }
+        else:
+            return {
+                "action": "reinforce",
+                "territory": "alaska",
+                "armies": 3,
+                "reasoning": "Demo move due to API error"
+            }
+    
+    # Extract function call
+    function_args = extract_function_call(response)
+    if function_args:
+        return function_args
+    
+    # Try to parse from content if no function call
+    # This handles models that don't support function calling
+    content = response.get("content", "")
+    if content:
+        # Simple parsing logic for non-function-calling models
+        if game_type == 'minesweeper':
+            # Look for patterns like "reveal (3, 4)" or "flag at row 3, col 4"
+            import re
+            reveal_match = re.search(r"reveal.*?(\d+).*?(\d+)", content.lower())
+            flag_match = re.search(r"flag.*?(\d+).*?(\d+)", content.lower())
+            
+            if reveal_match:
+                return {
+                    "action": "reveal",
+                    "row": int(reveal_match.group(1)),
+                    "col": int(reveal_match.group(2)),
+                    "reasoning": content
+                }
+            elif flag_match:
+                return {
+                    "action": "flag",
+                    "row": int(flag_match.group(1)),
+                    "col": int(flag_match.group(2)),
+                    "reasoning": content
+                }
+    
+    # Final fallback
+    if game_type == 'minesweeper':
         return {
             "action": "reveal",
             "row": random.randint(0, 8),
             "col": random.randint(0, 8),
-            "reasoning": "Starting with a random cell"
+            "reasoning": "Could not parse AI response, using random move"
         }
     else:
         return {
             "action": "reinforce",
             "territory": "alaska",
             "armies": 3,
-            "reasoning": "Strengthening northern position"
+            "reasoning": "Could not parse AI response, using default move"
         }
 
 
@@ -586,21 +661,32 @@ class handler(BaseHTTPRequestHandler):
                 # Generate prompt
                 prompt = get_prompt(game)
                 
-                # Call AI (mock for now)
-                ai_response = call_ai_model(prompt, function_schema, model_name, provider)
+                # Call AI with game type
+                ai_response = call_ai_model(prompt, function_schema, model_name, provider, game_type)
+                
+                # Store token usage if available
+                token_usage = None
+                if isinstance(ai_response, dict) and 'usage' in ai_response:
+                    token_usage = ai_response.get('usage')
                 
                 # Execute move
                 valid, message = execute_move(game, ai_response)
                 
                 # Record move
-                moves.append({
+                move_record = {
                     'move_number': move_num + 1,
                     'action': ai_response,
                     'valid': valid,
                     'message': message,
                     'game_state': game_state,
-                    'timestamp': datetime.utcnow().isoformat()
-                })
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'prompt': prompt
+                }
+                
+                if token_usage:
+                    move_record['token_usage'] = token_usage
+                
+                moves.append(move_record)
                 
                 # Check game over
                 if game.game_over:

@@ -81,6 +81,7 @@ class handler(BaseHTTPRequestHandler):
                     "job_id": job_id,
                     "game_type": play_config.get("game", "minesweeper"),
                     "difficulty": play_config.get("difficulty", "medium"),
+                    "scenario": play_config.get("scenario"),
                     "model_name": play_config.get("model", "gpt-4"),
                     "model_provider": play_config.get("provider", "openai"),
                     "status": "queued",
@@ -101,6 +102,11 @@ class handler(BaseHTTPRequestHandler):
                     "game_number": i + 1
                 })
             
+            # Start first game immediately (simplified approach)
+            # In production, this would be handled by a queue worker
+            if games_created:
+                self.run_single_game(games_created[0]['game_id'], play_config)
+            
             self.send_json_response({
                 "job_id": job_id,
                 "status": "started",
@@ -117,6 +123,21 @@ class handler(BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         self.end_headers()
+    
+    def run_single_game(self, game_id, config):
+        """Run a single game (simplified for demo)."""
+        # This would normally call the game_runner endpoint
+        # For now, just update status to in_progress
+        if SUPABASE_URL and SUPABASE_ANON_KEY:
+            try:
+                from supabase import create_client
+                supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+                supabase.table('games').update({
+                    'status': 'in_progress',
+                    'started_at': datetime.utcnow().isoformat()
+                }).eq('id', game_id).execute()
+            except:
+                pass
     
     def send_json_response(self, data):
         self.send_response(200)

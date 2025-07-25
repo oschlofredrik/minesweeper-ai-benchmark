@@ -68,7 +68,26 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('move-completed', (e) => {
         handleMoveHighlight(e.detail);
     });
+    
+    // Load initial models
+    updateModelOptions('openai');
+    
+    // Check available providers
+    checkAvailableProviders();
 });
+
+// Check which providers have API keys configured
+async function checkAvailableProviders() {
+    try {
+        const response = await fetch('/api/models');
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Available providers:', data.providers);
+        }
+    } catch (error) {
+        console.error('Failed to check providers:', error);
+    }
+}
 
 function showEvalModal() {
     document.getElementById('eval-modal').style.display = 'flex';
@@ -78,7 +97,82 @@ function hideEvalModal() {
     document.getElementById('eval-modal').style.display = 'none';
 }
 
-function updateModelOptions(provider) {
+async function updateModelOptions(provider) {
+    const modelSelect = document.querySelector('select[name="model"]');
+    modelSelect.innerHTML = '<option value="">Loading models...</option>';
+    
+    try {
+        const response = await fetch(`/api/models/${provider}`);
+        if (response.ok) {
+            const data = await response.json();
+            
+            modelSelect.innerHTML = '';
+            
+            // Add models to select
+            Object.entries(data.models).forEach(([modelId, modelInfo]) => {
+                const option = document.createElement('option');
+                option.value = modelId;
+                option.textContent = modelInfo.name;
+                
+                // Add indicator for special models
+                if (modelInfo.reasoning_model) {
+                    option.textContent += ' (Reasoning)';
+                }
+                if (!modelInfo.supports_functions) {
+                    option.textContent += ' *';
+                }
+                
+                // Select GPT-4 or Claude 3 Opus by default
+                if (modelId === 'gpt-4' || modelId === 'claude-3-opus-20240229') {
+                    option.selected = true;
+                }
+                
+                modelSelect.appendChild(option);
+            });
+            
+            // Show API key warning if not configured
+            if (!data.has_api_key) {
+                const warning = document.getElementById('api-key-warning') || createApiKeyWarning();
+                warning.textContent = `⚠️ ${provider.toUpperCase()}_API_KEY not configured`;
+                warning.style.display = 'block';
+            } else {
+                const warning = document.getElementById('api-key-warning');
+                if (warning) warning.style.display = 'none';
+            }
+        } else {
+            // Fallback to static options
+            if (provider === 'openai') {
+                modelSelect.innerHTML = `
+                    <option value="gpt-4">GPT-4</option>
+                    <option value="gpt-4-turbo-preview">GPT-4 Turbo</option>
+                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                `;
+            } else if (provider === 'anthropic') {
+                modelSelect.innerHTML = `
+                    <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+                    <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
+                    <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
+                `;
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load models:', error);
+        // Use fallback options
+        updateModelOptionsFallback(provider);
+    }
+}
+
+function createApiKeyWarning() {
+    const warning = document.createElement('div');
+    warning.id = 'api-key-warning';
+    warning.className = 'alert alert-warning';
+    warning.style.marginTop = '8px';
+    warning.style.fontSize = 'var(--font-size-small)';
+    document.querySelector('[name="provider"]').closest('.form-group').appendChild(warning);
+    return warning;
+}
+
+function updateModelOptionsFallback(provider) {
     const modelSelect = document.querySelector('select[name="model"]');
     
     if (provider === 'openai') {

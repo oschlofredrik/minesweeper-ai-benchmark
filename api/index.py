@@ -31,6 +31,8 @@ class handler(BaseHTTPRequestHandler):
             self.serve_page('replay.html')
         elif path == '/test-game':
             self.serve_page('test-game.html')
+        elif path == '/test-ai':
+            self.serve_page('test-ai.html')
         elif path == '/sessions':
             # Redirect to compete page which shows active sessions
             self.send_response(302)

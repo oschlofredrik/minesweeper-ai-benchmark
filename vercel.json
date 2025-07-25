@@ -36,6 +36,14 @@
     {
       "src": "api/game_runner.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "api/models_config.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "api/ai_models.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
@@ -70,6 +78,10 @@
     {
       "src": "/api/game_runner(.*)",
       "dest": "/api/game_runner.py"
+    },
+    {
+      "src": "/api/models(.*)",
+      "dest": "/api/models_config.py"
     },
     {
       "src": "/(.*)",
