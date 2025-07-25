@@ -25,6 +25,24 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Check for join code in URL
     handleJoinFromURL();
+    
+    // Also check for join parameter from join service
+    const urlParams = new URLSearchParams(window.location.search);
+    const joinCode = urlParams.get('join');
+    if (joinCode) {
+        // Auto-fill and submit join form
+        setTimeout(() => {
+            const modal = document.getElementById('join-modal');
+            if (modal) {
+                modal.classList.add('active');
+                document.getElementById('join-code').value = joinCode.toUpperCase();
+                // Auto-submit after a brief delay
+                setTimeout(() => {
+                    joinSession(joinCode.toUpperCase());
+                }, 500);
+            }
+        }, 1000);
+    }
 });
 
 // Navigation
