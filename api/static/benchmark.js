@@ -52,6 +52,10 @@ function handleMoveHighlight(move) {
     }
 }
 
+// Make functions globally available
+window.showEvalModal = showEvalModal;
+window.hideEvalModal = hideEvalModal;
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize event stream UI
@@ -90,7 +94,16 @@ async function checkAvailableProviders() {
 }
 
 function showEvalModal() {
-    document.getElementById('eval-modal').style.display = 'flex';
+    try {
+        const modal = document.getElementById('eval-modal');
+        if (!modal) {
+            console.error('Modal element not found');
+            return;
+        }
+        modal.style.display = 'flex';
+    } catch (error) {
+        console.error('Error showing modal:', error);
+    }
 }
 
 function hideEvalModal() {
@@ -203,11 +216,10 @@ async function handleStartEvaluation(e) {
         scenario: formData.get('scenario') || null
     };
     
-    // Generate tasks if needed
-    await generateTasksIfNeeded(evalConfig);
+    // Skip task generation for now (not implemented in simplified version)
     
     try {
-        const response = await fetch('/api/play', {
+        const response = await fetch('/api/benchmark/run', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(evalConfig)
@@ -226,15 +238,20 @@ async function handleStartEvaluation(e) {
             currentGameType = evalConfig.game;
             initializeGameVisualization(evalConfig);
             
-            // Start polling for updates
-            startGameUpdates(result.job_id);
-            
             // Clear event stream
             eventStreamUI.clear();
             eventStreamUI.addEvent({
                 type: 'system',
                 message: `Starting ${evalConfig.num_games} ${evalConfig.game} games with ${evalConfig.model}...`
             });
+            
+            // Process results immediately (sync execution)
+            if (result.status === 'completed' && result.games) {
+                updateBenchmarkResults(result);
+            } else {
+                // Fallback to polling
+                startGameUpdates(result.job_id);
+            }
         } else {
             alert('Failed to start evaluation');
         }
@@ -248,21 +265,64 @@ async function startGameUpdates(jobId) {
     // Poll for game updates
     const pollInterval = setInterval(async () => {
         try {
-            const response = await fetch(`/api/play/games/${jobId}`);
+            const response = await fetch(`/api/benchmark/jobs/${jobId}`);
             if (response.ok) {
                 const data = await response.json();
-                updateGameStats(data);
+                updateBenchmarkResults(data);
                 
                 // Check if all games completed
                 if (data.status === 'completed') {
                     clearInterval(pollInterval);
-                    showCompletionSummary(data);
                 }
             }
         } catch (error) {
             console.error('Error fetching game updates:', error);
         }
     }, 2000);
+}
+
+function updateBenchmarkResults(data) {
+    // Update stats
+    const completed = data.games?.filter(g => g.status === 'completed').length || 0;
+    const total = data.config?.num_games || data.games?.length || 0;
+    const wins = data.games?.filter(g => g.won).length || 0;
+    
+    document.getElementById('current-game-num').textContent = completed;
+    document.getElementById('total-games').textContent = total;
+    document.getElementById('win-rate').textContent = 
+        completed > 0 ? `${((wins / completed) * 100).toFixed(1)}%` : '0%';
+    
+    // Process completed games
+    data.games?.forEach((game, idx) => {
+        if (game.status === 'completed') {
+            // Add completion event
+            eventStreamUI.addEvent({
+                type: 'system',
+                message: `Game ${idx + 1} completed: ${game.won ? 'Won' : 'Lost'} in ${game.total_moves} moves`
+            });
+            
+            // Update visualization with final state
+            if (game.final_state && gameVisualizer) {
+                gameVisualizer.updateState(game.final_state);
+                
+                // Highlight last move if available
+                if (game.moves && game.moves.length > 0) {
+                    const lastMove = game.moves[game.moves.length - 1];
+                    if (lastMove.action) {
+                        gameVisualizer.highlightMove(lastMove.action);
+                    }
+                }
+            }
+            
+            // Show move count
+            document.getElementById('current-moves').textContent = game.total_moves || 0;
+        }
+    });
+    
+    // Show summary if completed
+    if (data.status === 'completed' && data.summary) {
+        showCompletionSummary(data);
+    }
 }
 
 function updateGameStats(data) {
@@ -300,19 +360,21 @@ function updateGameStats(data) {
 }
 
 function showCompletionSummary(data) {
-    const summary = `
+    const summary = data.summary || {};
+    const summaryHtml = `
         <div class="completion-summary">
             <h3>Evaluation Complete</h3>
-            <p>Total Games: ${data.total_games}</p>
-            <p>Wins: ${data.games.filter(g => g.won).length}</p>
-            <p>Win Rate: ${((data.games.filter(g => g.won).length / data.total_games) * 100).toFixed(1)}%</p>
-            <a href="/sessions/${currentJobId}" class="button">View Detailed Results</a>
+            <p>Total Games: ${summary.games_completed || 0}</p>
+            <p>Wins: ${summary.wins || 0}</p>
+            <p>Win Rate: ${((summary.win_rate || 0) * 100).toFixed(1)}%</p>
+            <p>Average Moves: ${(summary.avg_moves || 0).toFixed(1)}</p>
+            <a href="/leaderboard" class="button">View Leaderboard</a>
         </div>
     `;
     
     eventStreamUI.addEvent({
         type: 'system',
-        message: summary
+        message: summaryHtml
     });
 }
 
