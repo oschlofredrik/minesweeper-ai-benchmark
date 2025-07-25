@@ -53,7 +53,7 @@ class handler(BaseHTTPRequestHandler):
             self.send_error(404)
     
     def do_POST(self):
-        path = self.path
+        path = self.path.split('?')[0]
         
         if path == '/api/play':
             content_length = int(self.headers['Content-Length'])
@@ -112,6 +112,23 @@ class handler(BaseHTTPRequestHandler):
                 "status": "started",
                 "message": f"Started {num_games} game(s)",
                 "games": games_created
+            })
+        
+        elif path == '/api/benchmark/run':
+            # Handle benchmark run here
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            config = json.loads(post_data)
+            
+            # For now, return a simple response
+            job_id = "bench_" + str(uuid.uuid4())[:8]
+            
+            self.send_json_response({
+                "job_id": job_id,
+                "status": "started",
+                "config": config,
+                "games": [],
+                "message": "Benchmark started (simplified mode)"
             })
             
         else:

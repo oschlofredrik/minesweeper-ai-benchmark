@@ -44,10 +44,6 @@
     {
       "src": "api/ai_models.py",
       "use": "@vercel/python"
-    },
-    {
-      "src": "api/benchmark_runner.py",
-      "use": "@vercel/python"
     }
   ],
   "routes": [
@@ -89,7 +85,7 @@
     },
     {
       "src": "/api/benchmark(.*)",
-      "dest": "/api/benchmark_runner.py"
+      "dest": "/api/play_simple.py"
     },
     {
       "src": "/(.*)",
