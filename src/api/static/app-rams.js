@@ -290,12 +290,28 @@ async function updateGamesList() {
             activeGames.set(game.job_id, game);
         });
         
-        // Update sidebar
+        // Update sidebar if it exists
         const sidebar = document.getElementById('active-games-sidebar');
-        if (games.length === 0) {
-            sidebar.innerHTML = '<p class="text-sm text-muted">No active games</p>';
-        } else {
-            sidebar.innerHTML = games.map(game => `
+        if (sidebar) {
+            if (games.length === 0) {
+                sidebar.innerHTML = '<p class="text-sm text-muted">No active games</p>';
+            } else {
+                sidebar.innerHTML = games.map(game => `
+                    <div class="mb-2" style="cursor: pointer;" onclick="selectGame('${game.job_id}')">
+                        <div class="text-sm">${game.model_name}</div>
+                        <div class="progress">
+                            <div class="progress-bar" style="width: ${game.progress * 100}%"></div>
+                        </div>
+                        <div class="text-sm text-muted">${game.message}</div>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        // Also update the active sessions sidebar if present
+        const sessionsSidebar = document.getElementById('active-sessions-sidebar');
+        if (sessionsSidebar && games.length > 0) {
+            sessionsSidebar.innerHTML = games.map(game => `
                 <div class="mb-2" style="cursor: pointer;" onclick="selectGame('${game.job_id}')">
                     <div class="text-sm">${game.model_name}</div>
                     <div class="progress">
