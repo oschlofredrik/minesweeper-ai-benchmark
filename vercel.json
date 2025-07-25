@@ -24,6 +24,10 @@
     {
       "src": "api/leaderboard_simple.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "api/run_game_simple.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
@@ -46,6 +50,10 @@
     {
       "src": "/api/leaderboard",
       "dest": "/api/leaderboard_simple.py"
+    },
+    {
+      "src": "/api/run_game",
+      "dest": "/api/run_game_simple.py"
     },
     {
       "src": "/(.*)",

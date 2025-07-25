@@ -12,6 +12,14 @@ class handler(BaseHTTPRequestHandler):
         if path == '/' or path == '/index.html':
             self.serve_page('overview.html')
             
+        # Serve other pages
+        elif path == '/leaderboard':
+            self.serve_page('leaderboard.html')
+        elif path == '/compete':
+            self.serve_page('compete.html')
+        elif path == '/benchmark':
+            self.serve_page('benchmark.html')
+            
         # Serve static files
         elif path.startswith('/static/'):
             filename = path[8:]  # Remove /static/ prefix
