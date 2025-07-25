@@ -94,6 +94,10 @@ def get_available_models(provider: str) -> Dict[str, Any]:
 
 def make_http_request(url: str, headers: Dict[str, str], data: Dict[str, Any]) -> Dict[str, Any]:
     """Make HTTP request to API."""
+    # Debug logging
+    print(f"[HTTP] Request URL: {url}")
+    print(f"[HTTP] Headers: {[(k, v[:20] + '...' if k == 'Authorization' and len(v) > 20 else v) for k, v in headers.items()]}")
+    
     req = urllib.request.Request(
         url,
         data=json.dumps(data).encode('utf-8'),
@@ -124,7 +128,7 @@ def call_openai_model(
     temperature: float = 0.7
 ) -> Dict[str, Any]:
     """Call OpenAI API with function calling support using HTTP."""
-    api_key = os.environ.get('OPENAI_API_KEY')
+    api_key = os.environ.get('OPENAI_API_KEY', '').strip()
     if not api_key:
         return {
             "error": "OpenAI API key not found",
@@ -134,6 +138,7 @@ def call_openai_model(
     # Log masked API key for debugging
     masked_key = f"{api_key[:8]}...{api_key[-4:]}" if len(api_key) > 12 else "***"
     print(f"[HTTP] Using OpenAI API key: {masked_key}")
+    print(f"[HTTP] API key length: {len(api_key)}")
     
     # Check if this is a reasoning model
     model_config = MODEL_CONFIGS["openai"]["models"].get(model, {})
@@ -210,7 +215,7 @@ def call_anthropic_model(
     temperature: float = 0.7
 ) -> Dict[str, Any]:
     """Call Anthropic API with tool use support using HTTP."""
-    api_key = os.environ.get('ANTHROPIC_API_KEY')
+    api_key = os.environ.get('ANTHROPIC_API_KEY', '').strip()
     if not api_key:
         return {
             "error": "Anthropic API key not found",
