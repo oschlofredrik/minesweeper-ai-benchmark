@@ -238,8 +238,8 @@ class handler(BaseHTTPRequestHandler):
         
         # Try to import required modules
         try:
-            from ai_models import call_ai_model, format_game_messages, extract_function_call
-            print(f"[GAME] Successfully imported ai_models")
+            from ai_models_http import call_ai_model, format_game_messages, extract_function_call
+            print(f"[GAME] Successfully imported ai_models_http (HTTP-based)")
             
             from game_runner import (
                 SimpleMinesweeper, SimpleRisk,
