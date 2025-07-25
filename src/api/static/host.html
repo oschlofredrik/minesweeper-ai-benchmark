@@ -230,37 +230,78 @@
         margin-bottom: 0;
       }
       
-      .default-evaluation-preview {
-        background: var(--bg-secondary);
+      /* Evaluation Metrics Cards */
+      .evaluation-metrics {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: calc(var(--unit) * 2);
+        margin-bottom: calc(var(--unit) * 3);
+      }
+      
+      .metric-card {
         padding: calc(var(--unit) * 2);
-        margin-top: calc(var(--unit) * 2);
-        border-left: 4px solid var(--border);
-      }
-      
-      .default-evaluation-preview h5 {
-        font-size: var(--text-sm);
-        margin-bottom: calc(var(--unit) * 1);
-        color: var(--text-secondary);
-      }
-      
-      .default-evaluation-preview ul {
-        list-style: none;
-        padding: 0;
-      }
-      
-      .default-evaluation-preview li {
-        font-size: var(--text-sm);
-        color: var(--text-muted);
-        margin-bottom: calc(var(--unit) * 0.5);
-        padding-left: calc(var(--unit) * 2);
+        border: 2px solid var(--border);
+        border-radius: 0;
+        background: var(--bg-primary);
+        cursor: pointer;
+        transition: all 0.2s ease;
         position: relative;
+        user-select: none;
       }
       
-      .default-evaluation-preview li::before {
-        content: '•';
-        position: absolute;
-        left: 0;
+      .metric-card:hover {
+        border-color: var(--text-primary);
+        background: var(--bg-secondary);
+      }
+      
+      .metric-card.selected {
+        background: var(--text-primary);
+        border-color: var(--text-primary);
+        color: var(--bg-primary);
+      }
+      
+      .metric-card.selected p {
+        color: var(--bg-secondary);
+      }
+      
+      .metric-header {
+        display: flex;
+        align-items: flex-start;
+        gap: calc(var(--unit) * 1.5);
+      }
+      
+      .metric-icon {
+        font-size: calc(var(--text-base) * 1.5);
+        flex-shrink: 0;
+      }
+      
+      .metric-info {
+        flex: 1;
+      }
+      
+      .metric-info h5 {
+        margin: 0 0 calc(var(--unit) * 0.5) 0;
+        font-size: var(--text-base);
+        font-weight: 600;
+      }
+      
+      .metric-info p {
+        margin: 0;
+        font-size: var(--text-sm);
         color: var(--text-muted);
+      }
+      
+      .metric-check {
+        position: absolute;
+        top: calc(var(--unit) * 1);
+        right: calc(var(--unit) * 1);
+        font-size: var(--text-lg);
+        display: none;
+      }
+      
+      .metric-card.selected .metric-check {
+        display: block;
+        color: var(--bg-primary);
       }
       
       /* Cleaner select styling */
@@ -590,14 +631,65 @@
             </div>
             
             <!-- Default evaluation preview -->
-            <div id="default-evaluation-preview" class="default-evaluation-preview">
-              <h5>Default Evaluation Includes:</h5>
-              <ul>
-                <li>Win/Loss tracking</li>
-                <li>Game completion time</li>
-                <li>Move efficiency</li>
-                <li>Basic performance metrics</li>
-              </ul>
+            <div id="default-evaluation-preview" class="evaluation-section">
+              <h4 style="margin-bottom: calc(var(--unit) * 2);">Default Evaluation Metrics</h4>
+              <div class="evaluation-metrics">
+                <div class="metric-card selected" data-metric="win_rate">
+                  <div class="metric-header">
+                    <span class="metric-icon">🎯</span>
+                    <div class="metric-info">
+                      <h5>Win Rate</h5>
+                      <p>Track wins and losses</p>
+                    </div>
+                    <span class="metric-check">✓</span>
+                  </div>
+                </div>
+                
+                <div class="metric-card selected" data-metric="mine_identification">
+                  <div class="metric-header">
+                    <span class="metric-icon">🚩</span>
+                    <div class="metric-info">
+                      <h5>Mine Identification</h5>
+                      <p>Correctly identified mines</p>
+                    </div>
+                  </div>
+                  <span class="metric-check">✓</span>
+                </div>
+                
+                <div class="metric-card selected" data-metric="efficiency">
+                  <div class="metric-header">
+                    <span class="metric-icon">⚡</span>
+                    <div class="metric-info">
+                      <h5>Move Efficiency</h5>
+                      <p>Safe cells revealed efficiently</p>
+                    </div>
+                  </div>
+                  <span class="metric-check">✓</span>
+                </div>
+                
+                <div class="metric-card selected" data-metric="completion_time">
+                  <div class="metric-header">
+                    <span class="metric-icon">⏱</span>
+                    <div class="metric-info">
+                      <h5>Completion Time</h5>
+                      <p>Time to complete the game</p>
+                    </div>
+                  </div>
+                  <span class="metric-check">✓</span>
+                </div>
+                
+                <div class="metric-card selected" data-metric="accuracy">
+                  <div class="metric-header">
+                    <span class="metric-icon">✓</span>
+                    <div class="metric-info">
+                      <h5>Move Accuracy</h5>
+                      <p>Percentage of valid moves</p>
+                    </div>
+                  </div>
+                  <span class="metric-check">✓</span>
+                </div>
+              </div>
+              <p class="text-sm text-muted" style="margin-top: calc(var(--unit) * 2);">All metrics are equally weighted in default scoring.</p>
             </div>
             
             <!-- Custom scoring configuration -->
