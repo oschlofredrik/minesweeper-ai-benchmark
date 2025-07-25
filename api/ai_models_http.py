@@ -134,56 +134,109 @@ def call_openai_model(
     model_config = MODEL_CONFIGS["openai"]["models"].get(model, {})
     is_reasoning_model = model_config.get("reasoning_model", False)
     
-    # Prepare request
-    url = "https://api.openai.com/v1/chat/completions"
+    # Use the new Responses API endpoint
+    url = "https://api.openai.com/v1/responses"
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
     
+    # Convert messages to the new input format
+    # The Responses API uses "input" instead of "messages"
     data = {
         "model": model,
-        "messages": messages,
-        "temperature": 0 if is_reasoning_model else temperature,
+        "input": messages,  # Changed from "messages" to "input"
+        "store": False,  # Don't store responses by default
     }
+    
+    # Temperature is not supported for reasoning models
+    if not is_reasoning_model:
+        data["temperature"] = temperature
     
     # Add function calling for supported models
     if functions and model_config.get("supports_functions", False):
         data["tools"] = [{"type": "function", "function": func} for func in functions]
         data["tool_choice"] = "auto"
     
-    print(f"[HTTP] Making OpenAI API call with model={model}")
+    print(f"[HTTP] Making OpenAI Responses API call with model={model}")
     response = make_http_request(url, headers, data)
     
     if "error" in response:
-        return {
-            "error": f"OpenAI API error: {response['error']}",
-            "content": ""
-        }
+        # If Responses API fails, try fallback to chat completions
+        print(f"[HTTP] Responses API failed, trying chat completions endpoint")
+        url = "https://api.openai.com/v1/chat/completions"
+        data["messages"] = data.pop("input")  # Convert back to messages
+        data.pop("store", None)  # Remove store parameter
+        response = make_http_request(url, headers, data)
+        
+        if "error" in response:
+            return {
+                "error": f"OpenAI API error: {response['error']}",
+                "content": ""
+            }
     
     try:
-        # Extract response
-        choice = response["choices"][0]
-        message = choice["message"]
-        
-        # Handle function calls
-        if "tool_calls" in message and message["tool_calls"]:
-            tool_call = message["tool_calls"][0]
-            function_args = json.loads(tool_call["function"]["arguments"])
+        # Handle Responses API format
+        if "output" in response:
+            # New Responses API format
+            output = response["output"]
+            
+            # Look for function calls in the output
+            for item in output:
+                if item.get("role") == "assistant" and "tool_calls" in item:
+                    tool_call = item["tool_calls"][0]
+                    function_args = json.loads(tool_call["function"]["arguments"])
+                    return {
+                        "function_call": {
+                            "name": tool_call["function"]["name"],
+                            "arguments": function_args
+                        },
+                        "content": item.get("content", ""),
+                        "usage": response.get("usage", {})
+                    }
+            
+            # Extract text content
+            text_content = response.get("output_text", "")
+            if not text_content:
+                for item in output:
+                    if item.get("role") == "assistant" and "content" in item:
+                        text_content = item["content"]
+                        break
+            
             return {
-                "function_call": {
-                    "name": tool_call["function"]["name"],
-                    "arguments": function_args
-                },
-                "content": message.get("content", ""),
+                "content": text_content,
                 "usage": response.get("usage", {})
             }
         
-        # Regular response
-        return {
-            "content": message["content"],
-            "usage": response.get("usage", {})
-        }
+        # Fallback to chat completions format
+        elif "choices" in response:
+            choice = response["choices"][0]
+            message = choice["message"]
+            
+            # Handle function calls
+            if "tool_calls" in message and message["tool_calls"]:
+                tool_call = message["tool_calls"][0]
+                function_args = json.loads(tool_call["function"]["arguments"])
+                return {
+                    "function_call": {
+                        "name": tool_call["function"]["name"],
+                        "arguments": function_args
+                    },
+                    "content": message.get("content", ""),
+                    "usage": response.get("usage", {})
+                }
+            
+            # Regular response
+            return {
+                "content": message["content"],
+                "usage": response.get("usage", {})
+            }
+        
+        else:
+            return {
+                "error": "Unexpected response format",
+                "content": ""
+            }
         
     except Exception as e:
         return {
