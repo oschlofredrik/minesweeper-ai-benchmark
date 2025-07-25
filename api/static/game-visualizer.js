@@ -119,8 +119,28 @@ class MinesweeperVisualizer extends GameVisualizer {
         table.className = 'minesweeper-board';
         table.id = 'tilts-board';
         
+        // Add column headers
+        const headerRow = document.createElement('tr');
+        headerRow.appendChild(document.createElement('th')); // Empty corner cell
+        for (let c = 0; c < this.cols; c++) {
+            const th = document.createElement('th');
+            th.textContent = c;
+            th.style.fontSize = '0.8em';
+            th.style.color = '#666';
+            headerRow.appendChild(th);
+        }
+        table.appendChild(headerRow);
+        
         for (let r = 0; r < this.rows; r++) {
             const tr = document.createElement('tr');
+            
+            // Add row header
+            const rowHeader = document.createElement('th');
+            rowHeader.textContent = r;
+            rowHeader.style.fontSize = '0.8em';
+            rowHeader.style.color = '#666';
+            rowHeader.style.width = '2em';
+            tr.appendChild(rowHeader);
             
             for (let c = 0; c < this.cols; c++) {
                 const td = document.createElement('td');
