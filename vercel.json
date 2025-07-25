@@ -28,6 +28,10 @@
     {
       "src": "api/run_game_simple.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "api/games_config.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
@@ -54,6 +58,10 @@
     {
       "src": "/api/run_game",
       "dest": "/api/run_game_simple.py"
+    },
+    {
+      "src": "/api/games(.*)",
+      "dest": "/api/games_config.py"
     },
     {
       "src": "/(.*)",

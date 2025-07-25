@@ -96,7 +96,7 @@
             <form id="eval-form" class="form-stack">
                 <div class="form-group">
                     <label>Game</label>
-                    <select name="game" required>
+                    <select name="game" required onchange="updateGameOptions(this.value)">
                         <option value="minesweeper">Minesweeper</option>
                         <option value="risk">Risk</option>
                     </select>
@@ -131,6 +131,14 @@
                         <option value="hard">Hard</option>
                     </select>
                 </div>
+                
+                <div class="form-group" id="scenario-group" style="display: none;">
+                    <label>Scenario (Optional)</label>
+                    <select name="scenario">
+                        <option value="">None - Standard Game</option>
+                    </select>
+                    <small class="text-muted" id="scenario-description"></small>
+                </div>
 
                 <button type="submit" class="button button-primary">Start Evaluation</button>
             </form>
@@ -140,5 +148,106 @@
     <script src="/static/tilts-viz.js"></script>
     <script src="/static/event-stream.js"></script>
     <script src="/static/benchmark.js"></script>
+    <script>
+        // Load game configurations
+        let gameConfigs = {};
+        
+        async function loadGameConfigs() {
+            try {
+                const response = await fetch('/api/games');
+                if (response.ok) {
+                    const data = await response.json();
+                    // Load detailed config for each game
+                    for (const game of data.games) {
+                        const configResponse = await fetch(`/api/games/${game.id}`);
+                        if (configResponse.ok) {
+                            gameConfigs[game.id] = await configResponse.json();
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load game configs:', error);
+                // Use fallback config
+                gameConfigs = {
+                    minesweeper: {
+                        difficulties: {
+                            easy: { display: "Easy (9x9, 10 mines)" },
+                            medium: { display: "Medium (16x16, 40 mines)" },
+                            hard: { display: "Hard (16x30, 99 mines)" }
+                        },
+                        scenarios: []
+                    },
+                    risk: {
+                        difficulties: {
+                            easy: { display: "Easy - Quick game" },
+                            medium: { display: "Medium - Standard game" },
+                            hard: { display: "Hard - Challenging game" }
+                        },
+                        scenarios: [
+                            {
+                                id: "north_america_conquest",
+                                name: "North America Conquest",
+                                description: "Complete the conquest of North America in 5 turns"
+                            },
+                            {
+                                id: "defend_australia", 
+                                name: "Defend Australia",
+                                description: "Defend Australia from Asian invasion for 10 turns"
+                            }
+                        ]
+                    }
+                };
+            }
+        }
+        
+        function updateGameOptions(gameType) {
+            const config = gameConfigs[gameType] || {};
+            const difficultySelect = document.querySelector('[name="difficulty"]');
+            const scenarioGroup = document.getElementById('scenario-group');
+            const scenarioSelect = document.querySelector('[name="scenario"]');
+            
+            // Update difficulties
+            if (config.difficulties) {
+                difficultySelect.innerHTML = '';
+                Object.entries(config.difficulties).forEach(([value, diff]) => {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = diff.display || value;
+                    if (value === 'medium') option.selected = true;
+                    difficultySelect.appendChild(option);
+                });
+            }
+            
+            // Update scenarios
+            if (config.scenarios && config.scenarios.length > 0) {
+                scenarioGroup.style.display = 'block';
+                scenarioSelect.innerHTML = '<option value="">None - Standard Game</option>';
+                
+                config.scenarios.forEach(scenario => {
+                    const option = document.createElement('option');
+                    option.value = scenario.id;
+                    option.textContent = scenario.name;
+                    option.dataset.description = scenario.description;
+                    scenarioSelect.appendChild(option);
+                });
+            } else {
+                scenarioGroup.style.display = 'none';
+            }
+        }
+        
+        // Update scenario description
+        document.querySelector('[name="scenario"]').addEventListener('change', function() {
+            const selected = this.options[this.selectedIndex];
+            const description = selected.dataset.description || '';
+            document.getElementById('scenario-description').textContent = description;
+        });
+        
+        // Load configs on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadGameConfigs().then(() => {
+                updateGameOptions('minesweeper');
+            });
+        });
+    </script>
 </body>
 </html>

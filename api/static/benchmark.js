@@ -46,7 +46,8 @@ async function handleStartEvaluation(e) {
         model: formData.get('model'),
         provider: formData.get('provider'),
         num_games: parseInt(formData.get('num-games')),
-        difficulty: formData.get('difficulty')
+        difficulty: formData.get('difficulty'),
+        scenario: formData.get('scenario') || null
     };
     
     // Generate tasks if needed

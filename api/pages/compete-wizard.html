@@ -228,8 +228,16 @@
                                             <option value="easy">Easy (9x9, 10 mines)</option>
                                             <option value="medium" selected>Medium (16x16, 40 mines)</option>
                                             <option value="hard">Hard (16x30, 99 mines)</option>
-                                            <option value="expert">Expert (20x30, 145 mines)</option>
+                                            <option value="expert">Expert (20x40, 160 mines)</option>
                                         </select>
+                                    </div>
+                                    
+                                    <div class="form-group" id="scenario-group" style="display: none;">
+                                        <label>Scenario</label>
+                                        <select name="scenario">
+                                            <option value="">None - Standard Game</option>
+                                        </select>
+                                        <small class="text-muted" id="scenario-description"></small>
                                     </div>
                                     <div class="form-group">
                                         <label>Number of Games</label>
@@ -394,24 +402,92 @@
             document.querySelector('[name="evaluation_type"]').value = type;
         }
         
+        // Game configuration data
+        const gameConfigs = {
+            minesweeper: {
+                difficulties: {
+                    easy: "Easy (9x9, 10 mines)",
+                    medium: "Medium (16x16, 40 mines)",
+                    hard: "Hard (16x30, 99 mines)",
+                    expert: "Expert (20x40, 160 mines)"
+                },
+                scenarios: []
+            },
+            risk: {
+                difficulties: {
+                    easy: "Easy - Quick game",
+                    medium: "Medium - Standard game",
+                    hard: "Hard - Challenging game"
+                },
+                scenarios: [
+                    {
+                        id: "north_america_conquest",
+                        name: "North America Conquest",
+                        description: "You control most of North America. Complete the conquest within 5 turns!"
+                    },
+                    {
+                        id: "defend_australia",
+                        name: "Defend Australia",
+                        description: "Control Australia but enemies mass in Asia. Survive 10 turns!"
+                    },
+                    {
+                        id: "europe_vs_asia",
+                        name: "Europe vs Asia",
+                        description: "Classic continent showdown. You control Europe, break into Asia!"
+                    },
+                    {
+                        id: "blitzkrieg",
+                        name: "Blitzkrieg Challenge",
+                        description: "Overwhelming force. Conquer as much as possible in 3 turns!"
+                    },
+                    {
+                        id: "last_stand",
+                        name: "Last Stand",
+                        description: "Down to last few territories. Survive 15 turns!"
+                    }
+                ]
+            }
+        };
+        
         function updateGameSettings(gameType) {
+            const config = gameConfigs[gameType];
             const difficultySelect = document.querySelector('[name="difficulty"]');
+            const scenarioGroup = document.getElementById('scenario-group');
+            const scenarioSelect = document.querySelector('[name="scenario"]');
             
-            if (gameType === 'risk') {
-                difficultySelect.innerHTML = `
-                    <option value="easy">Easy - Small map</option>
-                    <option value="medium" selected>Medium - Standard map</option>
-                    <option value="hard">Hard - Large map</option>
-                `;
+            // Update difficulties
+            difficultySelect.innerHTML = '';
+            Object.entries(config.difficulties).forEach(([value, label]) => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = label;
+                if (value === 'medium') option.selected = true;
+                difficultySelect.appendChild(option);
+            });
+            
+            // Update scenarios
+            if (config.scenarios && config.scenarios.length > 0) {
+                scenarioGroup.style.display = 'block';
+                scenarioSelect.innerHTML = '<option value="">None - Standard Game</option>';
+                
+                config.scenarios.forEach(scenario => {
+                    const option = document.createElement('option');
+                    option.value = scenario.id;
+                    option.textContent = scenario.name;
+                    option.dataset.description = scenario.description;
+                    scenarioSelect.appendChild(option);
+                });
             } else {
-                difficultySelect.innerHTML = `
-                    <option value="easy">Easy (9x9, 10 mines)</option>
-                    <option value="medium" selected>Medium (16x16, 40 mines)</option>
-                    <option value="hard">Hard (16x30, 99 mines)</option>
-                    <option value="expert">Expert (20x30, 145 mines)</option>
-                `;
+                scenarioGroup.style.display = 'none';
             }
         }
+        
+        // Update scenario description when selection changes
+        document.querySelector('[name="scenario"]').addEventListener('change', function() {
+            const selected = this.options[this.selectedIndex];
+            const description = selected.dataset.description || '';
+            document.getElementById('scenario-description').textContent = description;
+        });
         
         function updateReview() {
             const form = document.getElementById('competition-wizard-form');
@@ -433,6 +509,11 @@
                     
                     <dt>Difficulty</dt>
                     <dd>${formData.get('difficulty').charAt(0).toUpperCase() + formData.get('difficulty').slice(1)}</dd>
+                    
+                    ${formData.get('scenario') ? `
+                    <dt>Scenario</dt>
+                    <dd>${document.querySelector('[name="scenario"] option:checked').textContent}</dd>
+                    ` : ''}
                     
                     <dt>Number of Games</dt>
                     <dd>${formData.get('num_games')}</dd>
@@ -466,6 +547,7 @@
                         max_players: parseInt(data.max_players),
                         config: {
                             difficulty: data.difficulty,
+                            scenario: data.scenario || null,
                             num_games: parseInt(data.num_games),
                             move_timeout: parseInt(data.move_timeout),
                             evaluation_type: data.evaluation_type
