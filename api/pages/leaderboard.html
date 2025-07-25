@@ -66,13 +66,15 @@
                                 <th>Model</th>
                                 <th>Games</th>
                                 <th>Win Rate</th>
+                                <th title="MineBench Standard Score">MS-S</th>
+                                <th title="MineBench Intermediate Score">MS-I</th>
                                 <th>Avg Moves</th>
                                 <th>Avg Time</th>
                             </tr>
                         </thead>
                         <tbody id="leaderboard-body">
                             <tr>
-                                <td colspan="6" class="text-center text-muted">Loading leaderboard...</td>
+                                <td colspan="8" class="text-center text-muted">Loading leaderboard...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -113,16 +115,23 @@
             // Sort by win rate
             filtered.sort((a, b) => (b.win_rate || 0) - (a.win_rate || 0));
             
-            tbody.innerHTML = filtered.map((entry, index) => `
-                <tr>
-                    <td>${index + 1}</td>
-                    <td>${entry.model_name}</td>
-                    <td>${entry.total_games}</td>
-                    <td>${((entry.win_rate || 0) * 100).toFixed(1)}%</td>
-                    <td>${(entry.avg_moves || 0).toFixed(1)}</td>
-                    <td>${(entry.avg_duration || 0).toFixed(1)}s</td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = filtered.map((entry, index) => {
+                const mss = entry.ms_s_score || entry.metrics?.['MS-S'] || '-';
+                const msi = entry.ms_i_score || entry.metrics?.['MS-I'] || '-';
+                
+                return `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${entry.model_name}</td>
+                        <td>${entry.total_games}</td>
+                        <td>${((entry.win_rate || 0) * 100).toFixed(1)}%</td>
+                        <td>${typeof mss === 'number' ? mss.toFixed(3) : mss}</td>
+                        <td>${typeof msi === 'number' ? msi.toFixed(3) : msi}</td>
+                        <td>${(entry.avg_moves || 0).toFixed(1)}</td>
+                        <td>${(entry.avg_duration || 0).toFixed(1)}s</td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         function filterLeaderboard() {

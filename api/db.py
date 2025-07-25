@@ -17,6 +17,7 @@ LEADERBOARD_FILE = DB_PATH / "leaderboard.json"
 EVALUATIONS_FILE = DB_PATH / "evaluations.json"
 PROMPTS_FILE = DB_PATH / "prompts.json"
 SETTINGS_FILE = DB_PATH / "settings.json"
+TASKS_FILE = DB_PATH / "benchmark_tasks.json"
 
 def load_json(file_path: Path, default: Any = None) -> Any:
     """Load JSON file or return default."""
@@ -32,6 +33,40 @@ def save_json(file_path: Path, data: Any):
     """Save data to JSON file."""
     with open(file_path, 'w') as f:
         json.dump(data, f, indent=2, default=str)
+
+# Generic data functions
+def get_data(collection: str, default: Any = None) -> Any:
+    """Get data from a collection."""
+    file_map = {
+        'sessions': SESSIONS_FILE,
+        'games': GAMES_FILE,
+        'leaderboard': LEADERBOARD_FILE,
+        'evaluations': EVALUATIONS_FILE,
+        'prompts': PROMPTS_FILE,
+        'settings': SETTINGS_FILE,
+        'benchmark_tasks': TASKS_FILE
+    }
+    
+    file_path = file_map.get(collection)
+    if file_path:
+        return load_json(file_path, default)
+    return default if default is not None else []
+
+def save_data(collection: str, data: Any):
+    """Save data to a collection."""
+    file_map = {
+        'sessions': SESSIONS_FILE,
+        'games': GAMES_FILE,
+        'leaderboard': LEADERBOARD_FILE,
+        'evaluations': EVALUATIONS_FILE,
+        'prompts': PROMPTS_FILE,
+        'settings': SETTINGS_FILE,
+        'benchmark_tasks': TASKS_FILE
+    }
+    
+    file_path = file_map.get(collection)
+    if file_path:
+        save_json(file_path, data)
 
 # Session Management
 def create_session(session_data: Dict[str, Any]) -> str:

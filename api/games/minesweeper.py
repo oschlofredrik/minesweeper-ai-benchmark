@@ -12,12 +12,22 @@ class MinesweeperGame(BaseGame):
         "hard": {"rows": 16, "cols": 30, "mines": 99}
     }
     
-    def __init__(self, difficulty: str = "medium", **kwargs):
+    def __init__(self, difficulty: str = "medium", task: Dict = None, **kwargs):
         super().__init__(difficulty, **kwargs)
-        settings = self.DIFFICULTY_SETTINGS.get(difficulty, self.DIFFICULTY_SETTINGS["medium"])
-        self.rows = kwargs.get("rows", settings["rows"])
-        self.cols = kwargs.get("cols", settings["cols"])
-        self.num_mines = kwargs.get("mines", settings["mines"])
+        
+        # Use task configuration if provided
+        if task and 'config' in task:
+            self.rows = task['config']['rows']
+            self.cols = task['config']['cols']
+            self.num_mines = task['config']['mines']
+            self.task = task
+        else:
+            settings = self.DIFFICULTY_SETTINGS.get(difficulty, self.DIFFICULTY_SETTINGS["medium"])
+            self.rows = kwargs.get("rows", settings["rows"])
+            self.cols = kwargs.get("cols", settings["cols"])
+            self.num_mines = kwargs.get("mines", settings["mines"])
+            self.task = None
+            
         self.board = None
         self.visible = None
         self.flags = None
@@ -43,18 +53,22 @@ class MinesweeperGame(BaseGame):
     
     def _place_mines(self, avoid_row: int, avoid_col: int):
         """Place mines on the board, avoiding the first click position."""
-        # Get all valid positions
-        positions = []
-        for r in range(self.rows):
-            for c in range(self.cols):
-                # Avoid 3x3 area around first click
-                if abs(r - avoid_row) <= 1 and abs(c - avoid_col) <= 1:
-                    continue
-                positions.append((r, c))
-        
-        # Randomly select mine positions
-        mine_positions = random.sample(positions, min(self.num_mines, len(positions)))
-        self.mines = set(mine_positions)
+        # Use task-provided mines if available
+        if self.task and 'board' in self.task and 'mines' in self.task['board']:
+            self.mines = set(tuple(pos) for pos in self.task['board']['mines'])
+        else:
+            # Get all valid positions
+            positions = []
+            for r in range(self.rows):
+                for c in range(self.cols):
+                    # Avoid 3x3 area around first click
+                    if abs(r - avoid_row) <= 1 and abs(c - avoid_col) <= 1:
+                        continue
+                    positions.append((r, c))
+            
+            # Randomly select mine positions
+            mine_positions = random.sample(positions, min(self.num_mines, len(positions)))
+            self.mines = set(mine_positions)
         
         # Place mines on board
         for r, c in mine_positions:

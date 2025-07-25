@@ -49,6 +49,9 @@ async function handleStartEvaluation(e) {
         difficulty: formData.get('difficulty')
     };
     
+    // Generate tasks if needed
+    await generateTasksIfNeeded(evalConfig);
+    
     try {
         const response = await fetch('/api/play', {
             method: 'POST',
@@ -158,4 +161,16 @@ function showCompletionSummary(data) {
         type: 'system',
         message: summary
     });
+}
+
+async function generateTasksIfNeeded(evalConfig) {
+    // Check if we have enough tasks
+    const response = await fetch(`/api/tasks?game_type=${evalConfig.game}&difficulty=${evalConfig.difficulty}`);
+    const data = await response.json();
+    
+    if (!data.tasks || data.tasks.length < evalConfig.num_games) {
+        // Generate more tasks
+        const needed = evalConfig.num_games - (data.tasks?.length || 0);
+        await fetch(`/api/tasks/generate?game_type=${evalConfig.game}&difficulty=${evalConfig.difficulty}&count=${needed}`);
+    }
 }

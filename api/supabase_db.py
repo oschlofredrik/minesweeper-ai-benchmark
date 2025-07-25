@@ -27,6 +27,23 @@ else:
 if not HAS_SUPABASE:
     from . import db as json_db
 
+# Generic data functions for non-table data (like tasks)
+def get_data(collection: str, default: Any = None) -> Any:
+    """Get data from a collection (uses JSON storage for now)."""
+    if not HAS_SUPABASE:
+        return json_db.get_data(collection, default)
+    # For now, always use JSON for generic data
+    from . import db as json_db_local
+    return json_db_local.get_data(collection, default)
+
+def save_data(collection: str, data: Any):
+    """Save data to a collection (uses JSON storage for now)."""
+    if not HAS_SUPABASE:
+        return json_db.save_data(collection, data)
+    # For now, always use JSON for generic data
+    from . import db as json_db_local
+    return json_db_local.save_data(collection, data)
+
 def _ensure_uuid(id_value: str) -> str:
     """Ensure ID is a valid UUID string."""
     if not id_value:

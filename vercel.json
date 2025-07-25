@@ -64,6 +64,10 @@
     {
       "src": "api/leaderboard.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "api/tasks.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
@@ -122,6 +126,10 @@
     {
       "src": "/leaderboard",
       "dest": "/api/leaderboard.py"
+    },
+    {
+      "src": "/api/tasks(.*)",
+      "dest": "/api/tasks.py"
     },
     {
       "src": "/(.*)",

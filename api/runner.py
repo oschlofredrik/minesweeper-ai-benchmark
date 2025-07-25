@@ -15,8 +15,9 @@ from .games.base import GameMove
 from .models.openai_client import OpenAIModel
 from .models.anthropic_client import AnthropicModel
 
-# Import database
+# Import database and evaluation
 from . import supabase_db as db
+from .evaluation import MineBenchMetrics, RiskMetrics
 
 class GameRunner:
     """Runs games with AI models and stores results."""
@@ -36,10 +37,18 @@ class GameRunner:
         self.move_timeout = 30  # Seconds per move
     
     def run_game(self, game_type: str, model_name: str, model_provider: str, 
-                 difficulty: str = "medium", job_id: str = None) -> Dict[str, Any]:
+                 difficulty: str = "medium", job_id: str = None, task_id: str = None) -> Dict[str, Any]:
         """Run a single game and return results."""
         
         start_time = time.time()
+        
+        # Get task if specified
+        task = None
+        if task_id:
+            tasks = db.get_data('benchmark_tasks', [])
+            task = next((t for t in tasks if t['id'] == task_id), None)
+            if task:
+                difficulty = task.get('difficulty', difficulty)
         
         # Create game instance
         if game_type not in self.GAME_CLASSES:
@@ -48,7 +57,7 @@ class GameRunner:
                 "status": "error"
             }
         
-        game = self.GAME_CLASSES[game_type](difficulty=difficulty)
+        game = self.GAME_CLASSES[game_type](difficulty=difficulty, task=task)
         game_state = game.new_game()
         
         # Create model instance
@@ -289,6 +298,20 @@ class GameRunner:
         # Calculate summary statistics
         completed_games = [r for r in results if r["status"] == "completed"]
         
+        # Get full game data for metrics calculation
+        all_game_data = []
+        for game_id in [r["game_id"] for r in results]:
+            game_data = db.get_game(game_id)
+            if game_data:
+                all_game_data.append(game_data)
+        
+        # Calculate metrics based on game type
+        metrics = {}
+        if game_type == "minesweeper" and all_game_data:
+            metrics = MineBenchMetrics.calculate_ms_scores(all_game_data)
+        elif game_type == "risk" and all_game_data:
+            metrics = RiskMetrics.calculate_strategic_score(all_game_data)
+        
         summary = {
             "job_id": job_id,
             "total_games": len(results),
@@ -298,7 +321,8 @@ class GameRunner:
             "avg_moves": sum(r["moves"] for r in results) / len(results) if results else 0,
             "avg_duration": sum(r["duration"] for r in results) / len(results) if results else 0,
             "total_tokens": sum(r["tokens_used"] for r in results),
-            "games": [r["game_id"] for r in results]
+            "games": [r["game_id"] for r in results],
+            "metrics": metrics
         }
         
         return summary
