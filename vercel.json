@@ -42,7 +42,7 @@
       "use": "@vercel/python"
     },
     {
-      "src": "api/ai_models.py",
+      "src": "api/test_env.py",
       "use": "@vercel/python"
     }
   ],
@@ -86,6 +86,10 @@
     {
       "src": "/api/benchmark(.*)",
       "dest": "/api/play_simple.py"
+    },
+    {
+      "src": "/api/test_env",
+      "dest": "/api/test_env.py"
     },
     {
       "src": "/(.*)",
