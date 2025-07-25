@@ -1,5 +1,6 @@
 """AI Model configurations and integration for Vercel."""
 import os
+import sys
 import json
 import time
 from typing import Dict, Any, Optional, List
@@ -97,13 +98,22 @@ def call_openai_model(
     temperature: float = 0.7
 ) -> Dict[str, Any]:
     """Call OpenAI API with function calling support."""
+    # Debug import issues
+    print(f"[AI_MODELS] Python path: {sys.path}")
+    print(f"[AI_MODELS] Current directory: {os.getcwd()}")
+    print(f"[AI_MODELS] Directory contents: {os.listdir('.')}")
+    
     try:
         import openai
-        print(f"OpenAI library version: {openai.__version__}")
+        print(f"[AI_MODELS] OpenAI library version: {openai.__version__}")
     except ImportError as e:
+        # Check if openai is in site-packages
+        import site
+        print(f"[AI_MODELS] Site packages: {site.getsitepackages() if hasattr(site, 'getsitepackages') else 'N/A'}")
+        
         return {
             "error": f"OpenAI library not installed: {str(e)}",
-            "content": "Please install openai: pip install openai"
+            "content": "OpenAI library is required but not available in Vercel environment"
         }
     
     api_key = os.environ.get('OPENAI_API_KEY')
