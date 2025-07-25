@@ -18,6 +18,90 @@ let competitionConfig = {
     publicResults: true
 };
 
+// Make selectScoringMethod available globally
+window.selectScoringMethod = function(card) {
+    // Clear previous selection
+    document.querySelectorAll('.scoring-card').forEach(c => {
+        c.classList.remove('selected');
+    });
+    
+    // Select new method
+    card.classList.add('selected');
+    const method = card.dataset.scoring;
+    competitionConfig.scoringMethod = method;
+    
+    // Show/hide relevant sections
+    const customScoring = document.getElementById('custom-scoring');
+    const defaultPreview = document.getElementById('default-evaluation-preview');
+    
+    if (method === 'default') {
+        customScoring.style.display = 'none';
+        defaultPreview.style.display = 'block';
+    } else if (method === 'custom' || method === 'composite') {
+        customScoring.style.display = 'block';
+        defaultPreview.style.display = 'none';
+    }
+};
+
+// Update default evaluation preview based on selected game
+function updateDefaultEvaluationPreview(game) {
+    const preview = document.getElementById('default-evaluation-preview');
+    if (!preview) return;
+    
+    let metrics = [];
+    switch(game) {
+        case 'minesweeper':
+            metrics = [
+                'Win/Loss tracking',
+                'Mines correctly identified',
+                'Safe cells revealed efficiency',
+                'Game completion time',
+                'Move accuracy percentage'
+            ];
+            break;
+        case 'risk':
+            metrics = [
+                'Territory control',
+                'Battle win percentage',
+                'Strategic positioning score',
+                'Expansion efficiency',
+                'Overall game placement'
+            ];
+            break;
+        case 'sudoku':
+            metrics = [
+                'Puzzle completion status',
+                'Solving time',
+                'Error count',
+                'Hint usage',
+                'Difficulty-adjusted score'
+            ];
+            break;
+        case 'number_puzzle':
+            metrics = [
+                'Correct answers',
+                'Average solving time',
+                'Streak bonuses',
+                'Difficulty progression',
+                'Overall accuracy rate'
+            ];
+            break;
+        default:
+            metrics = [
+                'Win/Loss tracking',
+                'Game completion time',
+                'Move efficiency',
+                'Basic performance metrics'
+            ];
+    }
+    
+    const metricsList = metrics.map(m => `<li>${m}</li>`).join('');
+    preview.innerHTML = `
+        <h5>Default Evaluation Includes:</h5>
+        <ul>${metricsList}</ul>
+    `;
+}
+
 // Initialize wizard
 document.addEventListener('DOMContentLoaded', () => {
     // Set up event listeners
@@ -52,16 +136,6 @@ function setupEventListeners() {
     document.querySelectorAll('.model-option').forEach(option => {
         option.addEventListener('click', () => toggleModel(option));
     });
-    
-    // Scoring method
-    const scoringMethod = document.getElementById('scoring-method');
-    if (scoringMethod) {
-        scoringMethod.addEventListener('change', (e) => {
-            document.getElementById('custom-scoring').style.display = 
-                e.target.value === 'custom' || e.target.value === 'composite' ? 'block' : 'none';
-            competitionConfig.scoringMethod = e.target.value;
-        });
-    }
 }
 
 function selectGame(option) {
@@ -83,6 +157,9 @@ function selectGame(option) {
 
 function loadGameConfig(game) {
     const configContainer = document.getElementById('game-specific-config');
+    
+    // Update the default evaluation preview based on game
+    updateDefaultEvaluationPreview(game);
     
     switch(game) {
         case 'minesweeper':

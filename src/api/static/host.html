@@ -183,6 +183,114 @@
         margin-top: calc(var(--unit) * 0.5);
       }
       
+      /* Scoring Method Cards */
+      .scoring-methods {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: calc(var(--unit) * 2);
+        margin-bottom: calc(var(--unit) * 3);
+      }
+      
+      .scoring-card {
+        padding: calc(var(--unit) * 3);
+        border: 2px solid var(--border);
+        border-radius: 0;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+      }
+      
+      .scoring-card:hover {
+        border-color: var(--text-primary);
+        background: var(--bg-secondary);
+      }
+      
+      .scoring-card.selected {
+        border-color: var(--text-primary);
+        background: var(--bg-secondary);
+      }
+      
+      .scoring-card.selected::after {
+        content: '✓';
+        position: absolute;
+        top: calc(var(--unit) * 1);
+        right: calc(var(--unit) * 1);
+        font-size: var(--text-lg);
+        color: var(--text-primary);
+      }
+      
+      .scoring-card h4 {
+        margin-bottom: calc(var(--unit) * 1);
+        font-size: var(--text-base);
+      }
+      
+      .scoring-card p {
+        font-size: var(--text-sm);
+        color: var(--text-muted);
+        margin-bottom: 0;
+      }
+      
+      .default-evaluation-preview {
+        background: var(--bg-secondary);
+        padding: calc(var(--unit) * 2);
+        margin-top: calc(var(--unit) * 2);
+        border-left: 4px solid var(--border);
+      }
+      
+      .default-evaluation-preview h5 {
+        font-size: var(--text-sm);
+        margin-bottom: calc(var(--unit) * 1);
+        color: var(--text-secondary);
+      }
+      
+      .default-evaluation-preview ul {
+        list-style: none;
+        padding: 0;
+      }
+      
+      .default-evaluation-preview li {
+        font-size: var(--text-sm);
+        color: var(--text-muted);
+        margin-bottom: calc(var(--unit) * 0.5);
+        padding-left: calc(var(--unit) * 2);
+        position: relative;
+      }
+      
+      .default-evaluation-preview li::before {
+        content: '•';
+        position: absolute;
+        left: 0;
+        color: var(--text-muted);
+      }
+      
+      /* Cleaner select styling */
+      select {
+        width: 100%;
+        padding: calc(var(--unit) * 1.5);
+        border: 1px solid var(--border);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-size: var(--text-base);
+        font-family: inherit;
+        cursor: pointer;
+        transition: border-color 0.2s ease;
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b6560' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(var(--unit) * 1.5) center;
+        background-size: 16px;
+        padding-right: calc(var(--unit) * 5);
+      }
+      
+      select:hover {
+        border-color: var(--text-secondary);
+      }
+      
+      select:focus {
+        outline: none;
+        border-color: var(--text-primary);
+      }
+      
       .summary-section {
         background: var(--bg-secondary);
         padding: calc(var(--unit) * 3);
@@ -463,26 +571,48 @@
             <h3>Scoring Configuration</h3>
             <p class="text-muted">Choose how to evaluate and score the competition.</p>
             
-            <div class="form-stack">
-              <div class="form-group">
-                <label>Scoring Method</label>
-                <select id="scoring-method">
-                  <option value="default">Default Game Scoring</option>
-                  <option value="custom">Custom Evaluation Metrics</option>
-                  <option value="composite">Composite Score (Multiple Metrics)</option>
-                </select>
+            <!-- Scoring method cards -->
+            <div class="scoring-methods">
+              <div class="scoring-card selected" data-scoring="default" onclick="selectScoringMethod(this)">
+                <h4>Default Game Scoring</h4>
+                <p>Use the game's built-in scoring system. Simple and straightforward.</p>
               </div>
               
-              <div id="custom-scoring" style="display: none;">
-                <h4>Select Evaluation Metrics</h4>
-                <button type="button" class="button button-secondary" onclick="showEvaluationSelector()">
-                  Configure Evaluations
-                </button>
-                <div id="selected-evaluations-summary" class="text-sm text-muted mt-2">
-                  No evaluations selected
-                </div>
+              <div class="scoring-card" data-scoring="custom" onclick="selectScoringMethod(this)">
+                <h4>Custom Evaluation</h4>
+                <p>Choose specific metrics to evaluate performance beyond winning.</p>
               </div>
               
+              <div class="scoring-card" data-scoring="composite" onclick="selectScoringMethod(this)">
+                <h4>Composite Score</h4>
+                <p>Combine multiple metrics for a comprehensive evaluation.</p>
+              </div>
+            </div>
+            
+            <!-- Default evaluation preview -->
+            <div id="default-evaluation-preview" class="default-evaluation-preview">
+              <h5>Default Evaluation Includes:</h5>
+              <ul>
+                <li>Win/Loss tracking</li>
+                <li>Game completion time</li>
+                <li>Move efficiency</li>
+                <li>Basic performance metrics</li>
+              </ul>
+            </div>
+            
+            <!-- Custom scoring configuration -->
+            <div id="custom-scoring" style="display: none;">
+              <h4>Select Evaluation Metrics</h4>
+              <button type="button" class="button button-secondary" onclick="showEvaluationSelector()">
+                Configure Evaluations
+              </button>
+              <div id="selected-evaluations-summary" class="text-sm text-muted mt-2">
+                No evaluations selected
+              </div>
+            </div>
+            
+            <!-- Additional settings -->
+            <div class="form-stack" style="margin-top: calc(var(--unit) * 4);">
               <div class="form-group">
                 <label>Time Limits</label>
                 <select id="time-limit">
