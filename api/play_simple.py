@@ -57,6 +57,24 @@ class handler(BaseHTTPRequestHandler):
                     "game_type": "minesweeper"
                 }]
             })
+        
+        elif path.startswith('/api/benchmark/jobs/'):
+            # Get benchmark job status
+            job_id = path.split('/')[-1]
+            print(f"[BENCHMARK] Job status request for {job_id}")
+            
+            # For now, return completed status
+            self.send_json_response({
+                "job_id": job_id,
+                "status": "completed",
+                "games": [],
+                "summary": {
+                    "games_completed": 1,
+                    "wins": 0,
+                    "win_rate": 0.0,
+                    "avg_moves": 1
+                }
+            })
             
         else:
             self.send_error(404)
