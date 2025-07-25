@@ -22,10 +22,10 @@
         <nav>
           <ul class="nav">
             <li class="nav-item">
-              <a href="#overview" class="nav-link active">Overview</a>
+              <a href="/" class="nav-link active">Overview</a>
             </li>
             <li class="nav-item">
-              <a href="#compete" class="nav-link">Compete</a>
+              <a href="/compete" class="nav-link">Compete</a>
             </li>
             <li class="nav-item">
               <a href="#benchmark" class="nav-link">Benchmark</a>
@@ -51,8 +51,7 @@
         
         <div class="mt-4">
           <h4 class="text-sm text-muted">Quick Actions</h4>
-          <a href="/host" class="button button-small">Create Session</a>
-          <button class="button button-small" onclick="showJoinSession()">Join Session</button>
+          <a href="/compete" class="button button-small">Create Session</a>
         </div>
 
         <!-- Admin Button in Sidebar -->
@@ -94,8 +93,7 @@
               develop and test your own AI strategies.
             </p>
             <div class="button-group mt-4">
-              <a href="/host" class="button button-primary">Host a Competition</a>
-              <button class="button" onclick="showJoinSession()">Join with Code</button>
+              <a href="/compete" class="button button-primary">Host a Competition</a>
               <button class="button" onclick="navigateTo('benchmark')">Benchmark AI</button>
             </div>
           </div>
@@ -152,30 +150,6 @@
               </form>
             </div>
             
-            <div class="card">
-              <h3>Join Competition</h3>
-              <p class="text-muted">Enter a code to join an existing session</p>
-              <form id="join-session-form" class="form-stack">
-                <div class="form-group">
-                  <label>Join Code</label>
-                  <input type="text" id="join-code" placeholder="PLAY123" maxlength="10" style="text-transform: uppercase;" required>
-                </div>
-                <div class="form-group">
-                  <label>Your Name</label>
-                  <input type="text" id="player-name" placeholder="Enter your name" required>
-                </div>
-                <div class="form-group">
-                  <label>AI Model</label>
-                  <select id="player-model">
-                    <option value="gpt-4">GPT-4</option>
-                    <option value="claude-3-opus">Claude 3 Opus</option>
-                    <option value="claude-3-sonnet">Claude 3 Sonnet</option>
-                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                  </select>
-                </div>
-                <button type="submit" class="button button-primary">Join Session</button>
-              </form>
-            </div>
           </div>
           
           <div class="card">

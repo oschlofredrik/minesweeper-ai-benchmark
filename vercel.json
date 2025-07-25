@@ -12,6 +12,14 @@
       "dest": "/api/join.py"
     },
     {
+      "src": "/host",
+      "dest": "/api/host.py"
+    },
+    {
+      "src": "/compete",
+      "dest": "/api/compete.py"
+    },
+    {
       "src": "/(.*)",
       "dest": "/vercel/api/index.py"
     }
