@@ -2,7 +2,51 @@
   "version": 2,
   "builds": [
     {
-      "src": "vercel/api/index.py",
+      "src": "api/index.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "api/join.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "api/compete.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "api/host.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "api/sessions.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "api/play.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "api/evaluations.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "api/admin.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "api/prompts.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "api/admin-page.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "api/events.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "api/run_game.py",
       "use": "@vercel/python"
     }
   ],
@@ -20,8 +64,40 @@
       "dest": "/api/compete.py"
     },
     {
+      "src": "/admin",
+      "dest": "/api/admin-page.py"
+    },
+    {
+      "src": "/api/sessions(.*)",
+      "dest": "/api/sessions.py"
+    },
+    {
+      "src": "/api/play(.*)",
+      "dest": "/api/play.py"
+    },
+    {
+      "src": "/api/evaluations(.*)",
+      "dest": "/api/evaluations.py"
+    },
+    {
+      "src": "/api/admin(.*)",
+      "dest": "/api/admin.py"
+    },
+    {
+      "src": "/api/prompts(.*)",
+      "dest": "/api/prompts.py"
+    },
+    {
+      "src": "/api/events",
+      "dest": "/api/events.py"
+    },
+    {
+      "src": "/api/run_game",
+      "dest": "/api/run_game.py"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/vercel/api/index.py"
+      "dest": "/api/index.py"
     }
   ]
 }

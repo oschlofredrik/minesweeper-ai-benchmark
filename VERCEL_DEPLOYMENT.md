@@ -1,5 +1,13 @@
 # Vercel Deployment Guide
 
+## Current Status ✅
+- Game engines implemented (Minesweeper, Risk)
+- AI model integration (OpenAI, Anthropic with function calling)
+- Supabase database connected (project: mgkprogfsjmazekeyquq)
+- Migration script ready
+- Vercel configuration updated
+- Live at: https://tilts.vercel.app/
+
 ## Prerequisites
 
 1. Install Vercel CLI:
@@ -11,95 +19,98 @@ npm install -g vercel
 
 ## Environment Variables
 
-You'll need to set these environment variables in Vercel:
+These are already set in your Vercel project:
 
+- `SUPABASE_URL` - https://mgkprogfsjmazekeyquq.supabase.co
+- `SUPABASE_ANON_KEY` - Your Supabase anon key
 - `OPENAI_API_KEY` - Your OpenAI API key
-- `ANTHROPIC_API_KEY` - Your Anthropic API key  
-- `DATABASE_URL` - PostgreSQL connection string (or use SQLite)
-- `SECRET_KEY` - A random secret key for sessions
+- `ANTHROPIC_API_KEY` - Your Anthropic API key
 
 ## Deployment Steps
 
-1. **Login to Vercel**:
+1. **Deploy Latest Changes**:
 ```bash
-vercel login
+git add .
+git commit -m "Complete Vercel migration with game engines and AI integration"
+git push origin main
 ```
 
-2. **Deploy**:
+Vercel will automatically deploy from your GitHub repository.
+
+2. **Run Data Migration** (if you have data in Render):
 ```bash
-vercel
+# First, add RENDER_DATABASE_URL to your .env file
+# Get it from: Render Dashboard > Your Database > Connection String
+
+# Then run the migration
+python scripts/migrate_render_to_supabase.py
 ```
 
-When prompted:
-- Set up and deploy: Y
-- Which scope: Select your account
-- Link to existing project? N  
-- Project name: minesweeper-benchmark (or your preferred name)
-- In which directory: . (current)
-- Override settings? N
+3. **Test the Deployment**:
+Visit https://tilts.vercel.app/ and test:
+- Playing games (Minesweeper and Risk)
+- Viewing leaderboard
+- Admin panel functionality
 
-3. **Set Environment Variables**:
-```bash
-# Set each environment variable
-vercel env add OPENAI_API_KEY
-vercel env add ANTHROPIC_API_KEY
-vercel env add DATABASE_URL
-vercel env add SECRET_KEY
-```
+## What's New in This Migration
 
-4. **Deploy to Production**:
-```bash
-vercel --prod
-```
+### Real Game Engines
+- **Minesweeper**: Full implementation with proper mine placement and win/loss detection
+- **Risk**: Simplified 22-territory version with all game phases
+- Both games provide function schemas for AI models
 
-## Post-Deployment
+### AI Integration
+- **OpenAI**: Uses native function calling API
+- **Anthropic**: Uses tool use for structured responses
+- No more regex parsing - all moves come as structured JSON
+- Automatic game chaining for multi-game sessions
 
-1. Your app will be available at: `https://your-project-name.vercel.app`
+### Serverless Architecture
+- Each game runs as a separate function invocation
+- Games chain automatically (one triggers the next)
+- Handles Vercel's 10-second timeout gracefully
+- All state stored in Supabase
 
-2. The API endpoints will be at:
-   - `/docs` - API documentation
-   - `/health` - Health check
-   - `/api/leaderboard` - Leaderboard data
-   - `/` - Main web interface
+### Database
+- Supabase PostgreSQL with automatic fallback to JSON
+- All game data, moves, and transcripts stored
+- Real-time leaderboard updates
 
-## Database Considerations
+## API Endpoints
+- `/api/play` - Start new games
+- `/api/run_game` - Execute individual games (NEW)
+- `/api/sessions` - Competition sessions
+- `/api/evaluations` - Custom evaluations
+- `/api/admin` - Admin functions
+- `/api/events` - SSE for real-time updates
+- `/` - Main web interface
 
-For Vercel deployment, you'll need an external database:
+## Monitoring
+Games now include:
+- Full move history with reasoning
+- Token usage tracking
+- Error messages and stack traces
+- Performance metrics
 
-1. **PostgreSQL** (Recommended):
-   - Use Vercel Postgres, Supabase, or Neon
-   - Update DATABASE_URL with connection string
-
-2. **SQLite** (Development only):
-   - Limited to read-only or temporary data
-   - Not recommended for production
-
-## Limitations
-
-- Vercel has a 10MB function size limit (we've configured 15MB max)
-- API routes have a 30-second timeout
-- Static files are served from `/src/api/static/`
-- Large file operations may need adjustment
+## Next Steps
+1. Monitor initial deployment
+2. Run data migration if needed
+3. Update DNS if using custom domain
+4. Decommission Render instance once verified
 
 ## Troubleshooting
 
-1. **Module Import Errors**: 
-   - Check that all dependencies are in `requirements-vercel.txt`
-   - Ensure paths in `api/index.py` are correct
+1. **Games Not Running**: 
+   - Check that API keys are set in Vercel environment
+   - Verify Supabase connection is working
+   - Check browser console for errors
 
-2. **Static Files Not Loading**:
-   - Verify routes in `vercel.json`
-   - Check file paths match deployment structure
+2. **Timeout Issues**:
+   - Games are designed to chain automatically
+   - Each game runs in its own function invocation
+   - Check `/api/run_game` endpoint logs
 
-3. **Database Connection Issues**:
-   - Verify DATABASE_URL is set correctly
-   - Check database is accessible from Vercel's network
-
-## Local Testing
-
-Test the Vercel build locally:
-```bash
-vercel dev
-```
-
-This will simulate the Vercel environment on your machine.
+3. **Database Issues**:
+   - Verify Supabase credentials are correct
+   - Check that migrations were applied
+   - System falls back to JSON if Supabase fails

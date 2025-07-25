@@ -18,15 +18,18 @@ This is a comprehensive benchmark platform for evaluating Large Language Models 
 12. **Monitoring**: Real-time log streaming via Render API
 13. **Function Calling**: Native OpenAI and Anthropic function/tool use
 14. **Event Tracking**: Full prompt/response/reasoning capture and display
+15. **Serverless Migration**: Complete Vercel deployment with all endpoints
+16. **Database Integration**: Supabase connected and configured
 
 ## Key Technical Details
 
 ### Architecture
 - **Language**: Python 3.11+
-- **Web Framework**: FastAPI with Uvicorn
+- **Web Framework**: FastAPI with Uvicorn (Render), HTTP handlers (Vercel)
 - **Async**: Full async/await support for parallel evaluation
 - **Type Safety**: Comprehensive type hints throughout
-- **Storage**: File-based (with optional PostgreSQL)
+- **Storage**: Supabase (primary), JSON files (fallback)
+- **Serverless**: Vercel Functions for API endpoints
 
 ### Project Structure
 ```
@@ -370,3 +373,86 @@ Risk game successfully:
 
 ## Final State
 The Tilts platform is now a true multi-game AI evaluation system. The successful Risk implementation demonstrates that new games can be added as plugins without modifying core infrastructure. The platform maintains robust error handling, fair scoring, and comprehensive debugging while supporting diverse game types. Both Minesweeper and Risk (and other games) work seamlessly with OpenAI and Anthropic models using native function calling for reliable, structured gameplay.
+
+## Serverless Deployment (July 2025)
+
+### Vercel Setup
+Successfully migrated entire platform to Vercel serverless architecture:
+- All API endpoints converted to HTTP handlers
+- Static file serving configured
+- Multi-step wizard restored
+- SSE for basic real-time updates
+- **Full game engines implemented** (Minesweeper and Risk)
+- **AI integration complete** (OpenAI and Anthropic with function calling)
+- **Automatic game chaining** to handle Vercel timeouts
+- **Live at**: https://tilts.vercel.app/
+
+### Supabase Database Integration
+**Project Details:**
+- **Project ID**: mgkprogfsjmazekeyquq
+- **Region**: eu-north-1
+- **URL**: https://mgkprogfsjmazekeyquq.supabase.co
+- **Database**: PostgreSQL with Row Level Security
+
+**Schema Applied:**
+- `sessions` - Competition sessions with join codes
+- `games` - Individual game records with full transcripts
+- `leaderboard_entries` - Model performance tracking
+- `evaluations` - Custom evaluation metrics marketplace
+- `prompts` - Prompt template library
+- `session_players` - Session participants
+- `settings` - System configuration
+
+**Key Features:**
+- Automatic fallback to JSON if Supabase unavailable
+- All tables have RLS enabled (currently open for development)
+- Update triggers for automatic timestamp management
+- Demo data inserted (GPT-4 and Claude leaderboard entries)
+
+### Environment Variables
+```bash
+# Supabase
+SUPABASE_URL=https://mgkprogfsjmazekeyquq.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# AI Models
+OPENAI_API_KEY=sk-proj-...
+ANTHROPIC_API_KEY=sk-ant-api03-...
+```
+
+### File Structure
+```
+/api/
+├── supabase_db.py    # Database abstraction with fallback
+├── index.py          # Main routing handler
+├── sessions.py       # Session management
+├── play.py           # Game execution
+├── evaluations.py    # Evaluation system
+├── admin.py          # Admin endpoints
+├── prompts.py        # Prompt library
+├── events.py         # SSE real-time
+└── requirements.txt  # Minimal deps (supabase, python-dotenv)
+
+/supabase/
+└── migrations/
+    └── 001_initial_schema.sql  # Complete database schema
+```
+
+### Deployment Details
+**Live URL**: https://tilts.vercel.app/
+
+### Deployment Commands
+```bash
+# Apply Supabase migrations
+supabase link --project-ref mgkprogfsjmazekeyquq
+supabase db push --password '/vETxuZ??DExSr8'
+
+# Deploy to Vercel
+git push origin main
+```
+
+### Migration Tools
+- `migrate-to-supabase.py` - Migrate JSON data to Supabase
+- `apply-migrations.sh` - Apply database schema
+
+The platform now runs fully serverless with persistent storage, maintaining all original features while adding scalability and reducing operational overhead.

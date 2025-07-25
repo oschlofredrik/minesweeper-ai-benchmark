@@ -21,77 +21,48 @@ class handler(BaseHTTPRequestHandler):
         elif path == '/health':
             self.send_json({"status": "healthy", "service": "tilts"})
             
-        elif path == '/api/leaderboard':
-            self.send_json({
-                "entries": [
-                    {
-                        "model_name": "gpt-4",
-                        "games_played": 250,
-                        "win_rate": 0.85,
-                        "avg_moves": 45,
-                        "valid_move_rate": 0.98,
-                        "mine_identification_precision": 0.92,
-                        "mine_identification_recall": 0.88,
-                        "coverage_ratio": 0.75,
-                        "reasoning_score": 0.90,
-                        "composite_score": 0.86,
-                        "last_updated": "2024-07-25T12:00:00Z"
-                    },
-                    {
-                        "model_name": "claude-3-opus", 
-                        "games_played": 200,
-                        "win_rate": 0.82,
-                        "avg_moves": 48,
-                        "valid_move_rate": 0.97,
-                        "mine_identification_precision": 0.90,
-                        "mine_identification_recall": 0.85,
-                        "coverage_ratio": 0.73,
-                        "reasoning_score": 0.88,
-                        "composite_score": 0.83,
-                        "last_updated": "2024-07-25T11:00:00Z"
-                    }
-                ]
-            })
+        # Route to specific endpoint handlers based on path
+        elif path.startswith('/api/'):
+            # Import db module to ensure it's initialized
+            from . import supabase_db as db
             
-        elif path == '/api/overview/stats':
-            self.send_json({
-                "total_games": 1000,
-                "total_models": 5,
-                "best_model": "gpt-4",
-                "best_win_rate": 0.85
-            })
-            
-        elif path == '/api/sessions':
-            self.send_json({"sessions": []})
-            
-        elif path == '/api/games/active':
-            self.send_json({"games": []})
-            
-        elif path == '/api/stats':
-            self.send_json({
-                "total_sessions": 0,
-                "active_sessions": 0,
-                "total_players": 0
-            })
-            
-        elif path == '/api/play/games':
-            self.send_json({
-                "games": [
-                    {"id": "minesweeper", "name": "Minesweeper", "description": "Classic mine detection game"},
-                    {"id": "risk", "name": "Risk", "description": "Strategic conquest game"}
-                ]
-            })
-            
-        elif path == '/api/sessions/templates/quick-match':
-            self.send_json({
-                "template": {
-                    "name": "Quick Match",
-                    "game_type": "minesweeper",
-                    "format": "single_round",
-                    "max_players": 10
-                }
-            })
-            
+            # Use dynamic imports to get leaderboard from db
+            if path == '/api/leaderboard':
+                leaderboard = db.get_leaderboard()
+                self.send_json({"entries": leaderboard})
+                
+            elif path == '/api/overview/stats':
+                sessions = db.list_sessions()
+                games = db.list_games()
+                leaderboard = db.get_leaderboard()
+                best_model = leaderboard[0] if leaderboard else None
+                
+                self.send_json({
+                    "total_games": len(games),
+                    "total_models": len(leaderboard),
+                    "best_model": best_model.get("model_name") if best_model else "N/A",
+                    "best_win_rate": best_model.get("win_rate", 0) if best_model else 0
+                })
+                
+            elif path == '/api/games/active':
+                games = db.list_games()
+                active_games = [g for g in games if g.get("status") == "in_progress"]
+                self.send_json({"games": active_games})
+                
+            elif path == '/api/stats':
+                sessions = db.list_sessions()
+                active_sessions = db.list_sessions(active_only=True)
+                
+                self.send_json({
+                    "total_sessions": len(sessions),
+                    "active_sessions": len(active_sessions),
+                    "total_players": sum(len(s.get("players", [])) for s in sessions)
+                })
+                
+            else:
+                # For other API endpoints, return 404 (they should have their own handlers)
+                self.send_error(404)
+                
         elif path == '/robots.txt':
             self.send_response(200)
             self.send_header('Content-type', 'text/plain')
@@ -122,17 +93,25 @@ class handler(BaseHTTPRequestHandler):
     
     def serve_file(self, filename, content_type):
         base_path = Path(__file__).parent.parent
-        file_path = base_path / 'serverless-migration' / 'src' / 'api' / 'static' / filename
         
-        if file_path.exists():
-            self.send_response(200)
-            self.send_header('Content-type', content_type)
-            self.end_headers()
-            
-            with open(file_path, 'rb') as f:
-                self.wfile.write(f.read())
-        else:
-            self.send_error(404)
+        # Try multiple paths to find the static files
+        possible_paths = [
+            base_path / 'serverless-migration' / 'src' / 'api' / 'static' / filename,
+            base_path / 'src' / 'api' / 'static' / filename,
+            base_path / 'vercel' / 'static' / filename
+        ]
+        
+        for file_path in possible_paths:
+            if file_path.exists():
+                self.send_response(200)
+                self.send_header('Content-type', content_type)
+                self.end_headers()
+                
+                with open(file_path, 'rb') as f:
+                    self.wfile.write(f.read())
+                return
+                
+        self.send_error(404)
     
     def serve_static_file(self, filename):
         # Determine content type
