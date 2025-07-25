@@ -18,6 +18,14 @@ sys.path.append(os.path.dirname(__file__))
 SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
 SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY', '')
 
+# Import HTTP-based realtime broadcasting
+try:
+    from supabase_realtime_http import broadcast_to_channel
+    print("[PLAY] Supabase HTTP realtime available")
+except ImportError:
+    broadcast_to_channel = None
+    print("[PLAY] Supabase realtime not available")
+
 # Simple in-memory game state storage
 GAME_STATES = {}
 
@@ -165,6 +173,8 @@ class handler(BaseHTTPRequestHandler):
             
             # Try to run a simple game
             try:
+                # Add job_id to config for broadcasting
+                config['job_id'] = job_id
                 result = self.run_benchmark_game(config)
                 print(f"[BENCHMARK] Game completed: won={result.get('won')}, moves={result.get('total_moves')}")
                 
@@ -234,6 +244,7 @@ class handler(BaseHTTPRequestHandler):
         print(f"[GAME] Starting game with model={config.get('model')} provider={config.get('provider')}")
         
         game_id = str(uuid.uuid4())
+        job_id = config.get('job_id', f"bench_{uuid.uuid4()[:8]}")
         game_type = config.get('game', 'minesweeper')
         model_name = config.get('model', 'gpt-4')
         provider = config.get('provider', 'openai')
@@ -280,6 +291,11 @@ class handler(BaseHTTPRequestHandler):
         except Exception as e:
             print(f"[GAME] Error initializing game: {str(e)}")
             raise
+        
+        # Check if broadcasting is available
+        can_broadcast = broadcast_to_channel is not None
+        if can_broadcast:
+            print(f"[GAME] Realtime broadcasting available for job {job_id}")
         
         # Run game
         moves = []
@@ -336,9 +352,49 @@ class handler(BaseHTTPRequestHandler):
                 
                 moves.append(move_data)
                 
+                # Broadcast move via Supabase if available
+                if can_broadcast:
+                    try:
+                        channel_name = f"game:{job_id}"
+                        broadcast_data = {
+                            'job_id': job_id,
+                            'game_id': game_id,
+                            'move_number': move_num + 1,
+                            'action': ai_move,
+                            'valid': valid,
+                            'message': message,
+                            'board_state': move_data['board_state'],
+                            'game_state': move_data['game_state']
+                        }
+                        
+                        # Use HTTP broadcasting
+                        broadcast_to_channel(channel_name, 'move', broadcast_data)
+                        print(f"[GAME] Broadcasted move {move_num + 1} to channel {channel_name}")
+                    except Exception as e:
+                        print(f"[GAME] Failed to broadcast move: {e}")
+                
                 # Check game over
                 if game.game_over:
                     print(f"[GAME] Game over! Won={getattr(game, 'won', False)}")
+                    
+                    # Broadcast game completion
+                    if can_broadcast:
+                        try:
+                            channel_name = f"game:{job_id}"
+                            completion_data = {
+                                'job_id': job_id,
+                                'game_id': game_id,
+                                'won': getattr(game, 'won', False),
+                                'total_moves': len(moves),
+                                'final_state': move_data['game_state']
+                            }
+                            
+                            # Use HTTP broadcasting
+                            broadcast_to_channel(channel_name, 'complete', completion_data)
+                            print(f"[GAME] Broadcasted game completion to channel {channel_name}")
+                        except Exception as e:
+                            print(f"[GAME] Failed to broadcast completion: {e}")
+                    
                     break
                     
         except Exception as e:

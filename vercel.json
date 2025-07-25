@@ -44,6 +44,10 @@
     {
       "src": "api/test_env.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "api/config_supabase.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
@@ -90,6 +94,10 @@
     {
       "src": "/api/test_env",
       "dest": "/api/test_env.py"
+    },
+    {
+      "src": "/api/config/supabase",
+      "dest": "/api/config_supabase.py"
     },
     {
       "src": "/(.*)",

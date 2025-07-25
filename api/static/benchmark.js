@@ -57,9 +57,12 @@ window.showEvalModal = showEvalModal;
 window.hideEvalModal = hideEvalModal;
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // Initialize event stream UI
     eventStreamUI = new EventStreamUI('event-stream-ui');
+    
+    // Initialize Supabase
+    await initSupabase();
     
     // Set up form handler
     document.getElementById('eval-form').addEventListener('submit', handleStartEvaluation);
@@ -258,7 +261,12 @@ async function handleStartEvaluation(e) {
                 `;
             }
             
-            // Always process results immediately since we get them sync
+            // Subscribe to realtime updates for this job
+            if (result.job_id) {
+                await subscribeToGame(result.job_id, handleRealtimeUpdate);
+            }
+            
+            // Process initial results if any
             if (result.games) {
                 updateBenchmarkResults(result);
             }
@@ -432,6 +440,81 @@ function updateGameStats(data) {
 
 function showCompletionSummary(data) {
     // Removed - completion is shown in the stats above
+}
+
+// Handle realtime updates from Supabase
+function handleRealtimeUpdate(event, payload) {
+    console.log('Realtime update:', event, payload);
+    
+    if (event === 'move') {
+        // Add move to event stream
+        if (eventStreamUI && eventStreamUI.streamList) {
+            const moveDiv = document.createElement('div');
+            moveDiv.className = 'event-item';
+            moveDiv.style.marginBottom = '1em';
+            
+            let moveHtml = `<div class="event-content">`;
+            
+            // Show board state if first move
+            if (payload.move_number === 1 && payload.board_state) {
+                moveHtml += `
+                    <details open>
+                        <summary><strong>Move ${payload.move_number} - Board State</strong></summary>
+                        <pre style="font-family: monospace; font-size: 0.75em; line-height: 1.2;">${payload.board_state}</pre>
+                    </details>
+                `;
+            }
+            
+            // Show AI action
+            if (payload.action) {
+                moveHtml += `
+                    <p><strong>Move ${payload.move_number}:</strong> ${payload.action.action} at (${payload.action.row}, ${payload.action.col})</p>
+                    ${payload.action.reasoning ? `<p style="font-style: italic; color: #666; margin-left: 1em;">"${payload.action.reasoning}"</p>` : ''}
+                    ${payload.valid === false ? `<p style="color: red;">Invalid: ${payload.message}</p>` : ''}
+                `;
+            }
+            
+            moveHtml += `</div>`;
+            moveDiv.innerHTML = moveHtml;
+            eventStreamUI.streamList.appendChild(moveDiv);
+            
+            // Auto-scroll to bottom
+            eventStreamUI.streamList.scrollTop = eventStreamUI.streamList.scrollHeight;
+        }
+        
+        // Update board visualization
+        if (payload.game_state && gameVisualizer) {
+            gameVisualizer.updateState(payload.game_state);
+        }
+        
+        // Update move count
+        document.getElementById('current-moves').textContent = payload.move_number || 0;
+        
+    } else if (event === 'complete') {
+        // Game completed
+        const completed = parseInt(document.getElementById('current-game-num').textContent) || 0;
+        document.getElementById('current-game-num').textContent = completed + 1;
+        
+        // Update win rate
+        if (payload.won) {
+            const wins = parseInt(document.getElementById('wins-count')?.textContent) || 0;
+            const total = completed + 1;
+            const winRate = ((wins + 1) / total * 100).toFixed(1);
+            document.getElementById('win-rate').textContent = `${winRate}%`;
+        }
+        
+        // Add completion message
+        if (eventStreamUI && eventStreamUI.streamList) {
+            const eventDiv = document.createElement('div');
+            eventDiv.className = 'event-item event-system';
+            eventDiv.innerHTML = `
+                <div class="event-content">
+                    <p>Game completed - ${payload.won ? 'Won' : 'Lost'} in ${payload.total_moves || 0} moves</p>
+                </div>
+            `;
+            eventStreamUI.streamList.appendChild(eventDiv);
+        }
+    }
 }
 
 async function generateTasksIfNeeded(evalConfig) {
