@@ -1,23 +1,8 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "api/main.py",
-      "use": "@vercel/python",
-      "config": {
-        "maxLambdaSize": "50mb"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/static/(.*)",
-      "dest": "serverless-migration/src/api/static/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "api/main.py"
-    }
-  ],
-  "installCommand": "pip install -r requirements-vercel.txt"
+  "buildCommand": "cd vercel",
+  "outputDirectory": "vercel",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/vercel/api/index" }
+  ]
 }

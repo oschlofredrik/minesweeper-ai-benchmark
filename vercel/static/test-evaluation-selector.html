@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluation Selector Test</title>
+    <link rel="stylesheet" href="/static/rams-design.css">
+    <link rel="stylesheet" href="/static/evaluation-selector.css">
+    <style>
+        body {
+            padding: calc(var(--unit) * 4);
+            background: var(--bg-primary);
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-controls {
+            margin-bottom: calc(var(--unit) * 4);
+            padding: calc(var(--unit) * 3);
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+        }
+        .test-controls button {
+            margin-right: calc(var(--unit) * 2);
+        }
+        #test-output {
+            padding: calc(var(--unit) * 2);
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            font-family: monospace;
+            font-size: var(--text-sm);
+            white-space: pre-wrap;
+            margin-top: calc(var(--unit) * 3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Evaluation Selector Component Test</h1>
+        
+        <div class="test-controls">
+            <h3>Test Controls</h3>
+            <button class="button" onclick="testGetSelected()">Get Selected Metrics</button>
+            <button class="button" onclick="testValidation()">Test Validation</button>
+            <button class="button" onclick="testReset()">Reset Selection</button>
+            <button class="button button-secondary" onclick="testPreset('balanced')">Apply Balanced Preset</button>
+            <button class="button button-secondary" onclick="testPreset('speed_focused')">Apply Speed Preset</button>
+        </div>
+        
+        <div id="evaluation-selector-container"></div>
+        
+        <div id="test-output"></div>
+    </div>
+    
+    <script src="/static/evaluation-selector.js"></script>
+    <script>
+        // Initialize the evaluation selector
+        const evaluationSelector = new EvaluationSelector('evaluation-selector-container', {
+            maxMetrics: 5,
+            allowCustomWeights: true,
+            onUpdate: (metrics) => {
+                logOutput('Metrics updated:', metrics);
+            }
+        });
+        
+        // Make it globally accessible for testing
+        window.evaluationSelector = evaluationSelector;
+        
+        function logOutput(label, data) {
+            const output = document.getElementById('test-output');
+            const timestamp = new Date().toLocaleTimeString();
+            output.textContent += `[${timestamp}] ${label}\n${JSON.stringify(data, null, 2)}\n\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function testGetSelected() {
+            const selected = evaluationSelector.getSelectedMetrics();
+            logOutput('Selected metrics:', selected);
+        }
+        
+        function testValidation() {
+            const validation = evaluationSelector.validateSelection();
+            logOutput('Validation result:', validation);
+        }
+        
+        function testReset() {
+            evaluationSelector.selectedMetrics.clear();
+            evaluationSelector.render();
+            evaluationSelector.attachEventListeners();
+            logOutput('Selection reset', {});
+        }
+        
+        function testPreset(presetName) {
+            evaluationSelector.applyPreset(presetName);
+            logOutput(`Applied preset: ${presetName}`, evaluationSelector.getSelectedMetrics());
+        }
+    </script>
+</body>
+</html>

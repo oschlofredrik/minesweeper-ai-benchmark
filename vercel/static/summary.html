@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Summary - Tilts</title>
+    <link rel="stylesheet" href="/static/rams-design.css">
+    <link rel="stylesheet" href="/static/rams-components.css">
+    <style>
+        body {
+            padding-top: 80px;
+        }
+        
+        .page-container {
+            display: flex;
+            gap: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+        
+        .main-content {
+            flex: 1;
+            max-width: 800px;
+        }
+        
+        .moves-panel {
+            flex: 0 0 400px;
+            border-left: 1px solid var(--border-color);
+            padding-left: 40px;
+            height: calc(100vh - 120px);
+            overflow-y: auto;
+            position: sticky;
+            top: 100px;
+        }
+        
+        .summary-header {
+            margin-bottom: 40px;
+        }
+        
+        .summary-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .summary-header .meta {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            margin: 32px 0;
+        }
+        
+        .metric-card {
+            background: var(--bg-light);
+            padding: 24px;
+            text-align: center;
+            border-radius: 4px;
+        }
+        
+        .metric-value {
+            font-size: 32px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+        
+        .metric-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .games-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 24px;
+        }
+        
+        .games-table th,
+        .games-table td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .games-table th {
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+        }
+        
+        .won {
+            color: #059862;
+            font-weight: 500;
+        }
+        
+        .lost {
+            color: #dc2626;
+            font-weight: 500;
+        }
+        
+        .loading {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 80px 40px;
+            font-size: 14px;
+        }
+        
+        .game-detail {
+            margin-top: 30px;
+            border: 1px solid var(--text-secondary);
+            padding: 20px;
+        }
+        
+        .game-detail h4 {
+            color: var(--accent-green);
+            margin-bottom: 15px;
+        }
+        
+        .moves-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        
+        .moves-table th,
+        .moves-table td {
+            border: 1px solid var(--text-secondary);
+            padding: 8px;
+            text-align: left;
+        }
+        
+        .moves-table th {
+            background: var(--bg-black);
+            color: var(--accent-green);
+            font-weight: normal;
+        }
+        
+        .move-action {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 13px;
+            background: var(--bg-white);
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .move-valid {
+            color: #059862;
+            font-size: 13px;
+        }
+        
+        .move-invalid {
+            color: #dc2626;
+            font-size: 13px;
+        }
+        
+        .move-reasoning {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            max-width: 600px;
+        }
+        
+        .move-error {
+            color: var(--accent-red);
+            font-size: 0.85em;
+        }
+        
+        .game-selector {
+            margin-bottom: 20px;
+        }
+        
+        .game-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+        
+        .game-selector button {
+            padding: 8px 16px;
+            background: white;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .game-selector button.active {
+            background: var(--text-primary);
+            color: white;
+            border-color: var(--text-primary);
+        }
+        
+        .game-selector button:hover:not(.active) {
+            border-color: var(--text-primary);
+        }
+        
+        .moves-panel h3 {
+            color: var(--accent-green);
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--text-secondary);
+            padding-bottom: 10px;
+        }
+        
+        .move-item {
+            margin-bottom: 16px;
+            padding: 16px;
+            background: var(--bg-light);
+            border-radius: 4px;
+        }
+        
+        .move-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .move-number {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        
+        .error {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 24px;
+            border-radius: 4px;
+            margin: 24px 0;
+            font-size: 14px;
+        }
+        
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 32px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 14px;
+            transition: opacity 0.2s ease;
+        }
+        
+        .back-link:hover {
+            opacity: 0.7;
+        }
+        
+        h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 32px 0 16px;
+        }
+        
+        h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 24px 0 16px;
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="logo">Tilts</div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/">Leaderboard</a></li>
+            <li class="active"><a href="#">Summary</a></li>
+        </ul>
+    </nav>
+    
+    <div class="main-container">
+        <header class="top-bar">
+            <h1>Game Summary</h1>
+        </header>
+        
+        <div class="page-container">
+            <a href="/" class="back-link">← Back to Dashboard</a>
+                <div class="main-content">
+                    <div id="summaryContent">
+                        <div class="loading">Loading summary data...</div>
+                    </div>
+                </div>
+                
+                <div class="moves-panel" id="movesPanel" style="display: none;">
+                    <h3>Move-by-Move Analysis</h3>
+                    <div class="game-selector" id="gameSelector"></div>
+                    <div id="movesList"></div>
+                </div>
+        </div>
+    </div>
+
+    <script>
+        // Get job ID from URL
+        const pathParts = window.location.pathname.split('/');
+        const jobId = pathParts[pathParts.length - 1];
+
+        async function loadSummary() {
+            try {
+                const response = await fetch(`/api/play/games/${jobId}/summary`);
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to load summary');
+                }
+                
+                const data = await response.json();
+                gameData = data; // Store globally for button clicks
+                displaySummary(data);
+            } catch (error) {
+                document.getElementById('summaryContent').innerHTML = `
+                    <div class="error">
+                        Error loading summary: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function displaySummary(data) {
+            const winRate = data.metrics.win_rate || 0;
+            const validMoveRate = data.metrics.valid_move_rate || 0;
+            const avgCoverage = data.aggregate_stats.average_coverage || 0;
+            const avgMoves = data.aggregate_stats.average_moves || 0;
+            
+            let html = `
+                <div class="summary-header">
+                    <h1>Session ${data.job_id}</h1>
+                    <div class="meta">
+                        <div>Model: ${data.model_name}</div>
+                        <div>Completed: ${new Date(data.completed_at).toLocaleString()}</div>
+                        <div>Duration: ${Math.round(data.duration)} seconds</div>
+                    </div>
+                </div>
+
+                <h3>Performance Metrics</h3>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">${(winRate * 100).toFixed(1)}%</div>
+                        <div class="metric-label">Win Rate</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${data.aggregate_stats.games_won}/${data.num_games}</div>
+                        <div class="metric-label">Games Won</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${(validMoveRate * 100).toFixed(1)}%</div>
+                        <div class="metric-label">Valid Move Rate</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${avgMoves.toFixed(1)}</div>
+                        <div class="metric-label">Avg Moves/Game</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${(avgCoverage * 100).toFixed(1)}%</div>
+                        <div class="metric-label">Avg Board Coverage</div>
+                    </div>
+                </div>
+
+                <h3>Detailed Metrics</h3>
+                <div class="metrics-grid">
+                    ${Object.entries(data.metrics).map(([key, value]) => {
+                        if (key === 'win_rate' || key === 'valid_move_rate') return '';
+                        const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        const displayValue = typeof value === 'number' ? 
+                            (value > 1 ? value.toFixed(1) : (value * 100).toFixed(1) + '%') : 
+                            value;
+                        return `
+                            <div class="metric-card">
+                                <div class="metric-value">${displayValue}</div>
+                                <div class="metric-label">${label}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+
+            // Add game-by-game results if available
+            if (data.game_results && data.game_results.length > 0) {
+                html += `
+                    <h3>Game-by-Game Results</h3>
+                    <table class="games-table">
+                        <thead>
+                            <tr>
+                                <th>Game #</th>
+                                <th>Result</th>
+                                <th>Moves</th>
+                                <th>Board Coverage</th>
+                                <th>Mines Found</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.game_results.map((game, index) => `
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td class="${game.won ? 'won' : 'lost'}">${game.won ? 'WON' : 'LOST'}</td>
+                                    <td>${game.num_moves}</td>
+                                    <td>${(game.board_coverage * 100).toFixed(1)}%</td>
+                                    <td>${game.mines_correctly_flagged}/${game.total_mines}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+
+            document.getElementById('summaryContent').innerHTML = html;
+            
+            // Show moves panel and populate game selector if we have games with moves
+            if (data.game_results && data.game_results.some(g => g.moves && g.moves.length > 0)) {
+                document.getElementById('movesPanel').style.display = 'block';
+                populateGameSelector(data.game_results);
+                
+                // Show first game's moves by default
+                const firstGameWithMoves = data.game_results.findIndex(g => g.moves && g.moves.length > 0);
+                if (firstGameWithMoves >= 0) {
+                    showGameMoves(firstGameWithMoves, data.game_results[firstGameWithMoves]);
+                }
+            }
+        }
+
+        let currentGameData = null;
+        
+        function populateGameSelector(gameResults) {
+            const selector = document.getElementById('gameSelector');
+            selector.innerHTML = gameResults.map((game, index) => {
+                if (game.moves && game.moves.length > 0) {
+                    return `<button onclick="showGameMoves(${index}, gameData.game_results[${index}])" id="gameBtn${index}">
+                        Game ${index + 1} ${game.won ? '✓' : '✗'}
+                    </button>`;
+                }
+                return '';
+            }).join('');
+        }
+        
+        function showGameMoves(gameIndex, game) {
+            // Update active button
+            document.querySelectorAll('.game-selector button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const activeBtn = document.getElementById(`gameBtn${gameIndex}`);
+            if (activeBtn) activeBtn.classList.add('active');
+            
+            // Display moves
+            const movesList = document.getElementById('movesList');
+            if (!game.moves || game.moves.length === 0) {
+                movesList.innerHTML = '<p>No moves available for this game.</p>';
+                return;
+            }
+            
+            movesList.innerHTML = `
+                <div style="margin-bottom: 15px;">
+                    <strong>Game ${gameIndex + 1}</strong> - 
+                    <span class="${game.won ? 'won' : 'lost'}">${game.won ? 'WON' : 'LOST'}</span> - 
+                    ${game.num_moves} moves - 
+                    ${game.moves.filter(m => m.was_valid).length} valid
+                </div>
+                ${game.moves.map(move => `
+                    <div class="move-item">
+                        <div class="move-header">
+                            <span class="move-number">Move ${move.move_number}</span>
+                            <span class="move-action">${move.action}</span>
+                            <span class="${move.was_valid ? 'move-valid' : 'move-invalid'}">
+                                ${move.was_valid ? '✓ Valid' : '✗ Invalid'}
+                            </span>
+                        </div>
+                        <div class="move-reasoning">
+                            <strong>AI Reasoning:</strong><br>
+                            ${move.reasoning || 'No reasoning provided'}
+                        </div>
+                        ${move.error ? `<div class="move-error">Error: ${move.error}</div>` : ''}
+                    </div>
+                `).join('')}
+            `;
+        }
+        
+        // Store game data globally for button clicks
+        let gameData = null;
+
+        // Load summary on page load
+        loadSummary();
+    </script>
+</body>
+</html>

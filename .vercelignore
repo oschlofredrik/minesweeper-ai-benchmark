@@ -1,55 +1,45 @@
-# Development
-.git/
-.github/
-venv/
-.env
+# Include only necessary files
+.git
+.github
+__pycache__
 *.pyc
-__pycache__/
-.pytest_cache/
+.pytest_cache
+venv/
+env/
 
-# Documentation
-docs/
-*.md
-!README.md
-
-# Tests
-tests/
-test_*.py
-
-# Data files
-data/logs/
-data/results/
-data/tasks/
-*.db
-*.log
-
-# Deployment configs
-docker*
-Dockerfile
-render*.yaml
-nginx/
-systemd/
-
-# Scripts
-scripts/
-*.sh
-
-# Large unused directories
+# Exclude source code directories we don't need
+src/
 benchmarks/
 config/
-
-# Keep only essential source
-src/cli/
-src/competition/
-src/plugins/
-src/prompt_engineering/
-src/prompts/
-src/scoring/
-src/web/
-
-# Serverless alternatives
+data/
+deployment/
+docs/
+nginx/
+scripts/
 serverless/
+systemd/
+tests/
 
-# Archives
+# Exclude other files
+*.md
+*.sh
+*.log
+*.db
 *.tar.gz
 *.zip
+Dockerfile
+docker-compose.yml
+render*.yaml
+alembic*
+pyproject.toml
+requirements.txt
+test_*.py
+check_*.py
+diagnose_*.py
+debug_*.py
+run_*.py
+setup.py
+
+# But keep our deployment files
+!vercel.json
+!.vercelignore
