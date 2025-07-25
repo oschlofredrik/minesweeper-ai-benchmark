@@ -75,6 +75,11 @@ async function subscribeToGame(jobId, onUpdate) {
                 return;
             }
             
+            // Log polling status
+            if (events && events.length > 0) {
+                console.log(`Found ${events.length} new events`);
+            }
+            
             // Process new events
             for (const event of events || []) {
                 console.log(`Event received: ${event.event}`, event.payload);

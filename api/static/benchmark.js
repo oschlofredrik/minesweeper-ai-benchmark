@@ -249,6 +249,14 @@ async function handleStartEvaluation(e) {
         scenario: null
     };
     
+    console.log('Starting evaluation with config:', evalConfig);
+    
+    // Validate config
+    if (!evalConfig.model || !evalConfig.provider) {
+        alert('Please select a model and provider');
+        return;
+    }
+    
     // Hide modal IMMEDIATELY
     hideEvalModal();
     document.querySelector('.board-placeholder').style.display = 'none';
@@ -270,14 +278,18 @@ async function handleStartEvaluation(e) {
     }
     
     try {
+        console.log('Sending request to /api/benchmark/run');
         const response = await fetch('/api/benchmark/run', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(evalConfig)
         });
         
+        console.log('Response status:', response.status);
+        
         if (response.ok) {
             const result = await response.json();
+            console.log('Benchmark started, result:', result);
             currentJobId = result.job_id;
             
             // Initialize event stream (clear happens automatically)
@@ -293,11 +305,13 @@ async function handleStartEvaluation(e) {
             
             // Subscribe to realtime updates for this job
             if (result.job_id) {
+                console.log('Subscribing to realtime updates for job:', result.job_id);
                 await subscribeToGame(result.job_id, handleRealtimeUpdate);
             }
             
             // Process initial results if any
             if (result.games) {
+                console.log('Processing initial results:', result.games);
                 updateBenchmarkResults(result);
             }
         } else {

@@ -164,17 +164,21 @@ class handler(BaseHTTPRequestHandler):
                 print(f"[BENCHMARK] Config received: {json.dumps(config)}")
                 print(f"[BENCHMARK] Environment check - OPENAI_API_KEY exists: {'OPENAI_API_KEY' in os.environ}")
                 print(f"[BENCHMARK] Environment check - ANTHROPIC_API_KEY exists: {'ANTHROPIC_API_KEY' in os.environ}")
+                print(f"[BENCHMARK] Environment check - SUPABASE_URL exists: {'SUPABASE_URL' in os.environ}")
+                print(f"[BENCHMARK] Environment check - SUPABASE_ANON_KEY exists: {'SUPABASE_ANON_KEY' in os.environ}")
             except Exception as e:
                 print(f"[BENCHMARK] Error parsing request: {e}")
                 self.send_json_response({"error": str(e)}, 400)
                 return
             
             job_id = "bench_" + str(uuid.uuid4())[:8]
+            print(f"[BENCHMARK] Created job_id: {job_id}")
             
             # Try to run a simple game
             try:
                 # Add job_id to config for broadcasting
                 config['job_id'] = job_id
+                print(f"[BENCHMARK] Starting game with job_id: {job_id}")
                 result = self.run_benchmark_game(config)
                 print(f"[BENCHMARK] Game completed: won={result.get('won')}, moves={result.get('total_moves')}")
                 

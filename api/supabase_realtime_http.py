@@ -25,8 +25,7 @@ def broadcast_to_channel(channel_name, event, payload):
         event_data = {
             "channel": channel_name,
             "event": event,
-            "payload": payload,
-            "created_at": "now()"
+            "payload": payload
         }
         
         # Store in realtime_events table
@@ -38,6 +37,9 @@ def broadcast_to_channel(channel_name, event, payload):
             'Prefer': 'return=minimal'
         }
         
+        print(f"[REALTIME] Posting to {url}")
+        print(f"[REALTIME] Event data: {json.dumps(event_data)[:200]}...")
+        
         req = urllib.request.Request(
             url,
             data=json.dumps(event_data).encode('utf-8'),
@@ -46,7 +48,7 @@ def broadcast_to_channel(channel_name, event, payload):
         )
         
         with urllib.request.urlopen(req) as response:
-            print(f"[REALTIME] Broadcasted {event} to channel {channel_name}")
+            print(f"[REALTIME] Successfully broadcasted {event} to channel {channel_name}")
             return True
             
     except urllib.error.HTTPError as e:
