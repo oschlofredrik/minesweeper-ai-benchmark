@@ -33,17 +33,35 @@ document.addEventListener('DOMContentLoaded', () => {
     eventStreamUI = new EventStreamUI('event-stream-ui');
     
     // Set up form handlers
-    const joinForm = document.getElementById('quick-join-form');
+    const joinForm = document.getElementById('join-session-form');
     if (joinForm) {
-        joinForm.addEventListener('submit', handleJoinSession);
+        console.log('[INIT] Found join session form');
+        joinForm.addEventListener('submit', function(e) {
+            console.log('[FORM] Join session form submitted');
+            e.preventDefault();
+            handleJoinSession(e);
+        });
+    } else {
+        console.log('[INIT] Join session form not found');
     }
     
     const createForm = document.getElementById('create-session-form');
     if (createForm) {
-        console.log('[INIT] Found create session form');
-        createForm.addEventListener('submit', handleCreateSession);
+        console.log('[INIT] Found create session form:', createForm);
+        createForm.addEventListener('submit', function(e) {
+            console.log('[FORM] Create session form submitted');
+            handleCreateSession(e);
+        });
+        
+        // Also add a capture phase listener to ensure we catch it
+        createForm.addEventListener('submit', function(e) {
+            console.log('[FORM] Create session form submitted (capture phase)');
+            e.preventDefault();
+            e.stopPropagation();
+        }, true);
     } else {
         console.log('[INIT] Create session form not found');
+        console.log('[INIT] Available forms:', Array.from(document.querySelectorAll('form')).map(f => f.id));
     }
     
     // Check for join code in URL
@@ -660,12 +678,17 @@ async function handleCreateSession(e) {
 }
 
 async function handleJoinSession(e) {
+    console.log('[SESSION] handleJoinSession called');
     e.preventDefault();
     
-    const joinCode = document.getElementById('quick-join-code').value.toUpperCase();
-    const playerName = 'Player-' + Math.random().toString(36).substr(2, 5);
+    // Get join code and player info from the form
+    const joinCode = document.getElementById('join-code').value.toUpperCase();
+    const playerName = document.getElementById('player-name').value || 'Player-' + Math.random().toString(36).substr(2, 5);
+    const playerModel = document.getElementById('player-model').value;
     const playerId = 'player-' + Math.random().toString(36).substr(2, 9);
     window.currentPlayerId = playerId;
+    
+    console.log('[SESSION] Joining with:', { joinCode, playerName, playerModel });
     
     try {
         const response = await fetch('/api/sessions/join', {
