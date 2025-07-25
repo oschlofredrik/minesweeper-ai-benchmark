@@ -12,8 +12,8 @@ function initializeGameVisualization(config) {
             gameVisualizer.clear();
         }
         
-        // Create new visualizer
-        gameVisualizer = createGameVisualizer(config.game, 'game-board');
+        // Create new visualizer - use tilts-board as container
+        gameVisualizer = createGameVisualizer(config.game, 'tilts-board');
         
         // Initialize with game config
         const gameConfig = {
@@ -27,11 +27,15 @@ function initializeGameVisualization(config) {
             const difficultySettings = {
                 easy: { rows: 9, cols: 9, mines: 10 },
                 medium: { rows: 16, cols: 16, mines: 40 },
-                hard: { rows: 16, cols: 30, mines: 99 }
+                hard: { rows: 16, cols: 30, mines: 99 },
+                beginner: { rows: 9, cols: 9, mines: 10 },
+                intermediate: { rows: 16, cols: 16, mines: 40 },
+                expert: { rows: 16, cols: 30, mines: 99 }
             };
             Object.assign(gameConfig, difficultySettings[config.difficulty] || difficultySettings.medium);
         }
         
+        console.log('Initializing game visualizer with config:', gameConfig);
         gameVisualizer.initialize(gameConfig);
     } catch (error) {
         console.error('Failed to initialize game visualization:', error);
@@ -58,8 +62,33 @@ window.hideEvalModal = hideEvalModal;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
-    // Initialize event stream UI
-    eventStreamUI = new EventStreamUI('event-stream-ui');
+    // Initialize event stream UI - but create a simple version if EventStreamUI doesn't work
+    try {
+        if (typeof EventStreamUI !== 'undefined') {
+            eventStreamUI = new EventStreamUI('event-stream-ui');
+        } else {
+            console.log('EventStreamUI not found, using simple event display');
+            // Create a simple event display
+            const eventContainer = document.getElementById('event-stream-ui');
+            if (eventContainer) {
+                eventContainer.innerHTML = `
+                    <div class="event-stream-header">
+                        <h4>Live Game Stream</h4>
+                    </div>
+                    <div class="event-stream-container" id="event-stream-list" style="height: 400px; overflow-y: auto;">
+                        <div class="event-placeholder">
+                            <p class="text-muted">Waiting for game to start...</p>
+                        </div>
+                    </div>
+                `;
+                eventStreamUI = {
+                    streamList: document.getElementById('event-stream-list')
+                };
+            }
+        }
+    } catch (error) {
+        console.error('Error initializing EventStreamUI:', error);
+    }
     
     // Initialize Supabase
     await initSupabase();
@@ -261,6 +290,12 @@ async function handleStartEvaluation(e) {
     hideEvalModal();
     document.querySelector('.board-placeholder').style.display = 'none';
     document.getElementById('game-stats').style.display = 'flex';
+    
+    // Show the game board
+    const gameBoard = document.getElementById('tilts-board');
+    if (gameBoard) {
+        gameBoard.style.display = 'table';
+    }
     
     // Initialize visualization while waiting
     currentGameType = evalConfig.game;
