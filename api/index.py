@@ -23,12 +23,22 @@ class handler(BaseHTTPRequestHandler):
             self.serve_page('benchmark.html')
         elif path == '/host':
             self.serve_page('host.html')
-        elif path == '/sessions':
-            self.serve_page('sessions.html')
-        elif path == '/prompts':
-            self.serve_page('prompts.html')
         elif path == '/admin':
             self.serve_page('admin.html')
+        elif path == '/summary':
+            self.serve_page('summary.html')
+        elif path == '/replay':
+            self.serve_page('replay.html')
+        elif path == '/sessions':
+            # Redirect to compete page which shows active sessions
+            self.send_response(302)
+            self.send_header('Location', '/compete')
+            self.end_headers()
+        elif path == '/prompts':
+            # Prompts page doesn't exist yet, redirect to overview
+            self.send_response(302)
+            self.send_header('Location', '/')
+            self.end_headers()
             
         # Serve static files
         elif path.startswith('/static/'):
