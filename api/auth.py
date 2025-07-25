@@ -3,7 +3,6 @@ import os
 import json
 from http.server import BaseHTTPRequestHandler
 from typing import Optional, Dict, Any
-from .lib import supabase_db as db
 
 # Environment variables for API keys
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')

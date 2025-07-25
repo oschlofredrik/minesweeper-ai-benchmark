@@ -6,31 +6,11 @@
       "use": "@vercel/python"
     },
     {
-      "src": "api/sessions.py",
+      "src": "api/sessions_simple.py",
       "use": "@vercel/python"
     },
     {
-      "src": "api/play.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/evaluations.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/admin.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/prompts.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/events.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/tasks.py",
+      "src": "api/play_simple.py",
       "use": "@vercel/python"
     },
     {
@@ -38,54 +18,34 @@
       "use": "@vercel/python"
     },
     {
-      "src": "api/testdb.py",
+      "src": "api/simple.py",
       "use": "@vercel/python"
     },
     {
-      "src": "api/simple.py",
+      "src": "api/leaderboard_simple.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/api/sessions(.*)",
-      "dest": "/api/sessions.py"
+      "dest": "/api/sessions_simple.py"
     },
     {
       "src": "/api/play(.*)",
-      "dest": "/api/play.py"
-    },
-    {
-      "src": "/api/evaluations(.*)",
-      "dest": "/api/evaluations.py"
-    },
-    {
-      "src": "/api/admin(.*)",
-      "dest": "/api/admin.py"
-    },
-    {
-      "src": "/api/prompts(.*)",
-      "dest": "/api/prompts.py"
-    },
-    {
-      "src": "/api/events",
-      "dest": "/api/events.py"
-    },
-    {
-      "src": "/api/tasks(.*)",
-      "dest": "/api/tasks.py"
+      "dest": "/api/play_simple.py"
     },
     {
       "src": "/api/auth(.*)",
       "dest": "/api/auth.py"
     },
     {
-      "src": "/api/testdb",
-      "dest": "/api/testdb.py"
-    },
-    {
       "src": "/api/simple",
       "dest": "/api/simple.py"
+    },
+    {
+      "src": "/api/leaderboard",
+      "dest": "/api/leaderboard_simple.py"
     },
     {
       "src": "/(.*)",
