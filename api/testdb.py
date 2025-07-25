@@ -1,7 +1,7 @@
 """Test database endpoint."""
 from http.server import BaseHTTPRequestHandler
 import json
-import simple_db
+from . import simple_db
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
