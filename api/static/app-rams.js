@@ -14,8 +14,17 @@ let eventStreamUI = null;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('[INIT] DOMContentLoaded - Main initialization starting');
+    
+    // List all sections found
+    const sections = document.querySelectorAll('.section');
+    console.log(`[INIT] Found ${sections.length} sections:`, Array.from(sections).map(s => s.id));
+    
+    // Initialize core functionality
     initializeNavigation();
     initializePlayForm();
+    
+    // Load initial data
     loadOverviewStats();
     loadLeaderboard();
     startGameUpdates();
@@ -23,34 +32,67 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize event stream UI
     eventStreamUI = new EventStreamUI('event-stream-ui');
     
+    // Set up form handlers
+    const joinForm = document.getElementById('quick-join-form');
+    if (joinForm) {
+        joinForm.addEventListener('submit', handleJoinSession);
+    }
+    
+    const createForm = document.getElementById('create-session-form');
+    if (createForm) {
+        console.log('[INIT] Found create session form');
+        createForm.addEventListener('submit', handleCreateSession);
+    } else {
+        console.log('[INIT] Create session form not found');
+    }
+    
     // Check for join code in URL
     handleJoinFromURL();
+    
+    // Show initial section
+    const hash = window.location.hash.substring(1);
+    if (hash && document.getElementById(hash)) {
+        console.log(`[INIT] Navigating to hash: ${hash}`);
+        navigateTo(hash);
+    } else {
+        console.log('[INIT] Showing default section: overview');
+        showSection('overview');
+    }
+    
+    console.log('[INIT] Main initialization complete');
 });
 
 // Navigation
 function initializeNavigation() {
+    console.log('[INIT] Initializing navigation');
     document.querySelectorAll('.nav-link').forEach(link => {
+        console.log(`[INIT] Setting up nav link: ${link.getAttribute('href')}`);
         link.addEventListener('click', (e) => {
             e.preventDefault();
             const section = link.getAttribute('href').substring(1);
-            showSection(section);
-            
-            // Update active state
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            link.classList.add('active');
+            console.log(`[NAV] Nav link clicked: ${section}`);
+            navigateTo(section);
         });
     });
 }
 
 // Show section
 function showSection(sectionId) {
+    console.log(`[NAV] showSection called with: ${sectionId}`);
+    
+    // Hide all sections
     document.querySelectorAll('.section').forEach(section => {
+        console.log(`[NAV] Hiding section: ${section.id}`);
         section.style.display = 'none';
     });
     
+    // Show requested section
     const section = document.getElementById(sectionId);
     if (section) {
+        console.log(`[NAV] Showing section: ${sectionId}`);
         section.style.display = 'block';
+    } else {
+        console.error(`[NAV] Section not found: ${sectionId}`);
     }
     
     // Load section-specific data
@@ -550,8 +592,14 @@ function showCreateSession() {
 }
 
 function showJoinSession() {
+    console.log('[UI] showJoinSession called');
     const modal = document.getElementById('join-session-modal');
-    modal.classList.add('active');
+    if (modal) {
+        console.log('[UI] Opening join session modal');
+        modal.classList.add('active');
+    } else {
+        console.error('[UI] Join session modal not found');
+    }
 }
 
 function hideModal(modalId) {
@@ -559,11 +607,19 @@ function hideModal(modalId) {
 }
 
 async function handleCreateSession(e) {
+    console.log('[SESSION] handleCreateSession called');
     e.preventDefault();
     
     const formData = new FormData(e.target);
     const creatorId = 'user-' + Math.random().toString(36).substr(2, 9);
     window.currentPlayerId = creatorId;
+    
+    console.log('[SESSION] Creating session with data:', {
+        name: formData.get('session-name'),
+        gameType: formData.get('game-type'),
+        format: formData.get('competition-format'),
+        maxPlayers: formData.get('max-players')
+    });
     
     const sessionData = {
         name: formData.get('session-name'),
@@ -813,15 +869,22 @@ async function startCompetition() {
 }
 
 function navigateTo(section) {
+    console.log(`[NAV] navigateTo called with: ${section}`);
     showSection(section);
     
     // Update nav
     document.querySelectorAll('.nav-link').forEach(link => {
         link.classList.remove('active');
         if (link.getAttribute('href') === '#' + section) {
+            console.log(`[NAV] Activating nav link: ${link.getAttribute('href')}`);
             link.classList.add('active');
         }
     });
+    
+    // Update URL without reload
+    if (history.pushState) {
+        history.pushState(null, null, '#' + section);
+    }
 }
 
 // Session Management
@@ -869,24 +932,7 @@ async function useTemplate(gameName) {
     showCreateSession();
 }
 
-// Initialize new competition features
-document.addEventListener('DOMContentLoaded', () => {
-    // Set up form handlers
-    const joinForm = document.getElementById('quick-join-form');
-    if (joinForm) {
-        joinForm.addEventListener('submit', handleJoinSession);
-    }
-    
-    // Load sections when navigated to
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.addEventListener('click', () => {
-            const section = link.getAttribute('href').substring(1);
-            if (section === 'compete') {
-                loadActiveSessions();
-            }
-        });
-    });
-});
+// Competition features are initialized in main DOMContentLoaded handler
 
 // Global evaluation selector instance
 let evaluationSelector = null;
