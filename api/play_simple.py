@@ -234,50 +234,120 @@ class handler(BaseHTTPRequestHandler):
         game_type = config.get('game', 'minesweeper')
         model_name = config.get('model', 'gpt-4')
         provider = config.get('provider', 'openai')
+        difficulty = config.get('difficulty', 'medium')
         
-        # Try to import AI models
+        # Try to import required modules
         try:
             from ai_models import call_ai_model, format_game_messages, extract_function_call
             print(f"[GAME] Successfully imported ai_models")
+            
+            from game_runner import (
+                SimpleMinesweeper, SimpleRisk,
+                get_minesweeper_prompt, get_risk_prompt,
+                get_function_schema, execute_minesweeper_move, execute_risk_move
+            )
+            print(f"[GAME] Successfully imported game_runner")
         except ImportError as e:
-            print(f"[GAME] Failed to import ai_models: {e}")
+            print(f"[GAME] Failed to import: {e}")
             raise
         
-        # Simple test: try to call the AI with a basic prompt
+        # Initialize game
         try:
-            messages = [{"role": "user", "content": "Say 'hello world' and nothing else"}]
-            print(f"[GAME] Calling AI model {model_name} via {provider}")
+            if game_type == 'minesweeper':
+                print(f"[GAME] Creating Minesweeper game with difficulty={difficulty}")
+                difficulty_configs = {
+                    'easy': {'rows': 9, 'cols': 9, 'mines': 10},
+                    'medium': {'rows': 16, 'cols': 16, 'mines': 40},
+                    'hard': {'rows': 16, 'cols': 30, 'mines': 99}
+                }
+                cfg = difficulty_configs.get(difficulty, difficulty_configs['medium'])
+                game = SimpleMinesweeper(rows=cfg['rows'], cols=cfg['cols'], mines=cfg['mines'])
+                get_prompt = get_minesweeper_prompt
+                execute_move = execute_minesweeper_move
+            else:
+                print(f"[GAME] Creating Risk game")
+                game = SimpleRisk(scenario=config.get('scenario'))
+                get_prompt = get_risk_prompt
+                execute_move = execute_risk_move
             
-            response = call_ai_model(
-                provider=provider,
-                model=model_name,
-                messages=messages,
-                temperature=0.7
-            )
-            
-            print(f"[GAME] AI Response: {response}")
-            
-            # Return a simple result
-            return {
-                'game_id': game_id,
-                'game_type': game_type,
-                'status': 'completed',
-                'won': False,
-                'total_moves': 1,
-                'moves': [{
-                    'move_number': 1,
-                    'action': {'test': 'response'},
-                    'valid': True,
-                    'message': str(response),
-                    'timestamp': datetime.utcnow().isoformat()
-                }],
-                'final_state': {'test': 'completed'},
-                'duration': 1.0
-            }
+            # Get function schema
+            function_schema = get_function_schema(game_type)
+            print(f"[GAME] Got function schema for {game_type}")
             
         except Exception as e:
-            print(f"[GAME] Error calling AI: {str(e)}")
+            print(f"[GAME] Error initializing game: {str(e)}")
             raise
+        
+        # Run game
+        moves = []
+        max_moves = 30
+        start_time = datetime.utcnow()
+        
+        try:
+            for move_num in range(max_moves):
+                print(f"[GAME] Move {move_num + 1}")
+                
+                # Get prompt
+                prompt = get_prompt(game)
+                messages = format_game_messages(game_type, prompt)
+                
+                # Call AI
+                print(f"[GAME] Calling AI with {len(messages)} messages")
+                response = call_ai_model(
+                    provider=provider,
+                    model=model_name,
+                    messages=messages,
+                    functions=[function_schema],
+                    temperature=0.7
+                )
+                
+                print(f"[GAME] AI response: {json.dumps(response)[:200]}...")
+                
+                # Extract move
+                ai_move = extract_function_call(response)
+                if not ai_move:
+                    print(f"[GAME] Could not extract move from response")
+                    # Return with what we have
+                    break
+                
+                print(f"[GAME] AI move: {ai_move}")
+                
+                # Execute move
+                valid, message = execute_move(game, ai_move)
+                print(f"[GAME] Move valid={valid}, message={message}")
+                
+                # Record move
+                moves.append({
+                    'move_number': move_num + 1,
+                    'action': ai_move,
+                    'valid': valid,
+                    'message': message,
+                    'timestamp': datetime.utcnow().isoformat()
+                })
+                
+                # Check game over
+                if game.game_over:
+                    print(f"[GAME] Game over! Won={getattr(game, 'won', False)}")
+                    break
+                    
+        except Exception as e:
+            print(f"[GAME] Error during game: {str(e)}")
+            import traceback
+            traceback.print_exc()
+        
+        # Calculate duration
+        duration = (datetime.utcnow() - start_time).total_seconds()
+        
+        return {
+            'game_id': game_id,
+            'game_type': game_type,
+            'status': 'completed',
+            'won': getattr(game, 'won', False),
+            'total_moves': len(moves),
+            'moves': moves,
+            'final_state': game.to_json_state() if hasattr(game, 'to_json_state') else {},
+            'duration': duration
+        }
     
     def send_json_response(self, data, status_code=200):
         self.send_response(status_code)
