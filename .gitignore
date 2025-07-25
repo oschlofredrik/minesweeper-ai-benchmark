@@ -147,3 +147,4 @@ data/results/
 node_modules/
 dist/
 logs/
+.vercel

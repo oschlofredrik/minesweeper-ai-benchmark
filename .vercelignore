@@ -1,0 +1,55 @@
+# Development
+.git/
+.github/
+venv/
+.env
+*.pyc
+__pycache__/
+.pytest_cache/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Tests
+tests/
+test_*.py
+
+# Data files
+data/logs/
+data/results/
+data/tasks/
+*.db
+*.log
+
+# Deployment configs
+docker*
+Dockerfile
+render*.yaml
+nginx/
+systemd/
+
+# Scripts
+scripts/
+*.sh
+
+# Large unused directories
+benchmarks/
+config/
+
+# Keep only essential source
+src/cli/
+src/competition/
+src/plugins/
+src/prompt_engineering/
+src/prompts/
+src/scoring/
+src/web/
+
+# Serverless alternatives
+serverless/
+
+# Archives
+*.tar.gz
+*.zip
