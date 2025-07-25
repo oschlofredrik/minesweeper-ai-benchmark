@@ -14,7 +14,6 @@
       .wizard-container {
         max-width: 800px;
         margin: 0 auto;
-        padding: calc(var(--unit) * 4);
       }
       
       .wizard-header {
@@ -35,7 +34,7 @@
         left: 0;
         right: 0;
         height: 2px;
-        background: var(--color-border);
+        background: var(--border);
         z-index: 0;
       }
       
@@ -45,7 +44,7 @@
         align-items: center;
         position: relative;
         z-index: 1;
-        background: var(--color-bg);
+        background: var(--bg-primary);
         padding: 0 calc(var(--unit) * 2);
       }
       
@@ -53,8 +52,8 @@
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        background: var(--color-bg-secondary);
-        border: 2px solid var(--color-border);
+        background: var(--bg-secondary);
+        border: 2px solid var(--border);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -64,25 +63,25 @@
       }
       
       .wizard-step.active .wizard-step-number {
-        background: var(--color-primary);
-        border-color: var(--color-primary);
-        color: white;
+        background: var(--text-primary);
+        border-color: var(--text-primary);
+        color: var(--bg-primary);
       }
       
       .wizard-step.completed .wizard-step-number {
-        background: var(--color-success);
-        border-color: var(--color-success);
-        color: white;
+        background: var(--gray-700);
+        border-color: var(--gray-700);
+        color: var(--bg-primary);
       }
       
       .wizard-step-label {
-        font-size: var(--font-size-sm);
-        color: var(--color-text-muted);
+        font-size: var(--text-sm);
+        color: var(--text-muted);
         text-align: center;
       }
       
       .wizard-step.active .wizard-step-label {
-        color: var(--color-text);
+        color: var(--text-primary);
         font-weight: 500;
       }
       
@@ -95,7 +94,7 @@
         justify-content: space-between;
         margin-top: calc(var(--unit) * 4);
         padding-top: calc(var(--unit) * 3);
-        border-top: 1px solid var(--color-border);
+        border-top: 1px solid var(--border);
       }
       
       .config-section {
@@ -108,21 +107,21 @@
       
       .game-option {
         padding: calc(var(--unit) * 2);
-        border: 2px solid var(--color-border);
-        border-radius: var(--radius);
+        border: 2px solid var(--border);
+        border-radius: 0;
         margin-bottom: calc(var(--unit) * 2);
         cursor: pointer;
         transition: all 0.2s ease;
       }
       
       .game-option:hover {
-        border-color: var(--color-primary);
-        background: var(--color-bg-hover);
+        border-color: var(--text-primary);
+        background: var(--bg-secondary);
       }
       
       .game-option.selected {
-        border-color: var(--color-primary);
-        background: var(--color-bg-selected);
+        border-color: var(--text-primary);
+        background: var(--bg-secondary);
       }
       
       .game-option h4 {
@@ -138,20 +137,20 @@
       .difficulty-option {
         flex: 1;
         padding: calc(var(--unit) * 2);
-        border: 2px solid var(--color-border);
-        border-radius: var(--radius);
+        border: 2px solid var(--border);
+        border-radius: 0;
         text-align: center;
         cursor: pointer;
         transition: all 0.2s ease;
       }
       
       .difficulty-option:hover {
-        border-color: var(--color-primary);
+        border-color: var(--text-primary);
       }
       
       .difficulty-option.selected {
-        border-color: var(--color-primary);
-        background: var(--color-bg-selected);
+        border-color: var(--text-primary);
+        background: var(--bg-secondary);
       }
       
       .model-list {
@@ -162,32 +161,32 @@
       
       .model-option {
         padding: calc(var(--unit) * 2);
-        border: 2px solid var(--color-border);
-        border-radius: var(--radius);
+        border: 2px solid var(--border);
+        border-radius: 0;
         cursor: pointer;
         transition: all 0.2s ease;
         text-align: center;
       }
       
       .model-option:hover {
-        border-color: var(--color-primary);
+        border-color: var(--text-primary);
       }
       
       .model-option.selected {
-        border-color: var(--color-primary);
-        background: var(--color-bg-selected);
+        border-color: var(--text-primary);
+        background: var(--bg-secondary);
       }
       
       .model-option .provider {
-        font-size: var(--font-size-sm);
-        color: var(--color-text-muted);
+        font-size: var(--text-sm);
+        color: var(--text-muted);
         margin-top: calc(var(--unit) * 0.5);
       }
       
       .summary-section {
-        background: var(--color-bg-secondary);
+        background: var(--bg-secondary);
         padding: calc(var(--unit) * 3);
-        border-radius: var(--radius);
+        border-radius: 0;
         margin-bottom: calc(var(--unit) * 3);
       }
       
@@ -198,7 +197,7 @@
       }
       
       .summary-label {
-        color: var(--color-text-muted);
+        color: var(--text-muted);
       }
       
       .summary-value {
@@ -208,8 +207,8 @@
       .join-code-display {
         text-align: center;
         padding: calc(var(--unit) * 3);
-        background: var(--color-bg-secondary);
-        border-radius: var(--radius);
+        background: var(--bg-secondary);
+        border-radius: 0;
         margin: calc(var(--unit) * 3) 0;
       }
       
@@ -217,21 +216,23 @@
         font-size: 48px;
         font-weight: bold;
         letter-spacing: 8px;
-        color: var(--color-primary);
+        color: var(--text-primary);
         margin: calc(var(--unit) * 2) 0;
       }
       
       .back-link {
         display: inline-flex;
         align-items: center;
-        color: var(--color-text-muted);
+        color: var(--text-muted);
         text-decoration: none;
+        border-bottom: none;
         margin-bottom: calc(var(--unit) * 3);
         transition: color 0.2s ease;
       }
       
       .back-link:hover {
-        color: var(--color-text);
+        color: var(--text-primary);
+        border-bottom: none;
       }
       
       .back-link::before {
@@ -241,13 +242,65 @@
     </style>
   </head>
   <body>
-    <div class="wizard-container">
-      <a href="/" class="back-link">Back to Tilts</a>
-      
-      <div class="wizard-header">
-        <h1>Host a Competition</h1>
-        <p class="text-muted">Set up your AI competition in just a few steps</p>
-      </div>
+    <div class="layout">
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar">
+        <!-- Logo at top of sidebar -->
+        <div class="sidebar-logo">
+          <h1 class="logo-text">Tilts</h1>
+        </div>
+        
+        <nav>
+          <ul class="nav">
+            <li class="nav-item">
+              <a href="/" class="nav-link">Overview</a>
+            </li>
+            <li class="nav-item">
+              <a href="/#compete" class="nav-link">Compete</a>
+            </li>
+            <li class="nav-item">
+              <a href="/#benchmark" class="nav-link">Benchmark</a>
+            </li>
+            <li class="nav-item">
+              <a href="/#sessions" class="nav-link">My Sessions</a>
+            </li>
+            <li class="nav-item">
+              <a href="/#leaderboard" class="nav-link">Leaderboard</a>
+            </li>
+            <li class="nav-item">
+              <a href="/#prompts" class="nav-link">Prompt Library</a>
+            </li>
+          </ul>
+        </nav>
+
+        <div class="mt-4">
+          <h4 class="text-sm text-muted">Active Sessions</h4>
+          <div id="active-sessions-sidebar">
+            <p class="text-sm text-muted">No active sessions</p>
+          </div>
+        </div>
+        
+        <div class="mt-4">
+          <h4 class="text-sm text-muted">Quick Actions</h4>
+          <a href="/host" class="button button-small active">Create Session</a>
+          <button class="button button-small" onclick="showJoinSession()">Join Session</button>
+        </div>
+
+        <!-- Admin Button in Sidebar -->
+        <div style="position: absolute; bottom: calc(var(--unit) * 3); left: calc(var(--unit) * 3); right: calc(var(--unit) * 3);">
+          <a href="/admin" class="button button-secondary" style="width: 100%; text-align: center;">Admin</a>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="main">
+        <div class="wizard-container">
+          <a href="/" class="back-link">Back to Overview</a>
+          
+          <div class="wizard-header">
+            <h1>Host a Competition</h1>
+            <p class="text-muted">Set up your AI competition in just a few steps</p>
+          </div>
       
       <div class="wizard-progress">
         <div class="wizard-step active" data-step="1">
@@ -509,7 +562,8 @@
         <button class="button button-secondary" id="prev-button" onclick="prevStep()" style="display: none;">Previous</button>
         <button class="button button-primary" id="next-button" onclick="nextStep()">Next</button>
         <button class="button button-primary" id="create-button" onclick="createCompetition()" style="display: none;">Create Competition</button>
-      </div>
+        </div>
+      </main>
     </div>
     
     <!-- Evaluation Selector Modal -->

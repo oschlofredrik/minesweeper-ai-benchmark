@@ -232,24 +232,36 @@ a:hover {
 .form-stack {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: calc(var(--unit) * 2);
 }
 
 .form-group {
   margin-bottom: calc(var(--unit) * 3);
 }
 
-.label {
+.label,
+label {
   display: block;
   font-size: var(--text-sm);
   font-weight: 500;
   margin-bottom: var(--unit);
   color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .input,
 .select,
-.textarea {
+.textarea,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+select,
+textarea {
   width: 100%;
   padding: calc(var(--unit) * 1.5) calc(var(--unit) * 2);
   font-size: var(--text-base);
@@ -257,13 +269,67 @@ a:hover {
   background: var(--bg-primary);
   border: 1px solid var(--border);
   transition: border-color var(--transition);
+  border-radius: 0;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
 
 .input:focus,
 .select:focus,
-.textarea:focus {
+.textarea:focus,
+input:focus,
+select:focus,
+textarea:focus {
   outline: none;
   border-color: var(--text-primary);
+}
+
+/* Select arrow styling */
+select {
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%2345403A' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right calc(var(--unit) * 2) center;
+  padding-right: calc(var(--unit) * 5);
+}
+
+/* Textarea specific */
+textarea {
+  min-height: calc(var(--unit) * 10);
+  resize: vertical;
+}
+
+/* Placeholder styling */
+::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+/* Disabled state */
+input:disabled,
+select:disabled,
+textarea:disabled {
+  background: var(--bg-secondary);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Checkbox and Radio */
+input[type="checkbox"],
+input[type="radio"] {
+  width: auto;
+  margin-right: var(--unit);
+}
+
+/* Number input arrows */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
 }
 
 /* Buttons */
@@ -447,6 +513,11 @@ details pre {
     --bg-primary: var(--dark-bg-primary);
     --bg-secondary: var(--dark-bg-secondary);
     --border: var(--dark-border);
+  }
+  
+  /* Dark mode select arrow */
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23DADCD1' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   }
 }
 
