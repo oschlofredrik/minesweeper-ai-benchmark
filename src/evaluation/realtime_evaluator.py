@@ -19,7 +19,7 @@ from src.evaluation.dynamic_engine import (
     DynamicEvaluationEngine, EvaluationContext
 )
 from src.api.event_streaming import publish_evaluation_update
-from src.core.database import get_db_session
+from src.core.database import get_db
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
@@ -184,7 +184,8 @@ class RealtimeEvaluator:
     ) -> None:
         """Store round evaluation results in database."""
         try:
-            async with get_db_session() as db:
+            db = get_db()
+            try:
                 for eval_id, score_data in results.get("evaluations", {}).items():
                     score = EvaluationScore(
                         game_session_id=UUID(session_id),
@@ -202,7 +203,9 @@ class RealtimeEvaluator:
                     )
                     db.add(score)
                 
-                await db.commit()
+                db.commit()
+            finally:
+                db.close()
                 
         except Exception as e:
             logger.error(f"Failed to store round results: {e}")
@@ -386,7 +389,8 @@ class SessionEvaluator:
             eval_id = eval_config["evaluation_id"]
             
             # Get evaluation definition
-            async with get_db_session() as db:
+            db = get_db()
+            try:
                 evaluation = db.query(Evaluation).filter(
                     Evaluation.id == UUID(eval_id)
                 ).first()
@@ -409,9 +413,11 @@ class SessionEvaluator:
                     config.update(eval_config["config_overrides"])
                 
                 # Run evaluation
-                result = await self.engine.evaluate(config, context)
+                result = self.engine.evaluate(config, context)
                 
                 return result
+            finally:
+                db.close()
                 
         except Exception as e:
             logger.error(f"Failed to run evaluation: {e}")
