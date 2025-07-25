@@ -5,6 +5,10 @@ import json
 import time
 from typing import Dict, Any, Optional, List
 
+# Check for OpenAI availability
+OPENAI_AVAILABLE = False
+ANTHROPIC_AVAILABLE = False
+
 # Model configurations
 MODEL_CONFIGS = {
     "openai": {
@@ -98,23 +102,25 @@ def call_openai_model(
     temperature: float = 0.7
 ) -> Dict[str, Any]:
     """Call OpenAI API with function calling support."""
-    # Debug import issues
-    print(f"[AI_MODELS] Python path: {sys.path}")
-    print(f"[AI_MODELS] Current directory: {os.getcwd()}")
-    print(f"[AI_MODELS] Directory contents: {os.listdir('.')}")
-    
-    try:
-        import openai
-        print(f"[AI_MODELS] OpenAI library version: {openai.__version__}")
-    except ImportError as e:
-        # Check if openai is in site-packages
-        import site
-        print(f"[AI_MODELS] Site packages: {site.getsitepackages() if hasattr(site, 'getsitepackages') else 'N/A'}")
-        
-        return {
-            "error": f"OpenAI library not installed: {str(e)}",
-            "content": "OpenAI library is required but not available in Vercel environment"
-        }
+    # Try to import OpenAI when needed
+    global OPENAI_AVAILABLE
+    if not OPENAI_AVAILABLE:
+        try:
+            from openai import OpenAI
+            OPENAI_AVAILABLE = True
+        except ImportError as e:
+            print(f"[AI_MODELS] Failed to import OpenAI: {e}")
+            # Try alternative import method
+            try:
+                import openai
+                OPENAI_AVAILABLE = True
+                print("[AI_MODELS] Using legacy openai import")
+            except ImportError as e2:
+                print(f"[AI_MODELS] Failed legacy import: {e2}")
+                return {
+                    "error": "OpenAI library not available",
+                    "content": f"OpenAI is not installed: {e}"
+                }
     
     api_key = os.environ.get('OPENAI_API_KEY')
     if not api_key:
@@ -126,7 +132,15 @@ def call_openai_model(
             "content": f"Please set OPENAI_API_KEY environment variable. Found vars: {env_vars}"
         }
     
-    client = openai.OpenAI(api_key=api_key)
+    # Create client based on import method
+    try:
+        from openai import OpenAI
+        client = OpenAI(api_key=api_key)
+    except:
+        # Fallback to legacy client creation
+        import openai
+        openai.api_key = api_key
+        client = openai
     
     try:
         # Check if this is a reasoning model (o1 series)
@@ -147,7 +161,12 @@ def call_openai_model(
         
         # Make API call
         print(f"Making OpenAI API call with model={model}")
-        response = client.chat.completions.create(**params)
+        # Make API call based on client type
+        try:
+            response = client.chat.completions.create(**params)
+        except AttributeError:
+            # Legacy API call
+            response = openai.ChatCompletion.create(**params)
         
         # Extract response
         message = response.choices[0].message
@@ -194,12 +213,16 @@ def call_anthropic_model(
     temperature: float = 0.7
 ) -> Dict[str, Any]:
     """Call Anthropic API with tool use support."""
+    # Try to import Anthropic when needed
+    global ANTHROPIC_AVAILABLE
     try:
         import anthropic
-    except ImportError:
+        ANTHROPIC_AVAILABLE = True
+    except ImportError as e:
+        print(f"[AI_MODELS] Failed to import Anthropic: {e}")
         return {
             "error": "Anthropic library not installed",
-            "content": "Please install anthropic: pip install anthropic"
+            "content": f"Anthropic is not installed: {e}"
         }
     
     api_key = os.environ.get('ANTHROPIC_API_KEY')

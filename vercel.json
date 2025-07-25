@@ -44,6 +44,14 @@
     {
       "src": "api/ai_models.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "api/test_openai.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "api/test_deps.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
@@ -86,6 +94,14 @@
     {
       "src": "/api/benchmark(.*)",
       "dest": "/api/play_simple.py"
+    },
+    {
+      "src": "/api/test_deps",
+      "dest": "/api/test_deps.py"
+    },
+    {
+      "src": "/api/test_openai",
+      "dest": "/api/test_openai.py"
     },
     {
       "src": "/(.*)",
