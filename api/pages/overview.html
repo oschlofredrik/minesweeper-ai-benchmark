@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tilts - AI Competition Platform</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/rams-design.css">
+    <link rel="stylesheet" href="/static/tilts.css">
+</head>
+<body>
+    <div class="layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <h1 class="logo-text">Tilts</h1>
+            </div>
+            
+            <nav>
+                <ul class="nav">
+                    <li class="nav-item">
+                        <a href="/" class="nav-link active">Overview</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/compete" class="nav-link">Compete</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/benchmark" class="nav-link">Benchmark</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/sessions" class="nav-link">My Sessions</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/leaderboard" class="nav-link">Leaderboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/prompts" class="nav-link">Prompt Library</a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="mt-4">
+                <h4 class="text-sm text-muted">Active Sessions</h4>
+                <div id="active-sessions-sidebar">
+                    <p class="text-sm text-muted">Loading...</p>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <h4 class="text-sm text-muted">Quick Actions</h4>
+                <a href="/compete" class="button button-small">Create Session</a>
+                <a href="/compete#join" class="button button-small">Join Session</a>
+            </div>
+
+            <div style="position: absolute; bottom: calc(var(--unit) * 3); left: calc(var(--unit) * 3); right: calc(var(--unit) * 3);">
+                <a href="/admin" class="button button-secondary" style="width: 100%; text-align: center;">Admin</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <section class="section">
+                <div class="grid grid-cols-3 mb-4">
+                    <div class="card">
+                        <div class="metric">
+                            <div class="metric-label">Total Evaluations</div>
+                            <div class="metric-value" id="total-evaluations">0</div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="metric">
+                            <div class="metric-label">Models Tested</div>
+                            <div class="metric-value" id="models-tested">0</div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="metric">
+                            <div class="metric-label">Best Win Rate</div>
+                            <div class="metric-value" id="best-win-rate">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>About Tilts</h3>
+                    <p class="text-muted">
+                        A flexible AI competition platform for logic-based games. Host
+                        Kahoot-style competitions with friends, benchmark AI models, or
+                        develop and test your own AI strategies.
+                    </p>
+                    <div class="button-group mt-4">
+                        <a href="/compete" class="button button-primary">Host a Competition</a>
+                        <a href="/compete#join" class="button">Join with Code</a>
+                        <a href="/benchmark" class="button">Benchmark AI</a>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <h3>Recent Activity</h3>
+                    <div id="recent-activity">
+                        <p class="text-muted">Loading recent games...</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Load overview stats
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/overview/stats');
+                const data = await response.json();
+                
+                document.getElementById('total-evaluations').textContent = data.total_games || 0;
+                document.getElementById('models-tested').textContent = data.total_models || 0;
+                document.getElementById('best-win-rate').textContent = 
+                    data.best_win_rate ? `${(data.best_win_rate * 100).toFixed(1)}%` : '0%';
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
+
+        // Load active sessions
+        async function loadActiveSessions() {
+            try {
+                const response = await fetch('/api/sessions?active=true');
+                const data = await response.json();
+                const container = document.getElementById('active-sessions-sidebar');
+                
+                if (data.sessions && data.sessions.length > 0) {
+                    container.innerHTML = data.sessions.map(session => `
+                        <div class="text-sm mb-2">
+                            <a href="/compete?join=${session.join_code}" class="text-primary">
+                                ${session.name}
+                            </a>
+                            <div class="text-muted">${session.players?.length || 0} players</div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p class="text-sm text-muted">No active sessions</p>';
+                }
+            } catch (error) {
+                console.error('Failed to load sessions:', error);
+            }
+        }
+
+        // Load recent activity
+        async function loadRecentActivity() {
+            try {
+                const response = await fetch('/api/games/recent?limit=5');
+                const data = await response.json();
+                const container = document.getElementById('recent-activity');
+                
+                if (data.games && data.games.length > 0) {
+                    container.innerHTML = data.games.map(game => `
+                        <div class="activity-item">
+                            <div class="activity-header">
+                                <span class="text-sm">${game.model_name}</span>
+                                <span class="text-sm text-muted">${game.game_type}</span>
+                            </div>
+                            <div class="activity-meta text-sm text-muted">
+                                ${game.won ? '✓ Won' : '✗ Lost'} - 
+                                ${game.total_moves} moves
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p class="text-muted">No recent games</p>';
+                }
+            } catch (error) {
+                console.error('Failed to load activity:', error);
+            }
+        }
+
+        // Initialize
+        loadStats();
+        loadActiveSessions();
+        loadRecentActivity();
+        
+        // Refresh periodically
+        setInterval(loadActiveSessions, 30000);
+    </script>
+</body>
+</html>

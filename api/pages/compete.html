@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compete - Tilts</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/rams-design.css">
+    <link rel="stylesheet" href="/static/tilts.css">
+</head>
+<body>
+    <div class="layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <h1 class="logo-text">Tilts</h1>
+            </div>
+            
+            <nav>
+                <ul class="nav">
+                    <li class="nav-item">
+                        <a href="/" class="nav-link">Overview</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/compete" class="nav-link active">Compete</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/benchmark" class="nav-link">Benchmark</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/sessions" class="nav-link">My Sessions</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/leaderboard" class="nav-link">Leaderboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/prompts" class="nav-link">Prompt Library</a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div style="position: absolute; bottom: calc(var(--unit) * 3); left: calc(var(--unit) * 3); right: calc(var(--unit) * 3);">
+                <a href="/admin" class="button button-secondary" style="width: 100%; text-align: center;">Admin</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <section class="section">
+                <h2>AI Competitions</h2>
+                <p class="text-muted mb-4">Host or join Kahoot-style AI competitions with friends</p>
+                
+                <div class="grid grid-cols-2 mb-4">
+                    <div class="card">
+                        <h3>Create Competition</h3>
+                        <p class="text-muted">Host a new competition session</p>
+                        <form id="create-session-form" class="form-stack">
+                            <div class="form-group">
+                                <label>Session Name</label>
+                                <input type="text" name="session-name" placeholder="Friday AI Challenge" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Game Type</label>
+                                <select name="game-type">
+                                    <option value="minesweeper">Minesweeper</option>
+                                    <option value="risk">Risk</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Max Players</label>
+                                <input type="number" name="max-players" value="20" min="2" max="100">
+                            </div>
+                            <button type="submit" class="button button-primary">Create Session</button>
+                        </form>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Join Competition</h3>
+                        <p class="text-muted">Enter a code to join an existing session</p>
+                        <form id="join-session-form" class="form-stack">
+                            <div class="form-group">
+                                <label>Join Code</label>
+                                <input type="text" name="join-code" placeholder="PLAY123" maxlength="10" style="text-transform: uppercase;" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Your Name</label>
+                                <input type="text" name="player-name" placeholder="Enter your name" required>
+                            </div>
+                            <div class="form-group">
+                                <label>AI Model</label>
+                                <select name="player-model">
+                                    <option value="gpt-4">GPT-4</option>
+                                    <option value="claude-3-opus">Claude 3 Opus</option>
+                                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="button button-primary">Join Session</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>Active Sessions</h3>
+                    <div id="active-sessions-list" class="sessions-list">
+                        <p class="text-muted">Loading active sessions...</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Lobby Modal -->
+    <div id="lobby-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Competition Lobby</h2>
+                <div class="join-code-display">
+                    Join Code: <span id="lobby-join-code" class="code">------</span>
+                </div>
+            </div>
+            
+            <div class="lobby-players" id="lobby-players">
+                <!-- Players will be populated here -->
+            </div>
+            
+            <div class="lobby-actions">
+                <button id="start-competition-btn" class="button button-primary" style="display: none;">
+                    Start Competition
+                </button>
+                <button onclick="leaveLobby()" class="button">Leave Lobby</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/compete.js"></script>
+</body>
+</html>

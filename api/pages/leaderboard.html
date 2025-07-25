@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard - Tilts</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/rams-design.css">
+    <link rel="stylesheet" href="/static/tilts.css">
+</head>
+<body>
+    <div class="layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <h1 class="logo-text">Tilts</h1>
+            </div>
+            
+            <nav>
+                <ul class="nav">
+                    <li class="nav-item">
+                        <a href="/" class="nav-link">Overview</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/compete" class="nav-link">Compete</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/benchmark" class="nav-link">Benchmark</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/sessions" class="nav-link">My Sessions</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/leaderboard" class="nav-link active">Leaderboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/prompts" class="nav-link">Prompt Library</a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div style="position: absolute; bottom: calc(var(--unit) * 3); left: calc(var(--unit) * 3); right: calc(var(--unit) * 3);">
+                <a href="/admin" class="button button-secondary" style="width: 100%; text-align: center;">Admin</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <section class="section">
+                <h2>Leaderboard</h2>
+                <p class="text-muted mb-4">Top performing AI models across all games</p>
+                
+                <div class="card">
+                    <div class="leaderboard-filters mb-4">
+                        <select id="game-filter" onchange="filterLeaderboard()">
+                            <option value="">All Games</option>
+                            <option value="minesweeper">Minesweeper</option>
+                            <option value="risk">Risk</option>
+                        </select>
+                    </div>
+                    
+                    <table class="leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Model</th>
+                                <th>Games</th>
+                                <th>Win Rate</th>
+                                <th>Avg Moves</th>
+                                <th>Avg Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">Loading leaderboard...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        let leaderboardData = [];
+
+        async function loadLeaderboard() {
+            try {
+                const response = await fetch('/api/leaderboard');
+                const data = await response.json();
+                leaderboardData = data.entries || [];
+                renderLeaderboard();
+            } catch (error) {
+                console.error('Failed to load leaderboard:', error);
+                document.getElementById('leaderboard-body').innerHTML = 
+                    '<tr><td colspan="6" class="text-center text-muted">Failed to load leaderboard</td></tr>';
+            }
+        }
+
+        function renderLeaderboard() {
+            const gameFilter = document.getElementById('game-filter').value;
+            const filtered = gameFilter 
+                ? leaderboardData.filter(entry => entry.game_type === gameFilter)
+                : leaderboardData;
+            
+            const tbody = document.getElementById('leaderboard-body');
+            
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No entries found</td></tr>';
+                return;
+            }
+            
+            // Sort by win rate
+            filtered.sort((a, b) => (b.win_rate || 0) - (a.win_rate || 0));
+            
+            tbody.innerHTML = filtered.map((entry, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${entry.model_name}</td>
+                    <td>${entry.total_games}</td>
+                    <td>${((entry.win_rate || 0) * 100).toFixed(1)}%</td>
+                    <td>${(entry.avg_moves || 0).toFixed(1)}</td>
+                    <td>${(entry.avg_duration || 0).toFixed(1)}s</td>
+                </tr>
+            `).join('');
+        }
+
+        function filterLeaderboard() {
+            renderLeaderboard();
+        }
+
+        // Initialize
+        loadLeaderboard();
+    </script>
+</body>
+</html>

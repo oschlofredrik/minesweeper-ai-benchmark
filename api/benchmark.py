@@ -1,11 +1,11 @@
-"""Compete page endpoint"""
+"""Benchmark page endpoint"""
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        # Serve the compete page
-        page_path = Path(__file__).parent / 'pages' / 'compete.html'
+        # Serve the benchmark page
+        page_path = Path(__file__).parent / 'pages' / 'benchmark.html'
         
         if page_path.exists():
             self.send_response(200)
@@ -15,4 +15,4 @@ class handler(BaseHTTPRequestHandler):
             with open(page_path, 'rb') as f:
                 self.wfile.write(f.read())
         else:
-            self.send_error(404, "Compete page not found")
+            self.send_error(404, "Benchmark page not found")

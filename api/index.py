@@ -8,9 +8,9 @@ class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = self.path.split('?')[0]
         
-        # Serve main page
+        # Serve overview page for root
         if path == '/' or path == '/index.html':
-            self.serve_file('index-rams.html', 'text/html')
+            self.serve_page('overview.html')
             
         # Serve static files
         elif path.startswith('/static/'):
@@ -91,27 +91,33 @@ class handler(BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         self.end_headers()
     
+    def serve_page(self, filename):
+        """Serve HTML pages from the pages directory."""
+        page_path = Path(__file__).parent / 'pages' / filename
+        
+        if page_path.exists():
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            
+            with open(page_path, 'rb') as f:
+                self.wfile.write(f.read())
+        else:
+            self.send_error(404, f"Page not found: {filename}")
+    
     def serve_file(self, filename, content_type):
-        base_path = Path(__file__).parent.parent
+        """Serve static files."""
+        static_path = Path(__file__).parent / 'static' / filename
         
-        # Try multiple paths to find the static files
-        possible_paths = [
-            base_path / 'serverless-migration' / 'src' / 'api' / 'static' / filename,
-            base_path / 'src' / 'api' / 'static' / filename,
-            base_path / 'vercel' / 'static' / filename
-        ]
-        
-        for file_path in possible_paths:
-            if file_path.exists():
-                self.send_response(200)
-                self.send_header('Content-type', content_type)
-                self.end_headers()
-                
-                with open(file_path, 'rb') as f:
-                    self.wfile.write(f.read())
-                return
-                
-        self.send_error(404)
+        if static_path.exists():
+            self.send_response(200)
+            self.send_header('Content-type', content_type)
+            self.end_headers()
+            
+            with open(static_path, 'rb') as f:
+                self.wfile.write(f.read())
+        else:
+            self.send_error(404)
     
     def serve_static_file(self, filename):
         # Determine content type
