@@ -92,18 +92,27 @@ class SimpleMinesweeper:
     def get_board_state(self):
         """Get current board state for AI."""
         lines = []
+        
+        # Add column headers
+        header = "    " + " ".join(str(c) for c in range(self.cols))
+        lines.append(header)
+        lines.append("   " + "-" * (self.cols * 2 + 1))
+        
         for r in range(self.rows):
             row = []
             for c in range(self.cols):
                 if self.flags[r][c]:
-                    row.append('F')
+                    row.append('🚩')
                 elif not self.visible[r][c]:
                     row.append('?')
                 elif self.board[r][c] == -1:
-                    row.append('*')
+                    row.append('💣')
+                elif self.board[r][c] == 0:
+                    row.append('.')
                 else:
                     row.append(str(self.board[r][c]))
-            lines.append(' '.join(row))
+            lines.append(f"{r:2}| " + " ".join(row))
+        
         return '\n'.join(lines)
     
     def to_json_state(self):
@@ -397,16 +406,29 @@ class SimpleRisk:
 # AI integration functions
 def get_minesweeper_prompt(game):
     """Generate prompt for Minesweeper AI."""
-    return f"""You are playing Minesweeper. The board uses these symbols:
-- ?: Hidden cell
-- F: Flagged cell
-- 0-8: Revealed cell with number of adjacent mines
-- *: Mine (game over)
+    return f"""You are playing Minesweeper. Your goal is to reveal all safe cells without hitting any mines.
 
-Current board state:
+Board symbols:
+- ?: Hidden cell (unknown)
+- 🚩: Flagged cell (you marked as mine)
+- .: Empty cell (0 adjacent mines)
+- 1-8: Number of mines in adjacent cells
+- 💣: Mine (game over if revealed)
+
+Current board ({game.rows}x{game.cols} with {game.num_mines} mines):
 {game.get_board_state()}
 
-Make your next move. Think step by step about which cell to reveal or flag based on the numbers shown."""
+Game stats:
+- Cells revealed: {sum(1 for r in range(game.rows) for c in range(game.cols) if game.visible[r][c])}
+- Flags placed: {sum(1 for r in range(game.rows) for c in range(game.cols) if game.flags[r][c])}
+- Remaining mines: {game.num_mines - sum(1 for r in range(game.rows) for c in range(game.cols) if game.flags[r][c])}
+
+Analyze the board carefully. Look for:
+1. Cells where the number equals adjacent hidden cells (all are mines - flag them)
+2. Cells where the number equals adjacent flags (remaining hidden cells are safe - reveal them)
+3. Patterns and logical deductions from multiple constraints
+
+Make your next move."""
 
 
 def get_risk_prompt(game):

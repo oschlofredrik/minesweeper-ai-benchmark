@@ -316,14 +316,22 @@ class handler(BaseHTTPRequestHandler):
                 valid, message = execute_move(game, ai_move)
                 print(f"[GAME] Move valid={valid}, message={message}")
                 
-                # Record move
-                moves.append({
+                # Record move with board state
+                move_data = {
                     'move_number': move_num + 1,
                     'action': ai_move,
                     'valid': valid,
                     'message': message,
-                    'timestamp': datetime.utcnow().isoformat()
-                })
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'board_state': game.get_board_state() if hasattr(game, 'get_board_state') else None,
+                    'game_state': game.to_json_state() if hasattr(game, 'to_json_state') else {}
+                }
+                
+                # Add prompt and response for debugging
+                move_data['prompt'] = prompt
+                move_data['ai_response'] = response
+                
+                moves.append(move_data)
                 
                 # Check game over
                 if game.game_over:
