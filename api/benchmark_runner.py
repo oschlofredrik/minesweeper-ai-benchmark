@@ -88,6 +88,8 @@ class handler(BaseHTTPRequestHandler):
         difficulty = config.get('difficulty', 'medium')
         scenario = config.get('scenario')
         
+        print(f"Starting benchmark with: game={game_type}, model={model_name}, provider={provider}")
+        
         games_completed = 0
         total_wins = 0
         total_moves = 0

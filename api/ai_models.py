@@ -99,17 +99,21 @@ def call_openai_model(
     """Call OpenAI API with function calling support."""
     try:
         import openai
-    except ImportError:
+        print(f"OpenAI library version: {openai.__version__}")
+    except ImportError as e:
         return {
-            "error": "OpenAI library not installed",
+            "error": f"OpenAI library not installed: {str(e)}",
             "content": "Please install openai: pip install openai"
         }
     
     api_key = os.environ.get('OPENAI_API_KEY')
     if not api_key:
+        # Debug: print all env vars that start with OPENAI
+        env_vars = [k for k in os.environ.keys() if 'OPENAI' in k or 'API' in k]
+        print(f"Available env vars with OPENAI/API: {env_vars}")
         return {
             "error": "OpenAI API key not found",
-            "content": "Please set OPENAI_API_KEY environment variable"
+            "content": f"Please set OPENAI_API_KEY environment variable. Found vars: {env_vars}"
         }
     
     client = openai.OpenAI(api_key=api_key)
@@ -132,10 +136,12 @@ def call_openai_model(
             params["tool_choice"] = "auto"
         
         # Make API call
+        print(f"Making OpenAI API call with model={model}")
         response = client.chat.completions.create(**params)
         
         # Extract response
         message = response.choices[0].message
+        print(f"Got response from OpenAI: {message}")
         
         # Handle function calls
         if hasattr(message, 'tool_calls') and message.tool_calls:
@@ -280,6 +286,8 @@ def call_ai_model(
     temperature: float = 0.7
 ) -> Dict[str, Any]:
     """Call appropriate AI model based on provider."""
+    print(f"call_ai_model called with provider={provider}, model={model}")
+    
     if provider == "openai":
         return call_openai_model(model, messages, functions, temperature)
     elif provider == "anthropic":
