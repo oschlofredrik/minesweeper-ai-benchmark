@@ -5,7 +5,7 @@ import random
 import uuid
 from pathlib import Path
 from typing import Dict, List, Any
-from . import supabase_db as db
+from .lib import supabase_db as db
 
 class TaskGenerator:
     """Generate benchmark tasks for games."""

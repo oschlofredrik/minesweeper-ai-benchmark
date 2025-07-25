@@ -3,7 +3,7 @@ from http.server import BaseHTTPRequestHandler
 import json
 import os
 from urllib.parse import urlparse
-from . import supabase_db as db
+from .lib import supabase_db as db
 import uuid
 
 class handler(BaseHTTPRequestHandler):
@@ -178,7 +178,7 @@ class handler(BaseHTTPRequestHandler):
     
     def _run_game_async(self, game_id: str, play_config: dict):
         """Run a game asynchronously (in practice, synchronously for Vercel)."""
-        from .runner import runner
+        from .lib.runner import runner
         
         # Get game details
         game = db.get_game(game_id)

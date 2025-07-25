@@ -6,18 +6,6 @@
       "use": "@vercel/python"
     },
     {
-      "src": "api/join.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/compete.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/host.py",
-      "use": "@vercel/python"
-    },
-    {
       "src": "api/sessions.py",
       "use": "@vercel/python"
     },
@@ -38,55 +26,19 @@
       "use": "@vercel/python"
     },
     {
-      "src": "api/admin-page.py",
-      "use": "@vercel/python"
-    },
-    {
       "src": "api/events.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/run_game.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/benchmark.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/sessions_v2.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/realtime.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/leaderboard.py",
       "use": "@vercel/python"
     },
     {
       "src": "api/tasks.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "api/auth.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
-    {
-      "src": "/join",
-      "dest": "/api/join.py"
-    },
-    {
-      "src": "/host",
-      "dest": "/api/host.py"
-    },
-    {
-      "src": "/compete",
-      "dest": "/api/compete.py"
-    },
-    {
-      "src": "/admin",
-      "dest": "/api/admin-page.py"
-    },
     {
       "src": "/api/sessions(.*)",
       "dest": "/api/sessions.py"
@@ -112,24 +64,12 @@
       "dest": "/api/events.py"
     },
     {
-      "src": "/api/run_game",
-      "dest": "/api/run_game.py"
-    },
-    {
-      "src": "/benchmark",
-      "dest": "/api/benchmark.py"
-    },
-    {
-      "src": "/api/sessions/(.*)/stream",
-      "dest": "/api/realtime.py"
-    },
-    {
-      "src": "/leaderboard",
-      "dest": "/api/leaderboard.py"
-    },
-    {
       "src": "/api/tasks(.*)",
       "dest": "/api/tasks.py"
+    },
+    {
+      "src": "/api/auth(.*)",
+      "dest": "/api/auth.py"
     },
     {
       "src": "/(.*)",

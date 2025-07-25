@@ -4,7 +4,7 @@ import json
 import random
 import string
 from datetime import datetime, timedelta
-from . import supabase_db as db
+from .lib import supabase_db as db
 
 def generate_join_code():
     """Generate a unique 6-character join code."""

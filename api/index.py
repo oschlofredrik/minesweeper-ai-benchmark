@@ -24,7 +24,7 @@ class handler(BaseHTTPRequestHandler):
         # Route to specific endpoint handlers based on path
         elif path.startswith('/api/'):
             # Import db module to ensure it's initialized
-            from . import supabase_db as db
+            from .lib import supabase_db as db
             
             # Use dynamic imports to get leaderboard from db
             if path == '/api/leaderboard':

@@ -2,7 +2,7 @@
 from http.server import BaseHTTPRequestHandler
 import json
 from urllib.parse import urlparse, parse_qs
-from . import supabase_db as db
+from .lib import supabase_db as db
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
