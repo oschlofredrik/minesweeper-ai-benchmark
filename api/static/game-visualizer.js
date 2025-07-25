@@ -64,16 +64,32 @@ class MinesweeperVisualizer extends GameVisualizer {
         
         // Parse board state from string representation
         const lines = gameState.board.split('\n');
-        for (let r = 0; r < this.rows && r < lines.length; r++) {
-            const cells = lines[r].split(/\s+/);
+        
+        // Skip header lines (column numbers and separator)
+        let startLine = 0;
+        if (lines[0] && lines[0].trim().includes(' 0 ')) {
+            startLine = 2; // Skip column headers and separator line
+        }
+        
+        for (let r = 0; r < this.rows && r + startLine < lines.length; r++) {
+            const line = lines[r + startLine];
+            if (!line) continue;
+            
+            // Extract cells after row number and pipe
+            const match = line.match(/^\s*\d+\|\s*(.+)$/);
+            if (!match) continue;
+            
+            const cells = match[1].trim().split(/\s+/);
             for (let c = 0; c < this.cols && c < cells.length; c++) {
                 const cell = cells[c];
                 if (cell === '?') {
                     this.board[r][c] = { state: 'hidden', value: null, flagged: false };
-                } else if (cell === 'F') {
+                } else if (cell === '🚩' || cell === 'F') {
                     this.board[r][c] = { state: 'hidden', value: null, flagged: true };
-                } else if (cell === '*') {
+                } else if (cell === '💣' || cell === '*') {
                     this.board[r][c] = { state: 'revealed', value: -1, flagged: false };
+                } else if (cell === '.') {
+                    this.board[r][c] = { state: 'revealed', value: 0, flagged: false };
                 } else {
                     const num = parseInt(cell);
                     if (!isNaN(num)) {
