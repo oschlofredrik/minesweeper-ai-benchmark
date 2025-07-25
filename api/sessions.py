@@ -5,6 +5,10 @@ import random
 import string
 from datetime import datetime, timedelta
 from .lib import supabase_db as db
+from .lib.logging_config import get_logger, log_with_context
+import logging
+
+logger = get_logger(__name__)
 
 def generate_join_code():
     """Generate a unique 6-character join code."""

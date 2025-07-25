@@ -5,16 +5,18 @@ import os
 from urllib.parse import urlparse
 from .lib import supabase_db as db
 from .lib.errors import handle_errors, ValidationError, ModelError, retry_on_error, validate_request_data
+from .lib.logging_config import get_logger, RequestLogger, log_with_context
 import uuid
 import logging
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        try:
-            parsed_path = urlparse(self.path)
-            path = parsed_path.path
+        with RequestLogger(logger, 'GET', self.path) as request_logger:
+            try:
+                parsed_path = urlparse(self.path)
+                path = parsed_path.path
             
             # List available games
             if path == '/api/play/games':
@@ -114,13 +116,14 @@ class handler(BaseHTTPRequestHandler):
                     
             else:
                 self.send_error(404)
-        except Exception as e:
-            logger.error(f"Error in do_GET: {e}", exc_info=True)
-            self.send_error(500, "Internal server error")
+            except Exception as e:
+                logger.error(f"Error in do_GET: {e}", exc_info=True)
+                self.send_error(500, "Internal server error")
     
     def do_POST(self):
-        try:
-            path = self.path
+        with RequestLogger(logger, 'POST', self.path) as request_logger:
+            try:
+                path = self.path
             
             # Start new game(s)
             if path == '/api/play':
@@ -138,6 +141,12 @@ class handler(BaseHTTPRequestHandler):
                 
                 # Create job ID
                 job_id = "play_" + str(uuid.uuid4())[:8]
+                request_logger.add_context(
+                    job_id=job_id,
+                    game_type=play_config.get("game"),
+                    model_name=play_config.get("model"),
+                    num_games=play_config.get("num_games", 1)
+                )
             
                 # Create game records
                 num_games = play_config.get("num_games", 1)
@@ -172,21 +181,32 @@ class handler(BaseHTTPRequestHandler):
                 if games_created:
                     self._trigger_game_execution(games_created[0]["game_id"])
             
-                self.send_json_response({
+                response_data = {
                     "job_id": job_id,
                     "status": "started",
                     "message": f"Started {num_games} game(s)",
                     "games": games_created
-                })
+                }
+                
+                log_with_context(
+                    logger, 
+                    logging.INFO,
+                    f"Successfully started {num_games} games",
+                    job_id=job_id,
+                    game_type=play_config.get("game"),
+                    model_name=play_config.get("model")
+                )
+                
+                self.send_json_response(response_data)
             
             else:
                 self.send_error(404)
-        except ValidationError as e:
-            logger.error(f"Validation error: {e}")
-            self.send_error(400, str(e))
-        except Exception as e:
-            logger.error(f"Error in do_POST: {e}", exc_info=True)
-            self.send_error(500, "Internal server error")
+            except ValidationError as e:
+                logger.error(f"Validation error: {e}")
+                self.send_error(400, str(e))
+            except Exception as e:
+                logger.error(f"Error in do_POST: {e}", exc_info=True)
+                self.send_error(500, "Internal server error")
     
     @retry_on_error(max_attempts=2, delay=0.5, exceptions=(Exception,))
     def _trigger_game_execution(self, game_id: str):
