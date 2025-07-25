@@ -216,7 +216,25 @@ async function handleStartEvaluation(e) {
         scenario: formData.get('scenario') || null
     };
     
-    // Skip task generation for now (not implemented in simplified version)
+    // Hide modal IMMEDIATELY
+    hideEvalModal();
+    document.querySelector('.board-placeholder').style.display = 'none';
+    document.getElementById('game-stats').style.display = 'flex';
+    
+    // Initialize visualization while waiting
+    currentGameType = evalConfig.game;
+    initializeGameVisualization(evalConfig);
+    
+    // Initialize event stream with starting message
+    if (eventStreamUI && eventStreamUI.streamList) {
+        eventStreamUI.streamList.innerHTML = `
+            <div class="event-item event-system">
+                <div class="event-content">
+                    <p>Starting ${evalConfig.num_games} ${evalConfig.game} games with ${evalConfig.model}...</p>
+                </div>
+            </div>
+        `;
+    }
     
     try {
         const response = await fetch('/api/benchmark/run', {
@@ -228,15 +246,6 @@ async function handleStartEvaluation(e) {
         if (response.ok) {
             const result = await response.json();
             currentJobId = result.job_id;
-            
-            // Hide modal and show game board
-            hideEvalModal();
-            document.querySelector('.board-placeholder').style.display = 'none';
-            document.getElementById('game-stats').style.display = 'flex';
-            
-            // Initialize visualization
-            currentGameType = evalConfig.game;
-            initializeGameVisualization(evalConfig);
             
             // Initialize event stream (clear happens automatically)
             if (eventStreamUI && eventStreamUI.streamList) {
@@ -324,6 +333,43 @@ function updateBenchmarkResults(data) {
                     </div>
                 `;
                 eventStreamUI.streamList.appendChild(eventDiv);
+            }
+            
+            // Show all moves in event stream
+            if (game.moves && game.moves.length > 0) {
+                game.moves.forEach((move, moveIdx) => {
+                    if (eventStreamUI && eventStreamUI.streamList) {
+                        // Add AI conversation for each move
+                        const moveDiv = document.createElement('div');
+                        moveDiv.className = 'event-item';
+                        moveDiv.style.marginBottom = '1em';
+                        
+                        let moveHtml = `<div class="event-content">`;
+                        
+                        // Show board state before move
+                        if (move.board_state && moveIdx === 0) {
+                            moveHtml += `
+                                <details>
+                                    <summary><strong>Move ${move.move_number} - Board State</strong></summary>
+                                    <pre style="font-family: monospace; font-size: 0.75em; line-height: 1.2;">${move.board_state}</pre>
+                                </details>
+                            `;
+                        }
+                        
+                        // Show AI action
+                        if (move.action) {
+                            moveHtml += `
+                                <p><strong>Move ${move.move_number}:</strong> ${move.action.action} at (${move.action.row}, ${move.action.col})</p>
+                                ${move.action.reasoning ? `<p style="font-style: italic; color: #666; margin-left: 1em;">"${move.action.reasoning}"</p>` : ''}
+                                ${move.valid === false ? `<p style="color: red;">Invalid: ${move.message}</p>` : ''}
+                            `;
+                        }
+                        
+                        moveHtml += `</div>`;
+                        moveDiv.innerHTML = moveHtml;
+                        eventStreamUI.streamList.appendChild(moveDiv);
+                    }
+                });
             }
             
             // Update visualization with final state
