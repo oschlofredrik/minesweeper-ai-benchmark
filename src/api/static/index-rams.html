@@ -139,12 +139,12 @@
                 
                 <!-- Evaluation Selection -->
                 <div class="form-group">
-                  <label>Evaluation Settings</label>
+                  <label>Scoring Configuration</label>
                   <button type="button" class="button button-secondary" onclick="showEvaluationSelector()">
-                    Configure Evaluations
+                    Configure Metrics
                   </button>
                   <div id="selected-evaluations-summary" class="text-sm text-muted mt-2">
-                    No evaluations selected (using default scoring)
+                    No metrics selected (using default scoring)
                   </div>
                 </div>
                 
@@ -565,7 +565,7 @@ played by this model">Games</span>
     <div id="evaluation-selector-modal" class="modal-overlay">
       <div class="modal-content modal-large">
         <div class="modal-header">
-          <h2>Configure Competition Evaluations</h2>
+          <h2>Competition Scoring Configuration</h2>
           <button class="modal-close" onclick="hideEvaluationSelector()">&times;</button>
         </div>
         <div class="modal-body">
@@ -573,7 +573,7 @@ played by this model">Games</span>
         </div>
         <div class="modal-footer">
           <button class="button button-secondary" onclick="hideEvaluationSelector()">Cancel</button>
-          <button class="button button-primary" onclick="saveEvaluationSelection()">Save Selection</button>
+          <button class="button button-primary" onclick="saveEvaluationSelection()">Apply Configuration</button>
         </div>
       </div>
     </div>

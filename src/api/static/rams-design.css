@@ -51,6 +51,11 @@
   
   /* Animation */
   --transition: 150ms ease-out;
+  
+  /* Additional UI elements */
+  --radius: 4px;
+  --bg-tertiary: var(--gray-200);
+  --danger: #dc3545;
 }
 
 /* Reset */

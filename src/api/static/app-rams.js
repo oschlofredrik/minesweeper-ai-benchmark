@@ -874,7 +874,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Global evaluation selector instance
 let evaluationSelector = null;
-let selectedEvaluations = [];
+let selectedMetrics = [];
 
 // Show evaluation selector modal
 function showEvaluationSelector() {
@@ -884,11 +884,10 @@ function showEvaluationSelector() {
     // Initialize selector if not already done
     if (!evaluationSelector) {
         evaluationSelector = new EvaluationSelector('evaluation-selector-container', {
-            maxEvaluations: 5,
+            maxMetrics: 5,
             allowCustomWeights: true,
-            showPresets: true,
-            onUpdate: (evaluations) => {
-                selectedEvaluations = evaluations;
+            onUpdate: (metrics) => {
+                selectedMetrics = metrics;
                 updateEvaluationSummary();
             }
         });
@@ -910,7 +909,7 @@ function saveEvaluationSelection() {
             return;
         }
         
-        selectedEvaluations = evaluationSelector.getSelectedEvaluations();
+        selectedMetrics = evaluationSelector.getSelectedMetrics();
         updateEvaluationSummary();
         hideEvaluationSelector();
     }
@@ -921,14 +920,14 @@ function updateEvaluationSummary() {
     const summary = document.getElementById('selected-evaluations-summary');
     if (!summary) return;
     
-    if (selectedEvaluations.length === 0) {
-        summary.textContent = 'No evaluations selected (using default scoring)';
+    if (selectedMetrics.length === 0) {
+        summary.textContent = 'No metrics selected (using default scoring)';
     } else {
-        const names = selectedEvaluations.map(e => {
-            const percent = (e.weight * 100).toFixed(0);
-            return `${e.evaluation_id.substring(0, 8)}... (${percent}%)`;
+        const names = selectedMetrics.map(m => {
+            const percent = (m.weight * 100).toFixed(0);
+            return `${m.name} (${percent}%)`;
         });
-        summary.textContent = `${selectedEvaluations.length} evaluations: ${names.join(', ')}`;
+        summary.textContent = `${selectedMetrics.length} metrics: ${names.join(', ')}`;
     }
 }
 
