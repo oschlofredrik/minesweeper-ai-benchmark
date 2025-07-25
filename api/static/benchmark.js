@@ -65,7 +65,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     await initSupabase();
     
     // Set up form handler
-    document.getElementById('eval-form').addEventListener('submit', handleStartEvaluation);
+    const playForm = document.getElementById('play-form');
+    if (playForm) {
+        playForm.addEventListener('submit', handleStartEvaluation);
+    } else {
+        console.error('Play form not found');
+    }
     
     // Listen for game events
     document.addEventListener('game-state-update', (e) => {
@@ -81,6 +86,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Check available providers
     checkAvailableProviders();
+    
+    // Set up start evaluation button
+    const startBtn = document.getElementById('start-eval-btn');
+    if (startBtn) {
+        startBtn.addEventListener('click', showEvalModal);
+    } else {
+        console.error('Start evaluation button not found');
+    }
+    
+    // Set up provider change handler
+    const providerSelect = document.getElementById('model-provider');
+    if (providerSelect) {
+        providerSelect.addEventListener('change', (e) => {
+            updateModelOptions(e.target.value);
+        });
+    }
 });
 
 // Check which providers have API keys configured
@@ -103,6 +124,7 @@ function showEvalModal() {
             console.error('Modal element not found');
             return;
         }
+        modal.classList.add('active');
         modal.style.display = 'flex';
     } catch (error) {
         console.error('Error showing modal:', error);
@@ -110,11 +132,19 @@ function showEvalModal() {
 }
 
 function hideEvalModal() {
-    document.getElementById('eval-modal').style.display = 'none';
+    const modal = document.getElementById('eval-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
 }
 
 async function updateModelOptions(provider) {
-    const modelSelect = document.querySelector('select[name="model"]');
+    const modelSelect = document.getElementById('model-name');
+    if (!modelSelect) {
+        console.error('Model select element not found');
+        return;
+    }
     modelSelect.innerHTML = '<option value="">Loading models...</option>';
     
     try {
@@ -189,7 +219,8 @@ function createApiKeyWarning() {
 }
 
 function updateModelOptionsFallback(provider) {
-    const modelSelect = document.querySelector('select[name="model"]');
+    const modelSelect = document.getElementById('model-name');
+    if (!modelSelect) return;
     
     if (provider === 'openai') {
         modelSelect.innerHTML = `
@@ -209,14 +240,13 @@ function updateModelOptionsFallback(provider) {
 async function handleStartEvaluation(e) {
     e.preventDefault();
     
-    const formData = new FormData(e.target);
     const evalConfig = {
-        game: formData.get('game'),
-        model: formData.get('model'),
-        provider: formData.get('provider'),
-        num_games: parseInt(formData.get('num-games')),
-        difficulty: formData.get('difficulty'),
-        scenario: formData.get('scenario') || null
+        game: document.getElementById('game-select').value,
+        model: document.getElementById('model-name').value,
+        provider: document.getElementById('model-provider').value,
+        num_games: parseInt(document.getElementById('num-games').value),
+        difficulty: document.getElementById('difficulty').value,
+        scenario: null
     };
     
     // Hide modal IMMEDIATELY
