@@ -106,6 +106,7 @@ def make_http_request(url: str, headers: Dict[str, str], data: Dict[str, Any]) -
             return json.loads(response.read().decode('utf-8'))
     except urllib.error.HTTPError as e:
         error_body = e.read().decode('utf-8')
+        print(f"[HTTP] Error response body: {error_body[:500]}")
         return {
             "error": f"HTTP {e.code}: {e.reason}",
             "details": error_body
@@ -129,6 +130,10 @@ def call_openai_model(
             "error": "OpenAI API key not found",
             "content": "Please set OPENAI_API_KEY environment variable"
         }
+    
+    # Log masked API key for debugging
+    masked_key = f"{api_key[:8]}...{api_key[-4:]}" if len(api_key) > 12 else "***"
+    print(f"[HTTP] Using OpenAI API key: {masked_key}")
     
     # Check if this is a reasoning model
     model_config = MODEL_CONFIGS["openai"]["models"].get(model, {})
