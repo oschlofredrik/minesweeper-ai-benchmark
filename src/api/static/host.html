@@ -694,12 +694,12 @@
             
             <!-- Custom scoring configuration -->
             <div id="custom-scoring" style="display: none;">
-              <h4>Select Evaluation Metrics</h4>
-              <button type="button" class="button button-secondary" onclick="showEvaluationSelector()">
-                Configure Evaluations
-              </button>
-              <div id="selected-evaluations-summary" class="text-sm text-muted mt-2">
-                No evaluations selected
+              <h4 style="margin-bottom: calc(var(--unit) * 2);">Select Evaluation Metrics</h4>
+              <p class="text-muted" style="margin-bottom: calc(var(--unit) * 2);">Choose up to 5 metrics and assign weights that total 100%.</p>
+              
+              <!-- Metric selector integrated directly -->
+              <div id="evaluation-selector-inline">
+                <!-- This will be populated by JavaScript -->
               </div>
             </div>
             
@@ -788,22 +788,6 @@
       </main>
     </div>
     
-    <!-- Evaluation Selector Modal -->
-    <div id="evaluation-selector-modal" class="modal-overlay">
-      <div class="modal-content modal-large">
-        <div class="modal-header">
-          <h2>Configure Competition Evaluations</h2>
-          <button class="modal-close" onclick="hideEvaluationSelector()">&times;</button>
-        </div>
-        <div class="modal-body">
-          <div id="evaluation-selector-container"></div>
-        </div>
-        <div class="modal-footer">
-          <button class="button button-secondary" onclick="hideEvaluationSelector()">Cancel</button>
-          <button class="button button-primary" onclick="saveEvaluationSelection()">Save Selection</button>
-        </div>
-      </div>
-    </div>
     
     <script src="/static/evaluation-selector.js"></script>
     <script src="/static/host-wizard.js"></script>

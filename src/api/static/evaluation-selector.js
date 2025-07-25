@@ -112,31 +112,36 @@ class EvaluationSelector {
     }
 
     render() {
+        // Check if we're in inline mode (no modal)
+        const isInline = !this.container.closest('.modal-content');
+        
         this.container.innerHTML = `
-            <div class="evaluation-selector">
+            <div class="evaluation-selector ${isInline ? 'inline-mode' : ''}">
+                ${!isInline ? `
                 <div class="selector-header">
                     <h3>Competition Scoring Configuration</h3>
                     <p class="text-muted">Select metrics to evaluate player performance</p>
                 </div>
+                ` : ''}
 
                 <div class="scoring-config">
                     <div class="config-header">
-                        <h4 class="config-title">Evaluation Metrics</h4>
+                        ${!isInline ? '<h4 class="config-title">Evaluation Metrics</h4>' : ''}
                         <div class="config-actions">
                             <div class="custom-dropdown preset-dropdown" id="preset-dropdown">
-                                <div class="dropdown-trigger" onclick="evaluationSelector.toggleDropdown('preset-dropdown')">
+                                <div class="dropdown-trigger" onclick="window.evaluationSelector.toggleDropdown('preset-dropdown')">
                                     <span>Load Preset</span>
                                     <div class="dropdown-arrow"></div>
                                 </div>
                                 <div class="dropdown-menu">
                                     ${Object.entries(this.presets).map(([key, preset]) => `
-                                        <div class="dropdown-option" onclick="evaluationSelector.applyPreset('${key}')">
+                                        <div class="dropdown-option" onclick="window.evaluationSelector.applyPreset('${key}')">
                                             ${preset.name}
                                         </div>
                                     `).join('')}
                                 </div>
                             </div>
-                            <button class="auto-balance-btn" onclick="evaluationSelector.autoBalanceWeights()">
+                            <button class="auto-balance-btn" onclick="window.evaluationSelector.autoBalanceWeights()">
                                 Auto-Balance Weights
                             </button>
                         </div>
@@ -169,7 +174,7 @@ class EvaluationSelector {
             return `
                 <div class="metric-card ${isSelected ? 'selected' : ''}" 
                      data-metric-id="${metric.id}"
-                     onclick="evaluationSelector.toggleMetric('${metric.id}')">
+                     onclick="window.evaluationSelector.toggleMetric('${metric.id}')">
                     <div class="metric-header">
                         <div class="metric-icon">${metric.icon}</div>
                         <div class="metric-checkbox"></div>
@@ -187,8 +192,8 @@ class EvaluationSelector {
                                        max="100" 
                                        value="${weight}"
                                        step="5"
-                                       onchange="evaluationSelector.updateWeight('${metric.id}', this.value)"
-                                       oninput="evaluationSelector.updateWeightDisplay('${metric.id}', this.value)">
+                                       onchange="window.evaluationSelector.updateWeight('${metric.id}', this.value)"
+                                       oninput="window.evaluationSelector.updateWeightDisplay('${metric.id}', this.value)">
                                 <span class="weight-value" id="weight-${metric.id}">${weight}%</span>
                             </div>
                         </div>

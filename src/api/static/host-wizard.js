@@ -37,9 +37,13 @@ window.selectScoringMethod = function(card) {
     if (method === 'default') {
         customScoring.style.display = 'none';
         defaultPreview.style.display = 'block';
+        // Clear any selected evaluations
+        competitionConfig.evaluations = [];
     } else if (method === 'custom' || method === 'composite') {
         customScoring.style.display = 'block';
         defaultPreview.style.display = 'none';
+        // Initialize the inline evaluation selector
+        setTimeout(() => initializeInlineEvaluationSelector(), 0);
     }
 };
 
@@ -351,6 +355,24 @@ function validateCurrentStep() {
             competitionConfig.timeLimit = document.getElementById('time-limit').value;
             competitionConfig.trackReasoning = document.getElementById('track-reasoning').checked;
             competitionConfig.publicResults = document.getElementById('public-results').checked;
+            
+            // Validate evaluation selection if using custom scoring
+            if (competitionConfig.scoringMethod !== 'default') {
+                if (!evaluationSelector) {
+                    alert('Please configure evaluation metrics');
+                    return false;
+                }
+                
+                const validation = evaluationSelector.validateSelection();
+                if (!validation.valid) {
+                    alert(validation.message);
+                    return false;
+                }
+                
+                // Get final selected evaluations
+                competitionConfig.evaluations = evaluationSelector.getSelectedMetrics();
+            }
+            
             return true;
             
         default:
@@ -418,7 +440,16 @@ function updateSummary() {
     document.getElementById('summary-difficulty').textContent = competitionConfig.difficulty.charAt(0).toUpperCase() + competitionConfig.difficulty.slice(1);
     document.getElementById('summary-max-players').textContent = competitionConfig.maxPlayers;
     document.getElementById('summary-models').textContent = competitionConfig.allowedModels === 'all' ? 'All Available Models' : `${competitionConfig.selectedModels.length} Selected Models`;
-    document.getElementById('summary-scoring').textContent = competitionConfig.scoringMethod === 'default' ? 'Default Game Scoring' : 'Custom Evaluation';
+    // Format scoring summary
+    let scoringSummary = 'Default Game Scoring';
+    if (competitionConfig.scoringMethod === 'custom' || competitionConfig.scoringMethod === 'composite') {
+        scoringSummary = competitionConfig.scoringMethod === 'custom' ? 'Custom Evaluation' : 'Composite Score';
+        if (competitionConfig.evaluations && competitionConfig.evaluations.length > 0) {
+            const metricNames = competitionConfig.evaluations.map(e => e.name).join(', ');
+            scoringSummary += ` (${metricNames})`;
+        }
+    }
+    document.getElementById('summary-scoring').textContent = scoringSummary;
 }
 
 async function createCompetition() {
@@ -528,36 +559,33 @@ function goToLobby() {
 
 // Evaluation selector integration
 let evaluationSelector = null;
-let selectedEvaluations = [];
 
-function showEvaluationSelector() {
-    const modal = document.getElementById('evaluation-selector-modal');
-    modal.classList.add('active');
+// Make evaluationSelector available globally for the evaluation selector component
+window.evaluationSelector = null;
+
+// Initialize evaluation selector when custom/composite scoring is selected
+function initializeInlineEvaluationSelector() {
+    const container = document.getElementById('evaluation-selector-inline');
+    if (!container) return;
     
     if (!evaluationSelector) {
-        evaluationSelector = new EvaluationSelector('evaluation-selector-container');
-        evaluationSelector.render();
-    }
-}
-
-function hideEvaluationSelector() {
-    document.getElementById('evaluation-selector-modal').classList.remove('active');
-}
-
-function saveEvaluationSelection() {
-    if (evaluationSelector) {
-        selectedEvaluations = evaluationSelector.getSelectedEvaluations();
-        competitionConfig.evaluations = selectedEvaluations;
+        // Create a new evaluation selector with inline options
+        evaluationSelector = new EvaluationSelector('evaluation-selector-inline', {
+            maxMetrics: 5,
+            allowCustomWeights: true,
+            onUpdate: (metrics) => {
+                // Update competition config when metrics change
+                competitionConfig.evaluations = metrics.map(m => ({
+                    id: m.id,
+                    name: m.name,
+                    weight: m.weight
+                }));
+            }
+        });
         
-        // Update summary
-        const summary = document.getElementById('selected-evaluations-summary');
-        if (selectedEvaluations.length > 0) {
-            const names = selectedEvaluations.map(e => e.name).join(', ');
-            summary.textContent = `Selected: ${names}`;
-        } else {
-            summary.textContent = 'No evaluations selected';
-        }
+        // Also set the global reference
+        window.evaluationSelector = evaluationSelector;
     }
     
-    hideEvaluationSelector();
+    evaluationSelector.render();
 }

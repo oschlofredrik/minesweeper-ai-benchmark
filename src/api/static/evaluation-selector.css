@@ -715,3 +715,33 @@
     max-height: 70vh;
     overflow-y: auto;
 }
+
+/* Inline Mode Styles */
+.evaluation-selector.inline-mode {
+    padding: 0;
+}
+
+.evaluation-selector.inline-mode .scoring-config {
+    margin-bottom: 0;
+}
+
+.evaluation-selector.inline-mode .config-header {
+    margin-bottom: calc(var(--unit) * 2);
+}
+
+.evaluation-selector.inline-mode .metrics-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.evaluation-selector.inline-mode .config-actions {
+    flex-wrap: wrap;
+}
+
+.evaluation-selector.inline-mode .preset-dropdown {
+    min-width: 150px;
+}
+
+.evaluation-selector.inline-mode .weight-total {
+    background: var(--bg-primary);
+    border: 2px solid var(--border);
+}
