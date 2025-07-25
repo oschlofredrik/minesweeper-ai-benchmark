@@ -1,25 +1,12 @@
-"""Minimal join service for Vercel deployment"""
+"""Join service endpoint - Kahoot-style PIN entry page"""
 from http.server import BaseHTTPRequestHandler
-import json
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        path = self.path.split('?')[0]
-        
-        if path == '/' or path == '/index.html':
-            self.send_response(200)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-            self.wfile.write(self.get_join_html().encode())
-        else:
-            self.send_error(404)
-    
-    def do_OPTIONS(self):
         self.send_response(200)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Content-type', 'text/html')
         self.end_headers()
+        self.wfile.write(self.get_join_html().encode())
     
     def get_join_html(self):
         return """<!DOCTYPE html>
@@ -214,12 +201,13 @@ class handler(BaseHTTPRequestHandler):
             joinBtn.textContent = 'Joining...';
             
             try {
-                // For demo, redirect to main tilts platform with join code
-                const mainUrl = window.location.hostname === 'localhost' 
-                    ? 'http://localhost:8000' 
-                    : 'https://tilts.vercel.app';
-                    
-                window.location.href = `${mainUrl}?join=${pin}`;
+                // Redirect to main platform with join code
+                // Remove the /join from the URL to get the main platform URL
+                const currentUrl = new URL(window.location.href);
+                currentUrl.pathname = '/';
+                currentUrl.search = '?join=' + pin;
+                
+                window.location.href = currentUrl.toString();
             } catch (error) {
                 // Show error
                 input.classList.add('error');

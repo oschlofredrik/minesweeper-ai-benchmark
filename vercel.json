@@ -8,6 +8,10 @@
   ],
   "routes": [
     {
+      "src": "/join",
+      "dest": "/api/join.py"
+    },
+    {
       "src": "/(.*)",
       "dest": "/vercel/api/index.py"
     }
