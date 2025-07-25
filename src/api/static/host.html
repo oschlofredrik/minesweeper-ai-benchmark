@@ -440,20 +440,20 @@
             <h3>Competition Details</h3>
             <div class="form-stack">
               <div class="form-group">
-                <label>Competition Name</label>
-                <input type="text" id="competition-name" placeholder="Friday AI Challenge" required>
+                <label class="label">COMPETITION NAME</label>
+                <input type="text" class="input" id="competition-name" placeholder="Friday AI Challenge" required>
               </div>
               <div class="form-group">
-                <label>Description</label>
-                <textarea id="competition-description" rows="3" placeholder="Test your AI models in a friendly competition..."></textarea>
+                <label class="label">DESCRIPTION</label>
+                <textarea class="textarea" id="competition-description" rows="3" placeholder="Test your AI models in a friendly competition..."></textarea>
               </div>
               <div class="form-group">
-                <label>Maximum Players</label>
-                <input type="number" id="max-players" min="2" max="50" value="10">
+                <label class="label">MAXIMUM PLAYERS</label>
+                <input type="number" class="input" id="max-players" min="2" max="50" value="10">
               </div>
               <div class="form-group">
-                <label>Competition Format</label>
-                <select id="competition-format">
+                <label class="label">COMPETITION FORMAT</label>
+                <select class="select" id="competition-format">
                   <option value="single_round">Single Round - One game decides the winner</option>
                   <option value="best_of_three">Best of 3 - First to win 2 games</option>
                   <option value="tournament">Tournament - Multiple rounds with elimination</option>
@@ -614,8 +614,8 @@
             <!-- Additional settings -->
             <div class="form-stack" style="margin-top: calc(var(--unit) * 4);">
               <div class="form-group">
-                <label>Time Limits</label>
-                <select id="time-limit">
+                <label class="label">TIME LIMITS</label>
+                <select class="select" id="time-limit">
                   <option value="none">No time limit</option>
                   <option value="30">30 seconds per move</option>
                   <option value="60">1 minute per move</option>
@@ -624,16 +624,16 @@
               </div>
               
               <div class="form-group">
-                <label>
+                <label class="checkbox-label">
                   <input type="checkbox" id="track-reasoning">
-                  Track and display AI reasoning
+                  <span>Track and display AI reasoning</span>
                 </label>
               </div>
               
               <div class="form-group">
-                <label>
+                <label class="checkbox-label">
                   <input type="checkbox" id="public-results" checked>
-                  Make results publicly visible
+                  <span>Make results publicly visible</span>
                 </label>
               </div>
             </div>

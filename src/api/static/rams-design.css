@@ -321,6 +321,22 @@ input[type="radio"] {
   margin-right: var(--unit);
 }
 
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  font-size: var(--text-base);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  margin-right: calc(var(--unit) * 1.5);
+}
+
+.checkbox-label span {
+  user-select: none;
+}
+
 /* Number input arrows */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
