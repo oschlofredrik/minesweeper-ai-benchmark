@@ -1,7 +1,10 @@
 {
   "version": 2,
-  "buildCommand": "cd vercel",
-  "outputDirectory": "vercel",
+  "functions": {
+    "vercel/api/index.py": {
+      "runtime": "python3.9"
+    }
+  },
   "rewrites": [
     { "source": "/(.*)", "destination": "/vercel/api/index" }
   ]
