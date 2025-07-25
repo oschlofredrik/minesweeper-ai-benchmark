@@ -1,13 +1,11 @@
+from http.server import BaseHTTPRequestHandler
 import json
 
-def handler(request, response):
-    """Vercel Python runtime handler."""
-    # Minimal working endpoint
-    data = {"status": "ok", "message": "Simple endpoint works", "method": request.method}
-    
-    response.status_code = 200
-    response.headers = {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-    }
-    return json.dumps(data)
+class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        data = {"status": "ok", "message": "Simple endpoint works"}
+        self.wfile.write(json.dumps(data).encode())
