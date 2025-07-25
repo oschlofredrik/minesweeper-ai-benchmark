@@ -253,11 +253,18 @@ async function handleStartEvaluation(e) {
                 startGameUpdates(result.job_id);
             }
         } else {
-            alert('Failed to start evaluation');
+            const errorText = await response.text();
+            console.error('Failed to start evaluation:', errorText);
+            try {
+                const errorData = JSON.parse(errorText);
+                alert(`Failed to start evaluation: ${errorData.error || 'Unknown error'}`);
+            } catch {
+                alert('Failed to start evaluation: Server error');
+            }
         }
     } catch (error) {
         console.error('Error starting evaluation:', error);
-        alert('Error starting evaluation');
+        alert(`Error starting evaluation: ${error.message}`);
     }
 }
 

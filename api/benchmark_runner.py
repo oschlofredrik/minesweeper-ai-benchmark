@@ -8,6 +8,9 @@ from datetime import datetime
 
 # Import dependencies
 sys.path.append(os.path.dirname(__file__))
+IMPORTS_AVAILABLE = False
+IMPORT_ERROR = "Not attempted"
+
 try:
     from game_runner import (
         SimpleMinesweeper, SimpleRisk, 
@@ -16,8 +19,10 @@ try:
     )
     from ai_models import call_ai_model as call_ai_api, format_game_messages, extract_function_call
     IMPORTS_AVAILABLE = True
-except ImportError:
+    IMPORT_ERROR = None
+except ImportError as e:
     IMPORTS_AVAILABLE = False
+    IMPORT_ERROR = str(e)
 
 # Supabase configuration
 SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
@@ -54,9 +59,10 @@ class handler(BaseHTTPRequestHandler):
         """Run a benchmark evaluation."""
         if not IMPORTS_AVAILABLE:
             self.send_json_response({
-                "error": "Game runner imports not available",
-                "status": "error"
-            })
+                "error": f"Game runner imports not available: {IMPORT_ERROR}",
+                "status": "error",
+                "details": "The benchmark runner could not import required game modules"
+            }, status_code=500)
             return
         
         content_length = int(self.headers['Content-Length'])
@@ -321,8 +327,8 @@ class handler(BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         self.end_headers()
     
-    def send_json_response(self, data):
-        self.send_response(200)
+    def send_json_response(self, data, status_code=200):
+        self.send_response(status_code)
         self.send_header('Content-type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
