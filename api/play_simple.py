@@ -174,6 +174,59 @@ class handler(BaseHTTPRequestHandler):
             job_id = "bench_" + str(uuid.uuid4())[:8]
             print(f"[BENCHMARK] Created job_id: {job_id}")
             
+            # Check if we should use Vercel AI SDK
+            use_sdk = os.environ.get('USE_VERCEL_SDK', '').lower() == 'true'
+            if use_sdk and config.get('provider') in ['openai', 'anthropic']:
+                print(f"[BENCHMARK] Using Vercel AI SDK for evaluation")
+                # Forward to SDK endpoint
+                try:
+                    from evaluate_sdk import handler as sdk_handler
+                    
+                    # Create SDK config
+                    sdk_config = {
+                        'gameType': config.get('game', 'minesweeper'),
+                        'provider': config.get('provider', 'openai'),
+                        'model': config.get('model', 'gpt-4'),
+                        'difficulty': config.get('difficulty', 'medium'),
+                        'scenario': config.get('scenario'),
+                        'numGames': config.get('num_games', 1),
+                        'streaming': True,
+                        'temperature': 0.7,
+                        'maxSteps': 50
+                    }
+                    
+                    # Create a mock request for the SDK handler
+                    class MockRequest:
+                        def __init__(self, data):
+                            self.data = data
+                            self.pos = 0
+                        
+                        def read(self, length):
+                            if self.pos == 0:
+                                self.pos = len(self.data)
+                                return self.data
+                            return b''
+                    
+                    # Replace request data and call SDK handler
+                    original_rfile = self.rfile
+                    self.rfile = MockRequest(json.dumps(sdk_config).encode())
+                    self.headers['Content-Length'] = str(len(self.rfile.data))
+                    
+                    # Create SDK handler instance
+                    sdk = sdk_handler(self.request, self.client_address, self.server)
+                    sdk.rfile = self.rfile
+                    sdk.wfile = self.wfile
+                    sdk.headers = self.headers
+                    sdk.do_POST()
+                    
+                    # Restore original
+                    self.rfile = original_rfile
+                    return
+                    
+                except Exception as e:
+                    print(f"[BENCHMARK] SDK forwarding failed: {e}")
+                    # Fall through to regular processing
+            
             # Try to run a simple game
             try:
                 # Add job_id to config for broadcasting

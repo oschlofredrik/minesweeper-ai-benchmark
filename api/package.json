@@ -1,0 +1,26 @@
+{
+  "name": "tilts-api",
+  "version": "1.0.0",
+  "description": "Tilts AI Competition Platform API",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "tsc",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ai": "beta",
+    "@ai-sdk/openai": "beta",
+    "@ai-sdk/anthropic": "beta",
+    "@ai-sdk/react": "beta",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "@vercel/node": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
