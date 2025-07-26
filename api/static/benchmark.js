@@ -126,6 +126,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const providerSelect = document.getElementById('model-provider');
     if (providerSelect) {
         providerSelect.addEventListener('change', (e) => {
+            console.log(`[DOMContentLoaded] Provider changed to: ${e.target.value}`);
             updateModelOptions(e.target.value);
         });
     }
@@ -261,6 +262,8 @@ function updateModelOptionsFallback(provider) {
     const modelSelect = document.getElementById('model-name');
     if (!modelSelect) return;
     
+    console.log(`[updateModelOptionsFallback] Provider: ${provider}`);
+    
     if (provider === 'openai') {
         modelSelect.innerHTML = `
             <option value="gpt-4-turbo-preview">GPT-4 Turbo</option>
@@ -271,6 +274,7 @@ function updateModelOptionsFallback(provider) {
             <option value="o1-preview">o1 Preview (Reasoning)</option>
             <option value="o1-mini">o1 Mini (Reasoning)</option>
         `;
+        console.log('[updateModelOptionsFallback] Set OpenAI models');
     } else if (provider === 'anthropic') {
         modelSelect.innerHTML = `
             <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
@@ -278,6 +282,9 @@ function updateModelOptionsFallback(provider) {
             <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
             <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
         `;
+        console.log('[updateModelOptionsFallback] Set Anthropic models');
+    } else {
+        console.warn(`[updateModelOptionsFallback] Unknown provider: ${provider}`);
     }
 }
 
