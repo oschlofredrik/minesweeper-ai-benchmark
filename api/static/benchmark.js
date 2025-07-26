@@ -97,13 +97,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.warn('initSupabase not available - Supabase realtime updates will not work');
     }
     
-    // Set up form handler
-    const playForm = document.getElementById('play-form');
-    if (playForm) {
-        playForm.addEventListener('submit', handleStartEvaluation);
-    } else {
-        console.error('Play form not found');
-    }
+    // Form handler will be set up when modal is shown
     
     // Listen for game events
     document.addEventListener('game-state-update', (e) => {
@@ -159,6 +153,19 @@ function showEvalModal() {
         }
         modal.classList.add('active');
         modal.style.display = 'flex';
+        
+        // Set up form handler when modal is shown
+        const playForm = document.getElementById('play-form');
+        if (playForm && !playForm.hasAttribute('data-handler-attached')) {
+            playForm.addEventListener('submit', handleStartEvaluation);
+            playForm.setAttribute('data-handler-attached', 'true');
+        }
+        
+        // Update model options for default provider
+        const providerSelect = document.getElementById('model-provider');
+        if (providerSelect) {
+            updateModelOptions(providerSelect.value || 'openai');
+        }
     } catch (error) {
         console.error('Error showing modal:', error);
     }

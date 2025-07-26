@@ -5,16 +5,22 @@ let gameChannel = null;
 // Initialize Supabase client
 async function initSupabase() {
     try {
+        // Check if Supabase SDK is loaded
+        if (!window.supabase || !window.supabase.createClient) {
+            console.error('Supabase SDK not loaded');
+            return null;
+        }
+        
         // Get Supabase config from backend
         const response = await fetch('/api/config/supabase');
         if (!response.ok) {
-            console.error('Failed to get Supabase config');
+            console.error('Failed to get Supabase config:', response.status);
             return null;
         }
         
         const config = await response.json();
         if (!config.url || !config.anonKey) {
-            console.error('Invalid Supabase config');
+            console.error('Invalid Supabase config:', config);
             return null;
         }
         
