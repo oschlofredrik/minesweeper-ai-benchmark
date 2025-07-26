@@ -36,7 +36,9 @@ except ImportError:
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        print(f"[MODELS_CONFIG] Received GET request: {self.path}")
         path_parts = self.path.split('/')
+        print(f"[MODELS_CONFIG] Path parts: {path_parts}")
         
         if len(path_parts) >= 3 and path_parts[2] == 'models':
             if len(path_parts) == 3:
@@ -82,9 +84,11 @@ class handler(BaseHTTPRequestHandler):
                     
                     self.send_json_response(result)
                 else:
+                    print(f"[MODELS_CONFIG] Unknown provider: {provider}")
                     self.send_error(404, f"Unknown provider: {provider}")
                     
         else:
+            print(f"[MODELS_CONFIG] Invalid path format: {self.path}")
             self.send_error(404)
     
     def do_OPTIONS(self):

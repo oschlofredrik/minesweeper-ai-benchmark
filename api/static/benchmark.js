@@ -187,6 +187,11 @@ async function updateModelOptions(provider) {
     }
     modelSelect.innerHTML = '<option value="">Loading models...</option>';
     
+    // Always use the comprehensive model list for now
+    // TODO: Fix API endpoint and re-enable dynamic loading
+    updateModelOptionsFallback(provider);
+    return;
+    
     try {
         console.log(`Fetching models for provider: ${provider}`);
         const response = await fetch(`/api/models/${provider}`);
@@ -232,19 +237,8 @@ async function updateModelOptions(provider) {
         } else {
             // Fallback to static options
             console.warn(`Models API failed with status ${response.status}, using fallback`);
-            if (provider === 'openai') {
-                modelSelect.innerHTML = `
-                    <option value="gpt-4">GPT-4</option>
-                    <option value="gpt-4-turbo-preview">GPT-4 Turbo</option>
-                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                `;
-            } else if (provider === 'anthropic') {
-                modelSelect.innerHTML = `
-                    <option value="claude-3-opus-20240229">Claude 3 Opus</option>
-                    <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
-                    <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
-                `;
-            }
+            // Use the comprehensive fallback
+            updateModelOptionsFallback(provider);
         }
     } catch (error) {
         console.error('Failed to load models:', error);

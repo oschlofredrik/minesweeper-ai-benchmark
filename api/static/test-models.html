@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Models API</title>
+</head>
+<body>
+    <h1>Test Models API</h1>
+    <button onclick="testModels()">Test /api/models</button>
+    <button onclick="testOpenAI()">Test /api/models/openai</button>
+    <button onclick="testAnthropic()">Test /api/models/anthropic</button>
+    <pre id="output"></pre>
+    
+    <script>
+        async function testModels() {
+            try {
+                const response = await fetch('/api/models');
+                const data = await response.json();
+                document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('output').textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        async function testOpenAI() {
+            try {
+                const response = await fetch('/api/models/openai');
+                const data = await response.json();
+                document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('output').textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        async function testAnthropic() {
+            try {
+                const response = await fetch('/api/models/anthropic');
+                const data = await response.json();
+                document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('output').textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
