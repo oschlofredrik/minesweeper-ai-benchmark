@@ -168,7 +168,12 @@ function showEvalModal() {
             // Update model options for current provider
             const currentProvider = newProviderSelect.value || 'openai';
             console.log(`[showEvalModal] Initial provider: ${currentProvider}`);
-            updateModelOptions(currentProvider);
+            
+            // Give DOM time to settle after replacing elements
+            setTimeout(() => {
+                console.log(`[showEvalModal] Updating models after delay for provider: ${currentProvider}`);
+                updateModelOptions(currentProvider);
+            }, 10);
         }
     } catch (error) {
         console.error('Error showing modal:', error);

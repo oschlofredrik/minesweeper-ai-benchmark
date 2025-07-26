@@ -131,7 +131,7 @@ function initializePlayForm() {
     const gameSelect = document.getElementById('game-select');
     
     // Update model options when provider changes
-    modelProvider.addEventListener('change', updateModelOptions);
+    modelProvider.addEventListener('change', updateCompeteModelOptions);
     
     // Update difficulty options when game changes
     if (gameSelect) {
@@ -140,7 +140,7 @@ function initializePlayForm() {
     }
     
     // Initialize model options on page load
-    updateModelOptions();
+    updateCompeteModelOptions();
     
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -181,7 +181,7 @@ function initializePlayForm() {
 }
 
 // Update model dropdown based on provider
-function updateModelOptions() {
+function updateCompeteModelOptions() {
     const provider = document.getElementById('model-provider').value;
     const modelSelect = document.getElementById('model-name');
     
