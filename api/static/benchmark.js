@@ -188,9 +188,13 @@ async function updateModelOptions(provider) {
     modelSelect.innerHTML = '<option value="">Loading models...</option>';
     
     try {
+        console.log(`Fetching models for provider: ${provider}`);
         const response = await fetch(`/api/models/${provider}`);
+        console.log(`Models API response status: ${response.status}`);
+        
         if (response.ok) {
             const data = await response.json();
+            console.log(`Models data received:`, data);
             
             modelSelect.innerHTML = '';
             
@@ -227,6 +231,7 @@ async function updateModelOptions(provider) {
             }
         } else {
             // Fallback to static options
+            console.warn(`Models API failed with status ${response.status}, using fallback`);
             if (provider === 'openai') {
                 modelSelect.innerHTML = `
                     <option value="gpt-4">GPT-4</option>
@@ -264,12 +269,17 @@ function updateModelOptionsFallback(provider) {
     
     if (provider === 'openai') {
         modelSelect.innerHTML = `
-            <option value="gpt-4">GPT-4</option>
             <option value="gpt-4-turbo-preview">GPT-4 Turbo</option>
+            <option value="gpt-4">GPT-4</option>
             <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+            <option value="gpt-4o">GPT-4o</option>
+            <option value="gpt-4o-mini">GPT-4o Mini</option>
+            <option value="o1-preview">o1 Preview (Reasoning)</option>
+            <option value="o1-mini">o1 Mini (Reasoning)</option>
         `;
     } else if (provider === 'anthropic') {
         modelSelect.innerHTML = `
+            <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
             <option value="claude-3-opus-20240229">Claude 3 Opus</option>
             <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
             <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
