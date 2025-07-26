@@ -108,9 +108,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         handleMoveHighlight(e.detail);
     });
     
-    // Load initial models
-    updateModelOptions('openai');
-    
     // Check available providers
     checkAvailableProviders();
     
@@ -120,15 +117,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         startBtn.addEventListener('click', showEvalModal);
     } else {
         console.error('Start evaluation button not found');
-    }
-    
-    // Set up provider change handler
-    const providerSelect = document.getElementById('model-provider');
-    if (providerSelect) {
-        providerSelect.addEventListener('change', (e) => {
-            console.log(`[DOMContentLoaded] Provider changed to: ${e.target.value}`);
-            updateModelOptions(e.target.value);
-        });
     }
 });
 
@@ -162,10 +150,23 @@ function showEvalModal() {
             playForm.setAttribute('data-handler-attached', 'true');
         }
         
-        // Update model options for default provider
+        // Set up provider change handler
         const providerSelect = document.getElementById('model-provider');
         if (providerSelect) {
-            updateModelOptions(providerSelect.value || 'openai');
+            // Remove existing change listener if any
+            const newProviderSelect = providerSelect.cloneNode(true);
+            providerSelect.parentNode.replaceChild(newProviderSelect, providerSelect);
+            
+            // Add change listener
+            newProviderSelect.addEventListener('change', (e) => {
+                console.log(`[showEvalModal] Provider changed to: ${e.target.value}`);
+                updateModelOptions(e.target.value);
+            });
+            
+            // Update model options for current provider
+            const currentProvider = newProviderSelect.value || 'openai';
+            console.log(`[showEvalModal] Initial provider: ${currentProvider}`);
+            updateModelOptions(currentProvider);
         }
     } catch (error) {
         console.error('Error showing modal:', error);
