@@ -91,7 +91,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     // Initialize Supabase
-    await initSupabase();
+    if (typeof initSupabase === 'function') {
+        await initSupabase();
+    } else {
+        console.warn('initSupabase not available - Supabase realtime updates will not work');
+    }
     
     // Set up form handler
     const playForm = document.getElementById('play-form');
@@ -339,9 +343,11 @@ async function handleStartEvaluation(e) {
             }
             
             // Subscribe to realtime updates for this job
-            if (result.job_id) {
+            if (result.job_id && typeof subscribeToGame === 'function') {
                 console.log('Subscribing to realtime updates for job:', result.job_id);
                 await subscribeToGame(result.job_id, handleRealtimeUpdate);
+            } else if (result.job_id) {
+                console.warn('subscribeToGame not available - realtime updates disabled');
             }
             
             // Process initial results if any
