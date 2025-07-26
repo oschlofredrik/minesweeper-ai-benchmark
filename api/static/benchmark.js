@@ -160,6 +160,8 @@ function showEvalModal() {
             // Add change listener
             newProviderSelect.addEventListener('change', (e) => {
                 console.log(`[showEvalModal] Provider changed to: ${e.target.value}`);
+                console.log(`[showEvalModal] Event target:`, e.target);
+                console.log(`[showEvalModal] Selected option:`, e.target.options[e.target.selectedIndex]);
                 updateModelOptions(e.target.value);
             });
             
@@ -182,11 +184,13 @@ function hideEvalModal() {
 }
 
 async function updateModelOptions(provider) {
+    console.log(`[updateModelOptions] Called with provider: ${provider}`);
     const modelSelect = document.getElementById('model-name');
     if (!modelSelect) {
         console.error('Model select element not found');
         return;
     }
+    console.log(`[updateModelOptions] Found model select, updating for provider: ${provider}`);
     modelSelect.innerHTML = '<option value="">Loading models...</option>';
     
     // Always use the comprehensive model list for now
