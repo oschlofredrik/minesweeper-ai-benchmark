@@ -2,78 +2,34 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/index.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/sessions_simple.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/play_simple.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/auth.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/simple.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/leaderboard_simple.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/run_game_simple.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/games_config.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/game_runner.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/models_config.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/test_env.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/config_supabase.py",
+      "src": "api/*.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/api/sessions(.*)",
-      "dest": "/api/sessions_simple.py"
+      "dest": "/api/sessions.py"
     },
     {
       "src": "/api/play(.*)",
-      "dest": "/api/play_simple.py"
+      "dest": "/api/play.py"
+    },
+    {
+      "src": "/api/benchmark(.*)",
+      "dest": "/api/play.py"
     },
     {
       "src": "/api/auth(.*)",
       "dest": "/api/auth.py"
     },
     {
-      "src": "/api/simple",
-      "dest": "/api/simple.py"
+      "src": "/api/leaderboard(.*)",
+      "dest": "/api/leaderboard.py"
     },
     {
-      "src": "/api/leaderboard",
-      "dest": "/api/leaderboard_simple.py"
-    },
-    {
-      "src": "/api/run_game",
-      "dest": "/api/run_game_simple.py"
+      "src": "/api/run_game(.*)",
+      "dest": "/api/run_game.py"
     },
     {
       "src": "/api/games(.*)",
@@ -88,16 +44,12 @@
       "dest": "/api/models_config.py"
     },
     {
-      "src": "/api/benchmark(.*)",
-      "dest": "/api/play_simple.py"
+      "src": "/api/stats",
+      "dest": "/api/index.py"
     },
     {
-      "src": "/api/test_env",
-      "dest": "/api/test_env.py"
-    },
-    {
-      "src": "/api/config/supabase",
-      "dest": "/api/config_supabase.py"
+      "src": "/static/(.*)",
+      "dest": "/api/static/$1"
     },
     {
       "src": "/(.*)",
