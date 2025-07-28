@@ -204,6 +204,31 @@ function initializePlayForm() {
     });
 }
 
+// Modal functions
+function showEvalModal() {
+    console.log('[app-rams.js] showEvalModal called');
+    const modal = document.getElementById('eval-modal');
+    if (modal) {
+        modal.classList.add('active');
+        modal.style.display = 'flex';
+        
+        // Initialize models when modal opens
+        updateCompeteModelOptions();
+    }
+}
+
+function hideEvalModal() {
+    const modal = document.getElementById('eval-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
+}
+
+// Make functions globally available for other scripts
+window.showEvalModal = showEvalModal;
+window.hideEvalModal = hideEvalModal;
+
 // Update model dropdown based on provider - fetch from SDK
 async function updateCompeteModelOptions() {
     console.log('[updateCompeteModelOptions] Function called');
