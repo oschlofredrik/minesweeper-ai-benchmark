@@ -136,6 +136,8 @@ function showSection(sectionId) {
 
 // Play Form
 function initializePlayForm() {
+    console.log('[initializePlayForm] Function called');
+    
     const form = document.getElementById('play-form');
     const modelProvider = document.getElementById('model-provider');
     const gameSelect = document.getElementById('game-select');
@@ -221,8 +223,14 @@ async function updateCompeteModelOptions() {
     modelSelect.innerHTML = '<option value="">Loading models...</option>';
     
     try {
-        // Fetch models from models endpoint
-        const response = await fetch(`/api/models/${provider}`);
+        // Fetch models from models endpoint with cache busting
+        const cacheBuster = new Date().getTime();
+        const response = await fetch(`/api/models/${provider}?cb=${cacheBuster}`, {
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache'
+            }
+        });
         console.log(`[updateCompeteModelOptions] Response status: ${response.status}`);
         
         if (!response.ok) {
@@ -230,7 +238,9 @@ async function updateCompeteModelOptions() {
         }
         
         const data = await response.json();
-        console.log(`[updateCompeteModelOptions] Models received:`, data);
+        console.log(`[updateCompeteModelOptions] Full response data:`, data);
+        console.log(`[updateCompeteModelOptions] Number of models:`, Object.keys(data.models || {}).length);
+        console.log(`[updateCompeteModelOptions] Model IDs:`, Object.keys(data.models || {}));
         
         // Build options HTML - the API returns { models: { modelId: modelInfo } }
         const models = data.models || {};
