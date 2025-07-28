@@ -1,0 +1,12 @@
+[
+  {
+    "game_id": "1f1e652b-168a-40a4-aa20-765f74d36738",
+    "task_id": "cdef6d67-9339-46e0-b658-a08ae0ed09df",
+    "model_name": "gpt-4",
+    "start_time": "2025-07-13T21:01:53.629957",
+    "end_time": "2025-07-13T21:01:54.433115",
+    "final_status": "in_progress",
+    "num_moves": 0,
+    "moves": []
+  }
+]

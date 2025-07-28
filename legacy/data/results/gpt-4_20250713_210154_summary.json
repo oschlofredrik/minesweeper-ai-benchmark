@@ -1,0 +1,55 @@
+{
+  "model": {
+    "name": "gpt-4",
+    "provider": "openai",
+    "model_id": "gpt-4",
+    "temperature": 0.7
+  },
+  "evaluation": {
+    "num_tasks": 1,
+    "max_moves": 500,
+    "prompt_format": "standard",
+    "parallel_games": 1,
+    "start_time": "2025-07-13T21:01:53.594054",
+    "end_time": "2025-07-13T21:01:54.434137",
+    "duration_seconds": 0.840083
+  },
+  "metrics": {
+    "win_rate": 0.0,
+    "valid_move_rate": 0.0,
+    "mine_identification_precision": 0.0,
+    "mine_identification_recall": 0.0,
+    "average_moves_to_win": null,
+    "average_moves_to_loss": null,
+    "board_coverage_on_loss": 0.0,
+    "reasoning_quality_score": null
+  },
+  "per_game_metrics": [
+    {
+      "game_id": "1f1e652b-168a-40a4-aa20-765f74d36738",
+      "model": "gpt-4",
+      "won": false,
+      "status": "in_progress",
+      "moves": 0,
+      "valid_move_rate": 0.0,
+      "flag_precision": 0.0,
+      "flag_recall": 0.0,
+      "board_coverage": 0.0,
+      "duration_seconds": 0.803158
+    }
+  ],
+  "game_results": [
+    {
+      "game_id": "1f1e652b-168a-40a4-aa20-765f74d36738",
+      "won": false,
+      "final_status": "in_progress",
+      "num_moves": 0,
+      "board_coverage": 0.0,
+      "mines_correctly_flagged": 0,
+      "total_mines": 99,
+      "valid_move_rate": 0.0,
+      "duration": 0.803158,
+      "moves": []
+    }
+  ]
+}

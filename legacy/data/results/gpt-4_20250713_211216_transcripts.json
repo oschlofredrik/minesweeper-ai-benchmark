@@ -1,0 +1,102 @@
+[
+  {
+    "game_id": "7adcda5a-b32d-46d0-a2d9-58e077ab9eb7",
+    "task_id": "6225e54c-1dd3-40e0-8ac6-c29180fad7e6",
+    "model_name": "gpt-4",
+    "start_time": "2025-07-13T21:12:13.895133",
+    "end_time": "2025-07-13T21:12:14.284497",
+    "final_status": "in_progress",
+    "num_moves": 0,
+    "moves": []
+  },
+  {
+    "game_id": "86a2436b-1642-42f8-ae12-6ba1fe0750ac",
+    "task_id": "d4f7fde5-862b-4f2e-b5be-6c6cf23a02ff",
+    "model_name": "gpt-4",
+    "start_time": "2025-07-13T21:12:14.290367",
+    "end_time": "2025-07-13T21:12:14.780788",
+    "final_status": "in_progress",
+    "num_moves": 0,
+    "moves": []
+  },
+  {
+    "game_id": "93291641-7df6-43b9-9b54-720cd760f529",
+    "task_id": "65989505-3a0f-4b0f-9961-41a473264e51",
+    "model_name": "gpt-4",
+    "start_time": "2025-07-13T21:12:14.790485",
+    "end_time": "2025-07-13T21:12:14.999003",
+    "final_status": "in_progress",
+    "num_moves": 0,
+    "moves": []
+  },
+  {
+    "game_id": "9dffe708-9731-4425-8546-227c029ff338",
+    "task_id": "694ef7c2-cd67-4731-83ac-16428a59c156",
+    "model_name": "gpt-4",
+    "start_time": "2025-07-13T21:12:15.006802",
+    "end_time": "2025-07-13T21:12:15.189702",
+    "final_status": "in_progress",
+    "num_moves": 0,
+    "moves": []
+  },
+  {
+    "game_id": "d833c0b9-add8-45a1-a7ff-0906ef03d894",
+    "task_id": "8a338c56-555f-49b8-a672-2445795e36e0",
+    "model_name": "gpt-4",
+    "start_time": "2025-07-13T21:12:15.195997",
+    "end_time": "2025-07-13T21:12:15.388984",
+    "final_status": "in_progress",
+    "num_moves": 0,
+    "moves": []
+  },
+  {
+    "game_id": "70e7bc40-4903-4004-8e65-bf4bedf4b6a8",
+    "task_id": "c06c165f-6b74-49b9-9a03-84b1be078e72",
+    "model_name": "gpt-4",
+    "start_time": "2025-07-13T21:12:15.398468",
+    "end_time": "2025-07-13T21:12:15.566505",
+    "final_status": "in_progress",
+    "num_moves": 0,
+    "moves": []
+  },
+  {
+    "game_id": "0d223bbc-2feb-47d9-a8bf-71c74f39a224",
+    "task_id": "a4181485-e69a-482f-9195-c1f57c8e0a00",
+    "model_name": "gpt-4",
+    "start_time": "2025-07-13T21:12:15.574605",
+    "end_time": "2025-07-13T21:12:15.769180",
+    "final_status": "in_progress",
+    "num_moves": 0,
+    "moves": []
+  },
+  {
+    "game_id": "c18e2efb-63aa-497f-965c-7bc7f5c8e419",
+    "task_id": "7842a255-9755-453f-b999-db1e02724506",
+    "model_name": "gpt-4",
+    "start_time": "2025-07-13T21:12:15.773963",
+    "end_time": "2025-07-13T21:12:15.966726",
+    "final_status": "in_progress",
+    "num_moves": 0,
+    "moves": []
+  },
+  {
+    "game_id": "5346245c-3a3b-43b8-8956-22544d969bde",
+    "task_id": "e47dcab2-ebce-4087-8869-5bbfb3070eec",
+    "model_name": "gpt-4",
+    "start_time": "2025-07-13T21:12:16.037201",
+    "end_time": "2025-07-13T21:12:16.212289",
+    "final_status": "in_progress",
+    "num_moves": 0,
+    "moves": []
+  },
+  {
+    "game_id": "e5791ad2-63c3-4d2f-8b79-b3d6d71b8322",
+    "task_id": "3f366679-9c22-487e-9aef-1eb5d2fe4e7a",
+    "model_name": "gpt-4",
+    "start_time": "2025-07-13T21:12:16.217476",
+    "end_time": "2025-07-13T21:12:16.389437",
+    "final_status": "in_progress",
+    "num_moves": 0,
+    "moves": []
+  }
+]

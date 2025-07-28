@@ -1,0 +1,12 @@
+[
+  {
+    "game_id": "e72bf8b8-2302-4d64-ac6b-8ab9777b5cc7",
+    "task_id": "6839bd45-dcb7-4b79-9bad-7683d9fa3898",
+    "model_name": "gpt-4-turbo-preview",
+    "start_time": "2025-07-13T20:34:05.191934",
+    "end_time": "2025-07-13T20:34:05.947493",
+    "final_status": "in_progress",
+    "num_moves": 0,
+    "moves": []
+  }
+]

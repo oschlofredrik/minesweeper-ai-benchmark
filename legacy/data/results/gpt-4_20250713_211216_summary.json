@@ -1,0 +1,271 @@
+{
+  "model": {
+    "name": "gpt-4",
+    "provider": "openai",
+    "model_id": "gpt-4",
+    "temperature": 0.7
+  },
+  "evaluation": {
+    "num_tasks": 10,
+    "max_moves": 500,
+    "prompt_format": "standard",
+    "parallel_games": 1,
+    "start_time": "2025-07-13T21:12:13.865729",
+    "end_time": "2025-07-13T21:12:16.390449",
+    "duration_seconds": 2.52472
+  },
+  "metrics": {
+    "win_rate": 0.0,
+    "valid_move_rate": 0.0,
+    "mine_identification_precision": 0.0,
+    "mine_identification_recall": 0.0,
+    "average_moves_to_win": null,
+    "average_moves_to_loss": null,
+    "board_coverage_on_loss": 0.0,
+    "reasoning_quality_score": null
+  },
+  "per_game_metrics": [
+    {
+      "game_id": "7adcda5a-b32d-46d0-a2d9-58e077ab9eb7",
+      "model": "gpt-4",
+      "won": false,
+      "status": "in_progress",
+      "moves": 0,
+      "valid_move_rate": 0.0,
+      "flag_precision": 0.0,
+      "flag_recall": 0.0,
+      "board_coverage": 0.0,
+      "duration_seconds": 0.389364
+    },
+    {
+      "game_id": "86a2436b-1642-42f8-ae12-6ba1fe0750ac",
+      "model": "gpt-4",
+      "won": false,
+      "status": "in_progress",
+      "moves": 0,
+      "valid_move_rate": 0.0,
+      "flag_precision": 0.0,
+      "flag_recall": 0.0,
+      "board_coverage": 0.0,
+      "duration_seconds": 0.490421
+    },
+    {
+      "game_id": "93291641-7df6-43b9-9b54-720cd760f529",
+      "model": "gpt-4",
+      "won": false,
+      "status": "in_progress",
+      "moves": 0,
+      "valid_move_rate": 0.0,
+      "flag_precision": 0.0,
+      "flag_recall": 0.0,
+      "board_coverage": 0.0,
+      "duration_seconds": 0.208518
+    },
+    {
+      "game_id": "9dffe708-9731-4425-8546-227c029ff338",
+      "model": "gpt-4",
+      "won": false,
+      "status": "in_progress",
+      "moves": 0,
+      "valid_move_rate": 0.0,
+      "flag_precision": 0.0,
+      "flag_recall": 0.0,
+      "board_coverage": 0.0,
+      "duration_seconds": 0.1829
+    },
+    {
+      "game_id": "d833c0b9-add8-45a1-a7ff-0906ef03d894",
+      "model": "gpt-4",
+      "won": false,
+      "status": "in_progress",
+      "moves": 0,
+      "valid_move_rate": 0.0,
+      "flag_precision": 0.0,
+      "flag_recall": 0.0,
+      "board_coverage": 0.0,
+      "duration_seconds": 0.192987
+    },
+    {
+      "game_id": "70e7bc40-4903-4004-8e65-bf4bedf4b6a8",
+      "model": "gpt-4",
+      "won": false,
+      "status": "in_progress",
+      "moves": 0,
+      "valid_move_rate": 0.0,
+      "flag_precision": 0.0,
+      "flag_recall": 0.0,
+      "board_coverage": 0.0,
+      "duration_seconds": 0.168037
+    },
+    {
+      "game_id": "0d223bbc-2feb-47d9-a8bf-71c74f39a224",
+      "model": "gpt-4",
+      "won": false,
+      "status": "in_progress",
+      "moves": 0,
+      "valid_move_rate": 0.0,
+      "flag_precision": 0.0,
+      "flag_recall": 0.0,
+      "board_coverage": 0.0,
+      "duration_seconds": 0.194575
+    },
+    {
+      "game_id": "c18e2efb-63aa-497f-965c-7bc7f5c8e419",
+      "model": "gpt-4",
+      "won": false,
+      "status": "in_progress",
+      "moves": 0,
+      "valid_move_rate": 0.0,
+      "flag_precision": 0.0,
+      "flag_recall": 0.0,
+      "board_coverage": 0.0,
+      "duration_seconds": 0.192763
+    },
+    {
+      "game_id": "5346245c-3a3b-43b8-8956-22544d969bde",
+      "model": "gpt-4",
+      "won": false,
+      "status": "in_progress",
+      "moves": 0,
+      "valid_move_rate": 0.0,
+      "flag_precision": 0.0,
+      "flag_recall": 0.0,
+      "board_coverage": 0.0,
+      "duration_seconds": 0.175088
+    },
+    {
+      "game_id": "e5791ad2-63c3-4d2f-8b79-b3d6d71b8322",
+      "model": "gpt-4",
+      "won": false,
+      "status": "in_progress",
+      "moves": 0,
+      "valid_move_rate": 0.0,
+      "flag_precision": 0.0,
+      "flag_recall": 0.0,
+      "board_coverage": 0.0,
+      "duration_seconds": 0.171961
+    }
+  ],
+  "game_results": [
+    {
+      "game_id": "7adcda5a-b32d-46d0-a2d9-58e077ab9eb7",
+      "won": false,
+      "final_status": "in_progress",
+      "num_moves": 0,
+      "board_coverage": 0.0,
+      "mines_correctly_flagged": 0,
+      "total_mines": 99,
+      "valid_move_rate": 0.0,
+      "duration": 0.389364,
+      "moves": []
+    },
+    {
+      "game_id": "86a2436b-1642-42f8-ae12-6ba1fe0750ac",
+      "won": false,
+      "final_status": "in_progress",
+      "num_moves": 0,
+      "board_coverage": 0.0,
+      "mines_correctly_flagged": 0,
+      "total_mines": 99,
+      "valid_move_rate": 0.0,
+      "duration": 0.490421,
+      "moves": []
+    },
+    {
+      "game_id": "93291641-7df6-43b9-9b54-720cd760f529",
+      "won": false,
+      "final_status": "in_progress",
+      "num_moves": 0,
+      "board_coverage": 0.0,
+      "mines_correctly_flagged": 0,
+      "total_mines": 99,
+      "valid_move_rate": 0.0,
+      "duration": 0.208518,
+      "moves": []
+    },
+    {
+      "game_id": "9dffe708-9731-4425-8546-227c029ff338",
+      "won": false,
+      "final_status": "in_progress",
+      "num_moves": 0,
+      "board_coverage": 0.0,
+      "mines_correctly_flagged": 0,
+      "total_mines": 99,
+      "valid_move_rate": 0.0,
+      "duration": 0.1829,
+      "moves": []
+    },
+    {
+      "game_id": "d833c0b9-add8-45a1-a7ff-0906ef03d894",
+      "won": false,
+      "final_status": "in_progress",
+      "num_moves": 0,
+      "board_coverage": 0.0,
+      "mines_correctly_flagged": 0,
+      "total_mines": 99,
+      "valid_move_rate": 0.0,
+      "duration": 0.192987,
+      "moves": []
+    },
+    {
+      "game_id": "70e7bc40-4903-4004-8e65-bf4bedf4b6a8",
+      "won": false,
+      "final_status": "in_progress",
+      "num_moves": 0,
+      "board_coverage": 0.0,
+      "mines_correctly_flagged": 0,
+      "total_mines": 99,
+      "valid_move_rate": 0.0,
+      "duration": 0.168037,
+      "moves": []
+    },
+    {
+      "game_id": "0d223bbc-2feb-47d9-a8bf-71c74f39a224",
+      "won": false,
+      "final_status": "in_progress",
+      "num_moves": 0,
+      "board_coverage": 0.0,
+      "mines_correctly_flagged": 0,
+      "total_mines": 99,
+      "valid_move_rate": 0.0,
+      "duration": 0.194575,
+      "moves": []
+    },
+    {
+      "game_id": "c18e2efb-63aa-497f-965c-7bc7f5c8e419",
+      "won": false,
+      "final_status": "in_progress",
+      "num_moves": 0,
+      "board_coverage": 0.0,
+      "mines_correctly_flagged": 0,
+      "total_mines": 99,
+      "valid_move_rate": 0.0,
+      "duration": 0.192763,
+      "moves": []
+    },
+    {
+      "game_id": "5346245c-3a3b-43b8-8956-22544d969bde",
+      "won": false,
+      "final_status": "in_progress",
+      "num_moves": 0,
+      "board_coverage": 0.0,
+      "mines_correctly_flagged": 0,
+      "total_mines": 99,
+      "valid_move_rate": 0.0,
+      "duration": 0.175088,
+      "moves": []
+    },
+    {
+      "game_id": "e5791ad2-63c3-4d2f-8b79-b3d6d71b8322",
+      "won": false,
+      "final_status": "in_progress",
+      "num_moves": 0,
+      "board_coverage": 0.0,
+      "mines_correctly_flagged": 0,
+      "total_mines": 99,
+      "valid_move_rate": 0.0,
+      "duration": 0.171961,
+      "moves": []
+    }
+  ]
+}
