@@ -63,10 +63,10 @@ window.hideEvalModal = hideEvalModal;
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
     // Check if we're on the benchmark page (not the main app page)
-    // If app-rams.js is handling the modal, we should skip
+    // If app-rams.js is handling the modal, we should skip EVERYTHING
     if (typeof updateCompeteModelOptions !== 'undefined') {
-        console.log('[benchmark.js] Skipping initialization - app-rams.js is handling the modal');
-        return;
+        console.log('[benchmark.js] Skipping ALL initialization - app-rams.js is handling everything');
+        return;  // Exit completely - don't set up ANY handlers
     }
     // Initialize event stream UI - but create a simple version if EventStreamUI doesn't work
     try {
