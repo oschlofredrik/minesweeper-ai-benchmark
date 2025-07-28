@@ -62,6 +62,12 @@ window.hideEvalModal = hideEvalModal;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
+    // Check if we're on the benchmark page (not the main app page)
+    // If app-rams.js is handling the modal, we should skip
+    if (typeof updateCompeteModelOptions !== 'undefined') {
+        console.log('[benchmark.js] Skipping initialization - app-rams.js is handling the modal');
+        return;
+    }
     // Initialize event stream UI - but create a simple version if EventStreamUI doesn't work
     try {
         if (typeof EventStreamUI !== 'undefined') {
@@ -189,12 +195,9 @@ function hideEvalModal() {
 }
 
 async function updateModelOptions(provider) {
-    console.log(`[updateModelOptions] Called with provider: ${provider}`);
-    const modelSelect = document.getElementById('model-name');
-    if (!modelSelect) {
-        console.error('Model select element not found');
-        return;
-    }
+    // This function should not be called if app-rams.js is active
+    console.warn('[benchmark.js] updateModelOptions called but should not be used with app-rams.js');
+    return;
     console.log(`[updateModelOptions] Found model select, updating for provider: ${provider}`);
     modelSelect.innerHTML = '<option value="">Loading models...</option>';
     
