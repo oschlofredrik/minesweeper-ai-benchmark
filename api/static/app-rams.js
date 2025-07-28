@@ -130,17 +130,29 @@ function initializePlayForm() {
     const modelProvider = document.getElementById('model-provider');
     const gameSelect = document.getElementById('game-select');
     
+    console.log('[app-rams.js] Setting up event listeners');
+    console.log('[app-rams.js] modelProvider element:', modelProvider);
+    console.log('[app-rams.js] form element:', form);
+    
     // Update model options when provider changes
-    modelProvider.addEventListener('change', updateCompeteModelOptions);
+    if (modelProvider) {
+        modelProvider.addEventListener('change', (e) => {
+            console.log('[app-rams.js] Provider changed to:', e.target.value);
+            updateCompeteModelOptions();
+        });
+        
+        // Initialize model options on page load
+        console.log('[app-rams.js] Initializing models on page load');
+        updateCompeteModelOptions();
+    } else {
+        console.error('[app-rams.js] modelProvider element not found!');
+    }
     
     // Update difficulty options when game changes
     if (gameSelect) {
         gameSelect.addEventListener('change', updateDifficultyOptions);
         updateDifficultyOptions();
     }
-    
-    // Initialize model options on page load
-    updateCompeteModelOptions();
     
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -182,8 +194,18 @@ function initializePlayForm() {
 
 // Update model dropdown based on provider - fetch from SDK
 async function updateCompeteModelOptions() {
+    console.log('[updateCompeteModelOptions] Function called');
+    
     const provider = document.getElementById('model-provider').value;
     const modelSelect = document.getElementById('model-name');
+    
+    console.log(`[updateCompeteModelOptions] Provider: ${provider}`);
+    console.log(`[updateCompeteModelOptions] Model select element:`, modelSelect);
+    
+    if (!modelSelect) {
+        console.error('[updateCompeteModelOptions] Model select element not found!');
+        return;
+    }
     
     console.log(`[updateCompeteModelOptions] Fetching models for provider: ${provider}`);
     modelSelect.innerHTML = '<option value="">Loading models...</option>';
