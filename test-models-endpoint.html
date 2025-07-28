@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Models Endpoint</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        pre { background: #f5f5f5; padding: 10px; overflow: auto; }
+        .test { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background: #e8f5e9; }
+        .error { background: #ffebee; }
+    </style>
+</head>
+<body>
+    <h1>Test Models SDK Endpoint</h1>
+    
+    <div id="results"></div>
+    
+    <script>
+        async function testEndpoint(url, description) {
+            const resultsDiv = document.getElementById('results');
+            const testDiv = document.createElement('div');
+            testDiv.className = 'test';
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                testDiv.className += ' success';
+                testDiv.innerHTML = `
+                    <h3>${description}</h3>
+                    <p>Status: ${response.status}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                testDiv.className += ' error';
+                testDiv.innerHTML = `
+                    <h3>${description}</h3>
+                    <p>Error: ${error.message}</p>
+                `;
+            }
+            
+            resultsDiv.appendChild(testDiv);
+        }
+        
+        // Test endpoints
+        (async () => {
+            await testEndpoint('/api/models-sdk', 'Get All Providers');
+            await testEndpoint('/api/models-sdk/openai', 'Get OpenAI Models');
+            await testEndpoint('/api/models-sdk/anthropic', 'Get Anthropic Models');
+            
+            // Also test the old endpoint to compare
+            await testEndpoint('/api/models/openai', 'Old Endpoint (should fail)');
+        })();
+    </script>
+</body>
+</html>

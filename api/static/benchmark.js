@@ -198,14 +198,13 @@ async function updateModelOptions(provider) {
     console.log(`[updateModelOptions] Found model select, updating for provider: ${provider}`);
     modelSelect.innerHTML = '<option value="">Loading models...</option>';
     
-    // Always use the comprehensive model list for now
-    // TODO: Fix API endpoint and re-enable dynamic loading
-    updateModelOptionsFallback(provider);
-    return;
+    // Comment out the fallback to try the API first
+    // updateModelOptionsFallback(provider);
+    // return;
     
     try {
         console.log(`Fetching models for provider: ${provider}`);
-        const response = await fetch(`/api/models/${provider}`);
+        const response = await fetch(`/api/models-sdk/${provider}`);
         console.log(`Models API response status: ${response.status}`);
         
         if (response.ok) {
@@ -220,12 +219,9 @@ async function updateModelOptions(provider) {
                 option.value = modelId;
                 option.textContent = modelInfo.name;
                 
-                // Add indicator for special models
-                if (modelInfo.reasoning_model) {
-                    option.textContent += ' (Reasoning)';
-                }
-                if (!modelInfo.supports_functions) {
-                    option.textContent += ' *';
+                // Add indicator for models that don't support tools
+                if (!modelInfo.supportsTools) {
+                    option.textContent += ' (No Tools)';
                 }
                 
                 // Select GPT-4 or Claude 3 Opus by default
