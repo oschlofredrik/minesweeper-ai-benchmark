@@ -4,10 +4,6 @@
     {
       "src": "api/*.py",
       "use": "@vercel/python"
-    },
-    {
-      "src": "api/**/*.ts",
-      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -26,10 +22,6 @@
     {
       "src": "/api/evaluate-sdk(.*)",
       "dest": "/api/evaluate-sdk.py"
-    },
-    {
-      "src": "/api/evaluation/(.*)",
-      "dest": "/api/evaluation/[id]/route.ts"
     },
     {
       "src": "/api/auth(.*)",
@@ -67,10 +59,5 @@
       "src": "/(.*)",
       "dest": "/api/index.py"
     }
-  ],
-  "functions": {
-    "api/evaluation/[id]/route.ts": {
-      "maxDuration": 300
-    }
-  }
+  ]
 }
