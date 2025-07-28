@@ -71,9 +71,12 @@
             
             <div class="form-group">
                 <label class="checkbox-label">
-                    <input type="checkbox" id="use-sdk"> 
-                    Use Vercel AI SDK (Experimental)
+                    <input type="checkbox" id="use-sdk" checked> 
+                    Use Vercel AI SDK (Streaming & Multi-step)
                 </label>
+                <p class="text-sm text-muted" style="margin-top: 0.5rem;">
+                    Enables real-time streaming, better error handling, and up to 5-minute game sessions
+                </p>
             </div>
             
             <button type="submit" class="button button-primary">Start Evaluation</button>
@@ -171,12 +174,26 @@
                 });
                 
                 if (response.ok) {
-                    statusDiv.innerHTML = '<div class="alert alert-success">Evaluation started! Redirecting...</div>';
+                    const result = await response.json();
+                    
+                    if (formData.use_sdk) {
+                        statusDiv.innerHTML = `
+                            <div class="alert alert-success">
+                                <strong>SDK Evaluation Started!</strong><br>
+                                Evaluation ID: ${result.evaluation_id}<br>
+                                <small>Streaming enabled • ${formData.num_games} games queued</small>
+                            </div>
+                        `;
+                    } else {
+                        statusDiv.innerHTML = '<div class="alert alert-success">Evaluation started!</div>';
+                    }
+                    
                     setTimeout(() => {
                         window.location.href = '/';
-                    }, 2000);
+                    }, 3000);
                 } else {
-                    throw new Error(`Failed: ${response.status}`);
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `Failed: ${response.status}`);
                 }
                 
             } catch (error) {
