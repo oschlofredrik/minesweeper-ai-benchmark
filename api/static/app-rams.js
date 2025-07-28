@@ -24,6 +24,16 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeNavigation();
     initializePlayForm();
     
+    // Set up start evaluation button
+    const startEvalBtn = document.getElementById('start-eval-btn');
+    if (startEvalBtn) {
+        console.log('[app-rams.js] Setting up start-eval-btn handler');
+        startEvalBtn.addEventListener('click', () => {
+            console.log('[app-rams.js] Start evaluation button clicked');
+            showEvalModal();
+        });
+    }
+    
     // Load initial data
     loadOverviewStats();
     loadLeaderboard();

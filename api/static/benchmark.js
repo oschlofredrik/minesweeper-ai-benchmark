@@ -140,6 +140,17 @@ async function checkAvailableProviders() {
 }
 
 function showEvalModal() {
+    // If app-rams.js is handling the modal, just show it without interfering
+    if (typeof updateCompeteModelOptions !== 'undefined') {
+        console.log('[benchmark.js] showEvalModal: app-rams.js is active, just showing modal');
+        const modal = document.getElementById('eval-modal');
+        if (modal) {
+            modal.classList.add('active');
+            modal.style.display = 'flex';
+        }
+        return;
+    }
+    
     try {
         const modal = document.getElementById('eval-modal');
         if (!modal) {
