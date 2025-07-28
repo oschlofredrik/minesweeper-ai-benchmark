@@ -24,14 +24,11 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeNavigation();
     initializePlayForm();
     
-    // Set up start evaluation button - redirect to evaluate page
-    const startEvalBtn = document.getElementById('start-eval-btn');
-    if (startEvalBtn) {
-        console.log('[app-rams.js] Setting up start-eval-btn handler');
-        startEvalBtn.addEventListener('click', () => {
-            console.log('[app-rams.js] Start evaluation button clicked - redirecting to evaluate page');
-            window.location.href = '/static/evaluate.html';
-        });
+    // Set up evaluation form
+    const evaluationForm = document.getElementById('evaluation-form');
+    if (evaluationForm) {
+        console.log('[app-rams.js] Setting up evaluation form handler');
+        evaluationForm.addEventListener('submit', handleStartEvaluationSDK);
     }
     
     // Load initial data
@@ -140,6 +137,45 @@ function initializePlayForm() {
     // Most functionality moved to evaluate.html
 }
 
+
+// Update model dropdown based on provider
+function updateModelOptions() {
+    const provider = document.getElementById('model-provider').value;
+    const modelSelect = document.getElementById('model-name');
+    
+    if (!modelSelect) return;
+    
+    // Clear current options
+    modelSelect.innerHTML = '';
+    
+    // Add provider-specific models
+    if (provider === 'openai') {
+        const models = [
+            { value: 'gpt-4o-mini', text: 'GPT-4o Mini' },
+            { value: 'gpt-4o', text: 'GPT-4o' },
+            { value: 'gpt-4', text: 'GPT-4' },
+            { value: 'gpt-4-turbo', text: 'GPT-4 Turbo' },
+            { value: 'gpt-3.5-turbo', text: 'GPT-3.5 Turbo' },
+            { value: 'o1-preview', text: 'o1-preview' },
+            { value: 'o1-mini', text: 'o1-mini' }
+        ];
+        models.forEach(model => {
+            const option = new Option(model.text, model.value);
+            modelSelect.add(option);
+        });
+    } else if (provider === 'anthropic') {
+        const models = [
+            { value: 'claude-3-5-sonnet-20241022', text: 'Claude 3.5 Sonnet' },
+            { value: 'claude-3-opus-20240229', text: 'Claude 3 Opus' },
+            { value: 'claude-3-sonnet-20240229', text: 'Claude 3 Sonnet' },
+            { value: 'claude-3-haiku-20240307', text: 'Claude 3 Haiku' }
+        ];
+        models.forEach(model => {
+            const option = new Option(model.text, model.value);
+            modelSelect.add(option);
+        });
+    }
+}
 
 // Update model dropdown based on provider - fetch from SDK
 async function updateCompeteModelOptions() {

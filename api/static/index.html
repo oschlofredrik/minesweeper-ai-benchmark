@@ -189,15 +189,64 @@
         
         <!-- Benchmark Section (formerly Play) -->
         <section id="benchmark" class="section" style="display: none">
+          <!-- Evaluation Form -->
+          <div class="card mb-4" id="eval-form-container">
+            <h3>Configure AI Benchmark</h3>
+            <form id="evaluation-form" class="form-inline">
+              <div class="form-group">
+                <label>Game</label>
+                <select id="game-select" class="form-control">
+                  <option value="minesweeper">Minesweeper</option>
+                  <option value="risk">Risk</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Provider</label>
+                <select id="model-provider" class="form-control" onchange="updateModelOptions()">
+                  <option value="openai">OpenAI</option>
+                  <option value="anthropic">Anthropic</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Model</label>
+                <select id="model-name" class="form-control">
+                  <option value="gpt-4o-mini">GPT-4o Mini</option>
+                  <option value="gpt-4o">GPT-4o</option>
+                  <option value="gpt-4">GPT-4</option>
+                  <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Games</label>
+                <input type="number" id="num-games" value="10" min="1" max="100" class="form-control" style="width: 80px;">
+              </div>
+              
+              <div class="form-group">
+                <label>Difficulty</label>
+                <select id="difficulty-select" class="form-control">
+                  <option value="easy">Easy</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="hard">Hard</option>
+                </select>
+              </div>
+              
+              <button type="submit" class="button button-primary">Start Benchmark</button>
+            </form>
+          </div>
+          
           <div
             class="grid"
-            style="grid-template-columns: 1fr 380px; gap: calc(var(--unit) * 4)"
+            style="grid-template-columns: 1fr 380px; gap: calc(var(--unit) * 4); display: none;"
+            id="game-visualization"
           >
             <!-- Visual Tilts Display -->
             <div class="tilts-container">
               <div class="tilts-header">
                 <h3>AI Benchmark Visualization</h3>
-                <button id="start-eval-btn" class="button">Start Benchmark</button>
+                <button id="stop-eval-btn" class="button button-secondary" style="display: none;">Stop</button>
               </div>
               
               <!-- Game Stats -->
