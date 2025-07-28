@@ -221,8 +221,8 @@ async function updateCompeteModelOptions() {
     modelSelect.innerHTML = '<option value="">Loading models...</option>';
     
     try {
-        // Fetch models from SDK endpoint
-        const response = await fetch(`/api/models-sdk/${provider}`);
+        // Fetch models from models endpoint
+        const response = await fetch(`/api/models/${provider}`);
         console.log(`[updateCompeteModelOptions] Response status: ${response.status}`);
         
         if (!response.ok) {
@@ -232,11 +232,13 @@ async function updateCompeteModelOptions() {
         const data = await response.json();
         console.log(`[updateCompeteModelOptions] Models received:`, data);
         
-        // Build options HTML
-        const optionsHtml = Object.entries(data.models)
+        // Build options HTML - the API returns { models: { modelId: modelInfo } }
+        const models = data.models || {};
+        const optionsHtml = Object.entries(models)
             .map(([modelId, modelInfo]) => {
                 let displayName = modelInfo.name;
-                if (!modelInfo.supportsTools) {
+                // Check both supportsTools and supports_functions for compatibility
+                if (!modelInfo.supportsTools && !modelInfo.supports_functions) {
                     displayName += ' (No Tools)';
                 }
                 // Mark default selection

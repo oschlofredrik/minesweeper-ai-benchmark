@@ -209,8 +209,6 @@ async function updateModelOptions(provider) {
     // This function should not be called if app-rams.js is active
     console.warn('[benchmark.js] updateModelOptions called but should not be used with app-rams.js');
     return;
-    console.log(`[updateModelOptions] Found model select, updating for provider: ${provider}`);
-    modelSelect.innerHTML = '<option value="">Loading models...</option>';
     
     // Comment out the fallback to try the API first
     // updateModelOptionsFallback(provider);

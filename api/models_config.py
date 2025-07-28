@@ -11,21 +11,23 @@ except ImportError:
     MODEL_CONFIGS = {
         "openai": {
             "models": {
-                "gpt-4-turbo-preview": {"name": "GPT-4 Turbo", "supports_functions": True},
-                "gpt-4": {"name": "GPT-4", "supports_functions": True},
-                "gpt-3.5-turbo": {"name": "GPT-3.5 Turbo", "supports_functions": True},
-                "gpt-4o": {"name": "GPT-4o", "supports_functions": True},
-                "gpt-4o-mini": {"name": "GPT-4o Mini", "supports_functions": True},
-                "o1-preview": {"name": "o1 Preview", "supports_functions": False, "reasoning_model": True},
-                "o1-mini": {"name": "o1 Mini", "supports_functions": False, "reasoning_model": True}
+                "gpt-4-turbo-preview": {"name": "GPT-4 Turbo Preview", "supports_functions": True, "supportsTools": True},
+                "gpt-4": {"name": "GPT-4", "supports_functions": True, "supportsTools": True},
+                "gpt-4o": {"name": "GPT-4o", "supports_functions": True, "supportsTools": True},
+                "gpt-4o-mini": {"name": "GPT-4o Mini", "supports_functions": True, "supportsTools": True},
+                "gpt-3.5-turbo": {"name": "GPT-3.5 Turbo", "supports_functions": True, "supportsTools": True},
+                "o1-preview": {"name": "o1 Preview (Reasoning)", "supports_functions": False, "reasoning_model": True, "supportsTools": False},
+                "o1-mini": {"name": "o1 Mini (Reasoning)", "supports_functions": False, "reasoning_model": True, "supportsTools": False},
+                "o3-mini": {"name": "o3 Mini", "supports_functions": True, "supportsTools": True}
             }
         },
         "anthropic": {
             "models": {
-                "claude-3-opus-20240229": {"name": "Claude 3 Opus", "supports_functions": True},
-                "claude-3-sonnet-20240229": {"name": "Claude 3 Sonnet", "supports_functions": True},
-                "claude-3-haiku-20240307": {"name": "Claude 3 Haiku", "supports_functions": True},
-                "claude-3-5-sonnet-20241022": {"name": "Claude 3.5 Sonnet", "supports_functions": True}
+                "claude-3-5-sonnet-20241022": {"name": "Claude 3.5 Sonnet", "supports_functions": True, "supportsTools": True},
+                "claude-3-opus-20240229": {"name": "Claude 3 Opus", "supports_functions": True, "supportsTools": True},
+                "claude-3-sonnet-20240229": {"name": "Claude 3 Sonnet", "supports_functions": True, "supportsTools": True},
+                "claude-3-haiku-20240307": {"name": "Claude 3 Haiku", "supports_functions": True, "supportsTools": True},
+                "claude-4-sonnet-20250514": {"name": "Claude 4 Sonnet", "supports_functions": True, "supportsTools": True}
             }
         }
     }
