@@ -24,13 +24,13 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeNavigation();
     initializePlayForm();
     
-    // Set up start evaluation button
+    // Set up start evaluation button - redirect to evaluate page
     const startEvalBtn = document.getElementById('start-eval-btn');
     if (startEvalBtn) {
         console.log('[app-rams.js] Setting up start-eval-btn handler');
         startEvalBtn.addEventListener('click', () => {
-            console.log('[app-rams.js] Start evaluation button clicked');
-            showEvalModal();
+            console.log('[app-rams.js] Start evaluation button clicked - redirecting to evaluate page');
+            window.location.href = '/static/evaluate.html';
         });
     }
     
@@ -134,100 +134,12 @@ function showSection(sectionId) {
     }
 }
 
-// Play Form
+// Play Form (now mostly unused - evaluation moved to separate page)
 function initializePlayForm() {
-    console.log('[initializePlayForm] Function called');
-    
-    const form = document.getElementById('play-form');
-    const modelProvider = document.getElementById('model-provider');
-    const gameSelect = document.getElementById('game-select');
-    
-    console.log('[app-rams.js] Setting up event listeners');
-    console.log('[app-rams.js] modelProvider element:', modelProvider);
-    console.log('[app-rams.js] form element:', form);
-    
-    // Update model options when provider changes
-    if (modelProvider) {
-        modelProvider.addEventListener('change', (e) => {
-            console.log('[app-rams.js] Provider changed to:', e.target.value);
-            updateCompeteModelOptions();
-        });
-        
-        // Initialize model options on page load
-        console.log('[app-rams.js] Initializing models on page load');
-        updateCompeteModelOptions();
-    } else {
-        console.error('[app-rams.js] modelProvider element not found!');
-    }
-    
-    // Update difficulty options when game changes
-    if (gameSelect) {
-        gameSelect.addEventListener('change', updateDifficultyOptions);
-        updateDifficultyOptions();
-    }
-    
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        await startEvaluation();
-    });
-    
-    // Modal handling
-    const evalModal = document.getElementById('eval-modal');
-    const modalClose = document.querySelector('.modal-close');
-    
-    // Close modal on successful submission
-    window.closeEvalModal = function() {
-        if (evalModal) evalModal.classList.remove('active');
-    };
-    
-    // Close modal when clicking the X button
-    if (modalClose) {
-        modalClose.addEventListener('click', () => {
-            if (evalModal) evalModal.classList.remove('active');
-        });
-    }
-    
-    // Close modal when clicking outside
-    if (evalModal) {
-        evalModal.addEventListener('click', (e) => {
-            if (e.target === evalModal) {
-                evalModal.classList.remove('active');
-            }
-        });
-    }
-    
-    // Close modal on ESC key
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && evalModal && evalModal.classList.contains('active')) {
-            evalModal.classList.remove('active');
-        }
-    });
+    console.log('[initializePlayForm] Function called - minimal setup only');
+    // Most functionality moved to evaluate.html
 }
 
-// Modal functions
-function showEvalModal() {
-    console.log('[app-rams.js] showEvalModal called');
-    const modal = document.getElementById('eval-modal');
-    if (modal) {
-        modal.classList.add('active');
-        modal.style.display = 'flex';
-        
-        // Initialize models when modal opens
-        updateCompeteModelOptions();
-    }
-}
-
-function hideEvalModal() {
-    const modal = document.getElementById('eval-modal');
-    if (modal) {
-        modal.classList.remove('active');
-        modal.style.display = 'none';
-    }
-}
-
-// Make functions globally available for other scripts
-window.showEvalModal = showEvalModal;
-window.hideEvalModal = hideEvalModal;
 
 // Update model dropdown based on provider - fetch from SDK
 async function updateCompeteModelOptions() {
@@ -296,54 +208,6 @@ async function updateCompeteModelOptions() {
     }
 }
 
-// Start evaluation
-async function startEvaluation() {
-    const statusDiv = document.getElementById('play-status');
-    const submitButton = document.querySelector('#play-form button[type="submit"]');
-    
-    submitButton.disabled = true;
-    statusDiv.innerHTML = '<div class="text-muted">Starting evaluation...</div>';
-    
-    const gameSelect = document.getElementById('game-select');
-    const data = {
-        game: gameSelect ? gameSelect.value : 'minesweeper',
-        model_provider: document.getElementById('model-provider').value,
-        model_name: document.getElementById('model-name').value,
-        num_games: parseInt(document.getElementById('num-games').value),
-        difficulty: document.getElementById('difficulty').value || null
-    };
-    
-    try {
-        const response = await fetch(`${API_BASE}/api/play`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        
-        const result = await response.json();
-        
-        if (response.ok) {
-            statusDiv.innerHTML = `<div class="status status-active">Evaluation started</div>`;
-            activeGames.set(result.job_id, result);
-            selectedGameId = result.job_id;
-            updateGamesList();
-            
-            // Close modal after successful start
-            window.closeEvalModal();
-            
-            // Connect event stream
-            if (eventStreamUI) {
-                eventStreamUI.connect(result.job_id);
-            }
-        } else {
-            statusDiv.innerHTML = `<div class="status status-error">Error: ${result.detail}</div>`;
-        }
-    } catch (error) {
-        statusDiv.innerHTML = `<div class="status status-error">Error: ${error.message}</div>`;
-    } finally {
-        submitButton.disabled = false;
-    }
-}
 
 // Load overview statistics
 async function loadOverviewStats() {

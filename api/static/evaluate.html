@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Evaluation - Tilts</title>
+    <link rel="stylesheet" href="/static/style-rams.css">
+    <style>
+        .evaluate-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+        .form-section {
+            margin-bottom: 2rem;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 2rem;
+            color: var(--color-text-secondary);
+            text-decoration: none;
+        }
+        .back-link:hover {
+            color: var(--color-text);
+        }
+    </style>
+</head>
+<body>
+    <div class="evaluate-container">
+        <a href="/" class="back-link">← Back to Dashboard</a>
+        
+        <h1>New AI Evaluation</h1>
+        
+        <form id="evaluation-form" class="form-section">
+            <div class="form-group">
+                <label class="label" for="game-type">Game</label>
+                <select class="select" id="game-type" required>
+                    <option value="minesweeper">Minesweeper</option>
+                    <option value="risk">Risk</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="label" for="provider">Model Provider</label>
+                <select class="select" id="provider" required>
+                    <option value="openai">OpenAI</option>
+                    <option value="anthropic">Anthropic</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="label" for="model">Model</label>
+                <select class="select" id="model" required>
+                    <option value="">Loading...</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="label" for="num-games">Number of Games</label>
+                <input type="number" class="input" id="num-games" min="1" max="100" value="10" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="label" for="difficulty">Difficulty</label>
+                <select class="select" id="difficulty" required>
+                    <option value="easy">Easy (9×9, 10 mines)</option>
+                    <option value="medium" selected>Medium (16×16, 40 mines)</option>
+                    <option value="hard">Hard (16×30, 99 mines)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="use-sdk"> 
+                    Use Vercel AI SDK (Experimental)
+                </label>
+            </div>
+            
+            <button type="submit" class="button button-primary">Start Evaluation</button>
+        </form>
+        
+        <div id="status" style="margin-top: 2rem;"></div>
+    </div>
+    
+    <script>
+        // Load models when page loads or provider changes
+        async function loadModels() {
+            const provider = document.getElementById('provider').value;
+            const modelSelect = document.getElementById('model');
+            
+            console.log(`Loading models for ${provider}...`);
+            modelSelect.innerHTML = '<option value="">Loading...</option>';
+            
+            try {
+                const response = await fetch(`/api/models/${provider}`);
+                const data = await response.json();
+                
+                modelSelect.innerHTML = '';
+                const models = data.models || {};
+                
+                Object.entries(models).forEach(([modelId, modelInfo]) => {
+                    const option = document.createElement('option');
+                    option.value = modelId;
+                    option.textContent = modelInfo.name;
+                    if (!modelInfo.supports_functions) {
+                        option.textContent += ' (No Tools)';
+                    }
+                    modelSelect.appendChild(option);
+                });
+                
+                // Select GPT-4 or Claude Opus by default
+                if (provider === 'openai' && models['gpt-4']) {
+                    modelSelect.value = 'gpt-4';
+                } else if (provider === 'anthropic' && models['claude-3-opus-20240229']) {
+                    modelSelect.value = 'claude-3-opus-20240229';
+                }
+                
+            } catch (error) {
+                console.error('Error loading models:', error);
+                modelSelect.innerHTML = '<option value="">Error loading models</option>';
+            }
+        }
+        
+        // Update difficulty options based on game
+        function updateDifficulty() {
+            const game = document.getElementById('game-type').value;
+            const difficultySelect = document.getElementById('difficulty');
+            
+            if (game === 'risk') {
+                difficultySelect.innerHTML = `
+                    <option value="north_america_conquest">North America Conquest</option>
+                    <option value="defend_australia">Defend Australia</option>
+                    <option value="europe_vs_asia">Europe vs Asia</option>
+                    <option value="blitzkrieg">Blitzkrieg</option>
+                    <option value="last_stand">Last Stand</option>
+                `;
+            } else {
+                difficultySelect.innerHTML = `
+                    <option value="easy">Easy (9×9, 10 mines)</option>
+                    <option value="medium" selected>Medium (16×16, 40 mines)</option>
+                    <option value="hard">Hard (16×30, 99 mines)</option>
+                `;
+            }
+        }
+        
+        // Form submission
+        async function handleSubmit(e) {
+            e.preventDefault();
+            
+            const statusDiv = document.getElementById('status');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            
+            const formData = {
+                game: document.getElementById('game-type').value,
+                provider: document.getElementById('provider').value,
+                model: document.getElementById('model').value,
+                num_games: parseInt(document.getElementById('num-games').value),
+                difficulty: document.getElementById('difficulty').value,
+                use_sdk: document.getElementById('use-sdk').checked
+            };
+            
+            submitBtn.disabled = true;
+            statusDiv.innerHTML = '<div class="alert alert-info">Starting evaluation...</div>';
+            
+            try {
+                const endpoint = formData.use_sdk ? '/api/evaluate-sdk' : '/api/benchmark/run';
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                if (response.ok) {
+                    statusDiv.innerHTML = '<div class="alert alert-success">Evaluation started! Redirecting...</div>';
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                } else {
+                    throw new Error(`Failed: ${response.status}`);
+                }
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="alert alert-error">Error: ${error.message}</div>`;
+                submitBtn.disabled = false;
+            }
+        }
+        
+        // Event listeners
+        document.getElementById('provider').addEventListener('change', loadModels);
+        document.getElementById('game-type').addEventListener('change', updateDifficulty);
+        document.getElementById('evaluation-form').addEventListener('submit', handleSubmit);
+        
+        // Initialize
+        loadModels();
+    </script>
+</body>
+</html>
