@@ -242,15 +242,16 @@ async function updateModelOptions(provider) {
                 if (warning) warning.style.display = 'none';
             }
         } else {
-            // Fallback to static options
-            console.warn(`Models API failed with status ${response.status}, using fallback`);
-            // Use the comprehensive fallback
-            updateModelOptionsFallback(provider);
+            console.error(`Models API failed with status ${response.status}`);
+            const errorText = await response.text();
+            console.error('Error response:', errorText);
+            modelSelect.innerHTML = '<option value="">Error loading models</option>';
+            alert(`Failed to load models: ${response.status} - Check console for details`);
         }
     } catch (error) {
         console.error('Failed to load models:', error);
-        // Use fallback options
-        updateModelOptionsFallback(provider);
+        modelSelect.innerHTML = '<option value="">Error loading models</option>';
+        alert(`Failed to load models: ${error.message}`);
     }
 }
 
@@ -264,35 +265,7 @@ function createApiKeyWarning() {
     return warning;
 }
 
-function updateModelOptionsFallback(provider) {
-    const modelSelect = document.getElementById('model-name');
-    if (!modelSelect) return;
-    
-    console.log(`[updateModelOptionsFallback] Provider: ${provider}`);
-    
-    if (provider === 'openai') {
-        modelSelect.innerHTML = `
-            <option value="gpt-4-turbo-preview">GPT-4 Turbo</option>
-            <option value="gpt-4">GPT-4</option>
-            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-            <option value="gpt-4o">GPT-4o</option>
-            <option value="gpt-4o-mini">GPT-4o Mini</option>
-            <option value="o1-preview">o1 Preview (Reasoning)</option>
-            <option value="o1-mini">o1 Mini (Reasoning)</option>
-        `;
-        console.log('[updateModelOptionsFallback] Set OpenAI models');
-    } else if (provider === 'anthropic') {
-        modelSelect.innerHTML = `
-            <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
-            <option value="claude-3-opus-20240229">Claude 3 Opus</option>
-            <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
-            <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
-        `;
-        console.log('[updateModelOptionsFallback] Set Anthropic models');
-    } else {
-        console.warn(`[updateModelOptionsFallback] Unknown provider: ${provider}`);
-    }
-}
+// REMOVED: updateModelOptionsFallback function - we should only use SDK models
 
 async function handleStartEvaluation(e) {
     e.preventDefault();

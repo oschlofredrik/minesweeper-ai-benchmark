@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test SDK Models API</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .test { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        pre { background: #f5f5f5; padding: 10px; overflow: auto; }
+        button { padding: 10px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Test SDK Models API</h1>
+    
+    <button onclick="testEndpoint('/api/models-sdk/openai')">Test OpenAI Models</button>
+    <button onclick="testEndpoint('/api/models-sdk/anthropic')">Test Anthropic Models</button>
+    <button onclick="testEndpoint('/api/models-sdk')">Test All Providers</button>
+    
+    <div id="results"></div>
+    
+    <h2>Test Model Dropdown</h2>
+    <select id="provider" onchange="updateModels()">
+        <option value="openai">OpenAI</option>
+        <option value="anthropic">Anthropic</option>
+    </select>
+    <select id="models">
+        <option>Loading...</option>
+    </select>
+    
+    <script>
+        async function testEndpoint(url) {
+            const resultsDiv = document.getElementById('results');
+            const testDiv = document.createElement('div');
+            testDiv.className = 'test';
+            
+            try {
+                console.log(`Fetching: ${url}`);
+                const response = await fetch(url);
+                console.log(`Response status: ${response.status}`);
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                testDiv.innerHTML = `
+                    <h3>${url}</h3>
+                    <p>Status: ${response.status}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                console.error('Error:', error);
+                testDiv.innerHTML = `
+                    <h3>${url}</h3>
+                    <p style="color: red;">Error: ${error.message}</p>
+                `;
+            }
+            
+            resultsDiv.appendChild(testDiv);
+        }
+        
+        async function updateModels() {
+            const provider = document.getElementById('provider').value;
+            const modelsSelect = document.getElementById('models');
+            
+            modelsSelect.innerHTML = '<option>Loading...</option>';
+            
+            try {
+                const response = await fetch(`/api/models-sdk/${provider}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                modelsSelect.innerHTML = '';
+                
+                Object.entries(data.models).forEach(([modelId, modelInfo]) => {
+                    const option = document.createElement('option');
+                    option.value = modelId;
+                    option.textContent = modelInfo.name;
+                    if (!modelInfo.supportsTools) {
+                        option.textContent += ' (No Tools)';
+                    }
+                    modelsSelect.appendChild(option);
+                });
+                
+            } catch (error) {
+                modelsSelect.innerHTML = `<option>Error: ${error.message}</option>`;
+            }
+        }
+        
+        // Test on load
+        updateModels();
+    </script>
+</body>
+</html>
