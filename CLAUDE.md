@@ -456,3 +456,76 @@ git push origin main
 - `apply-migrations.sh` - Apply database schema
 
 The platform now runs fully serverless with persistent storage, maintaining all original features while adding scalability and reducing operational overhead.
+
+## Sub-Agent Architecture (July 2025)
+
+### Available Sub-Agents
+
+The project includes specialized sub-agents for complex tasks. Proactively use these when appropriate:
+
+1. **benchmark-analyzer**
+   - **Purpose**: Analyze game results, calculate statistics, identify patterns
+   - **When to use**: 
+     - User asks about model performance comparisons
+     - Needs statistical analysis of benchmark results
+     - Wants to understand why certain models fail
+     - Requests leaderboard insights or trends
+   - **Example triggers**: "analyze performance", "compare models", "why is GPT-4 losing", "statistical significance"
+
+2. **game-implementer**
+   - **Purpose**: Implement new games following platform architecture
+   - **When to use**:
+     - User wants to add a new game (Chess, Sudoku, etc.)
+     - Needs to modify existing game logic
+     - Asks about game plugin architecture
+     - Wants to create game variants
+   - **Example triggers**: "add new game", "implement chess", "create game variant", "modify game rules"
+
+3. **performance-optimizer**
+   - **Purpose**: Optimize platform performance, reduce latency, improve efficiency
+   - **When to use**:
+     - User reports slow loading times
+     - Needs to optimize database queries
+     - Wants to reduce bundle sizes
+     - Asks about performance metrics
+   - **Example triggers**: "slow loading", "optimize performance", "reduce latency", "improve speed"
+
+### Sub-Agent Usage Guidelines
+
+**IMPORTANT**: Proactively suggest using sub-agents when tasks match their expertise. Don't wait for explicit requests.
+
+Examples of proactive usage:
+- User: "The leaderboard shows GPT-4 with lower scores than expected"
+  → Immediately suggest: "I'll use the benchmark-analyzer sub-agent to investigate this issue"
+
+- User: "I want to add Chess to the platform"
+  → Immediately suggest: "I'll use the game-implementer sub-agent to help implement Chess"
+
+- User: "The benchmark page takes forever to load"
+  → Immediately suggest: "I'll use the performance-optimizer sub-agent to diagnose and fix this"
+
+### How to Invoke Sub-Agents
+
+Use the Task tool with the appropriate subagent_type:
+```
+Task(
+    description="Analyze model performance",
+    prompt="Use the benchmark-analyzer sub-agent to analyze why Claude-3-Opus outperforms GPT-4 in Minesweeper",
+    subagent_type="general-purpose"
+)
+```
+
+### Sub-Agent Best Practices
+
+1. **Delegate Complex Analysis**: Don't try to analyze 100+ games manually - use benchmark-analyzer
+2. **Maintain Architecture**: Always use game-implementer for new games to ensure consistency
+3. **Profile Before Optimizing**: Use performance-optimizer to measure before making changes
+4. **Preserve Context**: Sub-agents work in separate contexts, keeping main conversation clean
+
+### Creating New Sub-Agents
+
+If a task requires specialized expertise not covered by existing sub-agents, create a new one:
+1. Identify the specific domain and responsibilities
+2. Create `.claude/agents/[name].md` with clear system prompt
+3. Define which tools the sub-agent needs
+4. Update this documentation
