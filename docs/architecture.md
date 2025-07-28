@@ -9,7 +9,7 @@ Tilts is built as a serverless application on Vercel with Supabase for data pers
 - **Location**: `/api/static/`
 - **Technology**: Vanilla JavaScript with Dieter Rams-inspired design
 - **Key Files**:
-  - `index-rams.html` - Main application
+  - `index.html` - Main application
   - `app-rams.js` - Core application logic
   - `evaluate.html` - Standalone evaluation page
 

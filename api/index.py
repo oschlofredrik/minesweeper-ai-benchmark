@@ -8,38 +8,17 @@ class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = self.path.split('?')[0]
         
-        # Serve overview page for root
+        # Serve main page for root
         if path == '/' or path == '/index.html':
-            self.serve_page('overview.html')
+            self.serve_static_file('index.html')
             
-        # Serve other pages
-        elif path == '/leaderboard':
-            self.serve_page('leaderboard.html')
-        elif path == '/compete':
-            self.serve_page('compete.html')
-        elif path == '/compete-wizard':
-            self.serve_page('compete-wizard.html')
-        elif path == '/benchmark':
-            self.serve_page('benchmark.html')
-        elif path == '/host':
-            self.serve_page('host.html')
-        elif path == '/admin':
-            self.serve_page('admin.html')
-        elif path == '/summary':
-            self.serve_page('summary.html')
-        elif path == '/replay':
-            self.serve_page('replay.html')
-        elif path == '/test-game':
-            self.serve_page('test-game.html')
-        elif path == '/test-ai':
-            self.serve_page('test-ai.html')
-        elif path == '/sessions':
-            # Redirect to compete page which shows active sessions
+        # Handle other routes (these pages don't exist anymore, redirect to main)
+        elif path in ['/leaderboard', '/compete', '/benchmark', '/admin']:
             self.send_response(302)
-            self.send_header('Location', '/compete')
+            self.send_header('Location', '/')
             self.end_headers()
-        elif path == '/prompts':
-            # Prompts page doesn't exist yet, redirect to overview
+        elif path in ['/sessions', '/prompts']:
+            # Redirect to main page
             self.send_response(302)
             self.send_header('Location', '/')
             self.end_headers()
