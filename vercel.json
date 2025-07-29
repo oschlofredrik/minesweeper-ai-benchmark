@@ -1,67 +1,65 @@
 {
-  "version": 2,
-  "builds": [
+  "functions": {
+    "packages/api/index.py": {
+      "maxDuration": 30
+    },
+    "packages/api/leaderboard_optimized.py": {
+      "maxDuration": 10
+    },
+    "packages/api/play_optimized.py": {
+      "maxDuration": 60
+    },
+    "packages/api/game_runner.py": {
+      "maxDuration": 300
+    },
+    "packages/api/evaluate-sdk.py": {
+      "maxDuration": 300
+    }
+  },
+  "rewrites": [
     {
-      "src": "api/*.py",
-      "use": "@vercel/python"
+      "source": "/api/leaderboard",
+      "destination": "/packages/api/leaderboard_optimized.py"
     },
     {
-      "src": "api/static/**",
-      "use": "@vercel/static"
+      "source": "/api/leaderboard/(.*)",
+      "destination": "/packages/api/leaderboard_optimized.py"
+    },
+    {
+      "source": "/api/play",
+      "destination": "/packages/api/play_optimized.py"
+    },
+    {
+      "source": "/api/play/(.*)",
+      "destination": "/packages/api/play_optimized.py"
+    },
+    {
+      "source": "/api/benchmark/(.*)",
+      "destination": "/packages/api/play_optimized.py"
+    },
+    {
+      "source": "/api/games/(.*)",
+      "destination": "/packages/api/game_runner.py"
+    },
+    {
+      "source": "/api/evaluate",
+      "destination": "/packages/api/evaluate-sdk.py"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/packages/api/index.py"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/packages/api/index.py"
     }
   ],
-  "routes": [
-    {
-      "src": "/api/sessions(.*)",
-      "dest": "/api/sessions.py"
-    },
-    {
-      "src": "/api/play(.*)",
-      "dest": "/api/play.py"
-    },
-    {
-      "src": "/api/benchmark(.*)",
-      "dest": "/api/play.py"
-    },
-    {
-      "src": "/api/evaluate-sdk(.*)",
-      "dest": "/api/evaluate-sdk.py"
-    },
-    {
-      "src": "/api/auth(.*)",
-      "dest": "/api/auth.py"
-    },
-    {
-      "src": "/api/leaderboard(.*)",
-      "dest": "/api/leaderboard.py"
-    },
-    {
-      "src": "/api/run_game(.*)",
-      "dest": "/api/run_game.py"
-    },
-    {
-      "src": "/api/games(.*)",
-      "dest": "/api/games_config.py"
-    },
-    {
-      "src": "/api/game_runner(.*)",
-      "dest": "/api/game_runner.py"
-    },
-    {
-      "src": "/api/models(.*)",
-      "dest": "/api/models_config.py"
-    },
-    {
-      "src": "/api/stats",
-      "dest": "/api/index.py"
-    },
-    {
-      "src": "/static/(.*)",
-      "dest": "/api/static/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/api/index.py"
-    }
-  ]
+  "env": {
+    "DB_POOL_SIZE": "5",
+    "DB_TIMEOUT": "30",
+    "CACHE_TTL": "300",
+    "LEADERBOARD_CACHE_TTL": "60",
+    "LEADERBOARD_BATCH_SIZE": "10",
+    "LEADERBOARD_UPDATE_INTERVAL": "30"
+  }
 }

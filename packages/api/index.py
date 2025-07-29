@@ -108,7 +108,7 @@ class handler(BaseHTTPRequestHandler):
     
     def serve_file(self, filename, content_type):
         """Serve static files."""
-        static_path = Path(__file__).parent / 'static' / filename
+        static_path = Path(__file__).parent.parent / 'web' / filename
         
         if static_path.exists():
             self.send_response(200)

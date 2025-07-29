@@ -148,3 +148,10 @@ node_modules/
 dist/
 logs/
 .vercel
+
+# Monorepo specific
+**/node_modules/
+**/dist/
+**/.env
+*.tsbuildinfo
+packages/*/tsconfig.tsbuildinfo

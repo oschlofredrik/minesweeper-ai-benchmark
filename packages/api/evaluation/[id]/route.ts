@@ -1,4 +1,4 @@
-import { runGameEvaluation, GameConfig } from '../../ai/evaluation';
+import { runGameEvaluation, GameConfig } from '../../ai/evaluation.js';
 import { createClient } from '@supabase/supabase-js';
 
 // Enable Fluid Compute for long-running evaluations
@@ -51,11 +51,11 @@ export async function POST(
         // Update progress
         await updateEvaluationProgress(evaluationId, completedGames, games.length);
         
-      } catch (error) {
+      } catch (error: any) {
         results.push({
           gameId: game.id,
           success: false,
-          error: error.message
+          error: error.message || 'Unknown error'
         });
       }
     }
@@ -70,7 +70,7 @@ export async function POST(
       results
     });
     
-  } catch (error) {
+  } catch (error: any) {
     await updateEvaluationStatus(evaluationId, 'failed', { error: error.message });
     
     return Response.json(
