@@ -26,9 +26,11 @@ except ImportError:
 # Import game runner
 try:
     from game_runner import SimpleMinesweeper, run_ai_turn
+    from ai_models_http import call_ai_model, format_game_messages, extract_function_call
 except ImportError:
     SimpleMinesweeper = None
     run_ai_turn = None
+    call_ai_model = None
 
 # Batch processing configuration
 BATCH_SIZE = int(os.environ.get('LEADERBOARD_BATCH_SIZE', '10'))
@@ -182,14 +184,130 @@ class handler(BaseHTTPRequestHandler):
             self.send_error(404)
     
     def queue_games_for_processing(self, games: List[Dict], config: Dict):
-        """Queue games for processing (simplified for demo)."""
-        # In production, this would add to a proper job queue
-        # For now, just mark first game as in_progress
-        if games and USE_OPTIMIZED:
-            update_game(games[0]['game_id'], {
-                'status': 'in_progress',
-                'started_at': datetime.utcnow().isoformat()
-            })
+        """Queue games for processing - actually run them."""
+        if not games:
+            return
+            
+        # For Vercel, we need to run games synchronously within the request
+        # In production, this would be handled by a background worker
+        for game_info in games[:1]:  # Run first game only to avoid timeout
+            game_id = game_info['game_id']
+            
+            try:
+                # Mark as in_progress
+                if USE_OPTIMIZED:
+                    update_game(game_id, {
+                        'status': 'in_progress',
+                        'started_at': datetime.utcnow().isoformat()
+                    })
+                
+                # Actually run the game
+                print(f"[PLAY] Running game {game_id}")
+                result = self.run_single_game(game_id, config)
+                
+                # Handle completion
+                self.handle_game_completion(game_id, result)
+                
+            except Exception as e:
+                print(f"[PLAY] Error running game {game_id}: {e}")
+                if USE_OPTIMIZED:
+                    update_game(game_id, {
+                        'status': 'error',
+                        'error': str(e)
+                    })
+    
+    def run_single_game(self, game_id: str, config: Dict) -> Dict[str, Any]:
+        """Run a single game with AI."""
+        print(f"[GAME] Starting game {game_id}")
+        
+        game_type = config.get('game', 'minesweeper')
+        model_name = config.get('model', 'gpt-4')
+        provider = config.get('provider', 'openai')
+        difficulty = config.get('difficulty', 'medium')
+        
+        if not SimpleMinesweeper or not call_ai_model:
+            raise ImportError("Game runner or AI models not available")
+        
+        # Initialize game
+        if game_type == 'minesweeper':
+            difficulty_configs = {
+                'easy': {'rows': 9, 'cols': 9, 'mines': 10},
+                'medium': {'rows': 16, 'cols': 16, 'mines': 40},
+                'hard': {'rows': 16, 'cols': 30, 'mines': 99}
+            }
+            cfg = difficulty_configs.get(difficulty, difficulty_configs['medium'])
+            game = SimpleMinesweeper(rows=cfg['rows'], cols=cfg['cols'], mines=cfg['mines'])
+        else:
+            raise ValueError(f"Unsupported game type: {game_type}")
+        
+        # Run game
+        moves = []
+        max_moves = 50
+        start_time = datetime.utcnow()
+        
+        for move_num in range(max_moves):
+            # Get game state
+            board_state = game.get_board_state()
+            prompt = f"Current Minesweeper board:\n{board_state}\n\nMake your next move (reveal row col or flag row col):"
+            
+            # Call AI
+            messages = format_game_messages(game_type, prompt)
+            
+            try:
+                response = call_ai_model(
+                    provider=provider,
+                    model=model_name,
+                    messages=messages,
+                    temperature=0.7
+                )
+                
+                # Extract move
+                ai_move = extract_function_call(response)
+                if not ai_move:
+                    print(f"[GAME] Could not extract move from AI response")
+                    break
+                
+                # Execute move
+                action = ai_move.get('action', 'reveal')
+                row = ai_move.get('row', 0)
+                col = ai_move.get('col', 0)
+                
+                if action == 'reveal':
+                    valid, message = game.reveal(row, col)
+                elif action == 'flag':
+                    valid, message = game.flag(row, col)
+                else:
+                    valid, message = False, "Invalid action"
+                
+                moves.append({
+                    'move_number': move_num + 1,
+                    'action': ai_move,
+                    'valid': valid,
+                    'message': message
+                })
+                
+                if game.game_over:
+                    break
+                    
+            except Exception as e:
+                print(f"[GAME] Error during move {move_num + 1}: {e}")
+                break
+        
+        # Calculate results
+        duration = (datetime.utcnow() - start_time).total_seconds()
+        valid_moves = sum(1 for m in moves if m['valid'])
+        
+        return {
+            'game_id': game_id,
+            'model_name': model_name,
+            'won': game.won if hasattr(game, 'won') else False,
+            'total_moves': len(moves),
+            'valid_moves': valid_moves,
+            'mines_identified': sum(1 for r in range(game.rows) for c in range(game.cols) if game.flags[r][c] and (r, c) in game.mines),
+            'mines_total': game.num_mines,
+            'duration': duration,
+            'moves': moves
+        }
     
     def queue_leaderboard_update(self, game_result: Dict[str, Any]):
         """Queue a game result for batch leaderboard update."""
