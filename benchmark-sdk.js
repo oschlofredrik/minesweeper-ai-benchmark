@@ -104,8 +104,8 @@ async function handleStartEvaluationSDK(e) {
         // Create job ID for tracking
         currentJobId = `eval_${Date.now()}`;
         
-        // Use the play endpoint (optimized version handles benchmarks)
-        const url = new URL('/api/play', window.location.origin);
+        // Use the SDK evaluation endpoint
+        const url = new URL('/api/evaluate-sdk', window.location.origin);
         
         // SDK endpoint expects use_sdk flag
         const useSDK = true;
@@ -148,19 +148,26 @@ async function handleStartEvaluationSDK(e) {
         const result = await response.json();
         console.log('[SDK] Response data:', result);
         
-        if (result.job_id) {
-            console.log('[SDK] Job created with ID:', result.job_id);
+        if (result.evaluation_id) {
+            console.log('[SDK] Evaluation created with ID:', result.evaluation_id);
+            currentJobId = result.evaluation_id;
+            
             if (window.eventStreamUI) {
                 window.eventStreamUI.addEvent({
                     type: 'success',
-                    message: `Job created: ${result.job_id}`
+                    message: `Evaluation created: ${result.evaluation_id}`
                 });
             }
             
-            // TODO: Poll for job status
+            // Poll for evaluation status
+            pollJobStatus(result.evaluation_id);
+        } else if (result.job_id) {
+            // Fallback for old response format
+            currentJobId = result.job_id;
+            console.log('[SDK] Job created with ID:', result.job_id);
             pollJobStatus(result.job_id);
         } else {
-            console.error('[SDK] No job ID in response');
+            console.error('[SDK] No evaluation ID in response');
         }
         
     } catch (error) {
@@ -175,7 +182,7 @@ async function pollJobStatus(jobId) {
     
     const pollInterval = setInterval(async () => {
         try {
-            const response = await fetch(`/api/play/games/${jobId}`);
+            const response = await fetch(`/api/evaluation/${jobId}/status`);
             const data = await response.json();
             
             console.log('[SDK] Job status:', data);

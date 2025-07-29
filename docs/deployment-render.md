@@ -1,6 +1,6 @@
 # Deploying to Render
 
-This guide walks you through deploying the Minesweeper AI Benchmark to Render.
+This guide walks you through deploying Tilts to Render.
 
 ## Prerequisites
 
@@ -25,9 +25,9 @@ git push origin main
 1. Log in to your [Render Dashboard](https://dashboard.render.com/)
 2. Click "New +" and select "Web Service"
 3. Connect your GitHub account if not already connected
-4. Select your `minesweeper-ai-benchmark` repository
+4. Select your `tilts` repository
 5. Configure the service:
-   - **Name**: `minesweeper-benchmark` (or your preferred name)
+   - **Name**: `tilts` (or your preferred name)
    - **Region**: Choose closest to your users
    - **Branch**: `main`
    - **Runtime**: `Python 3`
@@ -61,9 +61,9 @@ For persistent storage of results:
 
 1. In Render Dashboard, click "New +" → "PostgreSQL"
 2. Configure:
-   - **Name**: `minesweeper-db`
-   - **Database**: `minesweeper_benchmark`
-   - **User**: `minesweeper_user`
+   - **Name**: `tilts-db`
+   - **Database**: `tilts`
+   - **User**: `tilts_user`
    - **Region**: Same as your web service
    - **Instance Type**: Free (or upgrade for production)
 3. Once created, Render will automatically add the `DATABASE_URL` to your web service
@@ -243,4 +243,4 @@ If the app is slow:
 
 - [Render Documentation](https://render.com/docs)
 - [Render Community](https://community.render.com/)
-- [Project Issues](https://github.com/your-username/minesweeper-ai-benchmark/issues)
+- [Project Issues](https://github.com/your-username/tilts/issues)
