@@ -63,10 +63,12 @@ async function handleStartEvaluationSDK(e) {
         return;
     }
     
-    // Hide modal and show game board
-    hideEvalModal();
+    // Hide form and show game visualization
+    document.getElementById('eval-form-container').style.display = 'none';
+    document.getElementById('game-visualization').style.display = 'grid';
     document.querySelector('.board-placeholder').style.display = 'none';
     document.getElementById('game-stats').style.display = 'flex';
+    document.getElementById('stop-eval-btn').style.display = 'block';
     
     const gameBoard = document.getElementById('tilts-board');
     if (gameBoard) {
@@ -377,3 +379,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Export for global access
 window.handleStartEvaluationSDK = handleStartEvaluationSDK;
+
+// Function to reset the benchmark view
+function resetBenchmarkView() {
+    document.getElementById('eval-form-container').style.display = 'block';
+    document.getElementById('game-visualization').style.display = 'none';
+    document.getElementById('stop-eval-btn').style.display = 'none';
+    
+    // Clear any ongoing evaluation
+    if (window.currentEvaluation) {
+        window.currentEvaluation.abort();
+        window.currentEvaluation = null;
+    }
+}
+
+// Set up stop button handler when ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        const stopBtn = document.getElementById('stop-eval-btn');
+        if (stopBtn) {
+            stopBtn.addEventListener('click', resetBenchmarkView);
+        }
+    });
+} else {
+    const stopBtn = document.getElementById('stop-eval-btn');
+    if (stopBtn) {
+        stopBtn.addEventListener('click', resetBenchmarkView);
+    }
+}
