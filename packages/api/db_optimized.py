@@ -583,7 +583,7 @@ __all__ = [
 ]
 
 # Import remaining functions from original module for compatibility
-from api.supabase_db import (
+from supabase_db import (
     update_session, list_sessions, create_game, get_game, update_game,
     create_evaluation, get_evaluation, list_evaluations,
     save_prompt, get_settings, update_settings,

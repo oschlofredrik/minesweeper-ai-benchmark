@@ -9,15 +9,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+# Add current directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent))
 
 try:
-    from api.db_optimized import (
+    from db_optimized import (
         create_game, update_game, batch_update_leaderboard,
         get_game, list_games, HAS_SUPABASE
     )
-    from api.cache_service import cache
+    from cache_service import cache
     USE_OPTIMIZED = True
 except ImportError:
     USE_OPTIMIZED = False

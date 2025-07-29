@@ -5,12 +5,12 @@ import sys
 import os
 from pathlib import Path
 
-# Add the parent directory to the path to import our modules
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+# Add the current directory to the path to import our modules
+sys.path.insert(0, str(Path(__file__).parent))
 
 try:
-    from api.db_optimized import get_leaderboard, get_db_stats, HAS_SUPABASE
-    from api.cache_service import cache, leaderboard_cache_key
+    from db_optimized import get_leaderboard, get_db_stats, HAS_SUPABASE
+    from cache_service import cache, leaderboard_cache_key
     USE_OPTIMIZED = True
 except ImportError:
     USE_OPTIMIZED = False
