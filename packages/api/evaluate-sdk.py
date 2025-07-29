@@ -25,6 +25,16 @@ class handler(BaseHTTPRequestHandler):
             post_data = self.rfile.read(content_length)
             data = json.loads(post_data)
             
+            print(f"[SDK] Received request: {data}")
+            
+            # Check for required environment variables
+            if data.get('provider') == 'openai' and not os.environ.get('OPENAI_API_KEY'):
+                self.send_error(500, "OPENAI_API_KEY environment variable not set")
+                return
+            elif data.get('provider') == 'anthropic' and not os.environ.get('ANTHROPIC_API_KEY'):
+                self.send_error(500, "ANTHROPIC_API_KEY environment variable not set")
+                return
+            
             # Extract evaluation parameters
             game_type = data.get('game', 'minesweeper')
             provider = data.get('provider', 'openai')
@@ -117,7 +127,20 @@ class handler(BaseHTTPRequestHandler):
             }).encode())
             
         except Exception as e:
-            self.send_error(500, str(e))
+            import traceback
+            error_message = f"Error in evaluate-sdk: {str(e)}"
+            print(f"[SDK] Error: {error_message}")
+            print(f"[SDK] Traceback: {traceback.format_exc()}")
+            
+            self.send_response(500)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                "error": error_message,
+                "details": str(e),
+                "type": type(e).__name__
+            }).encode())
     
     def _create_initial_state(self, game_type, difficulty):
         """Create initial game state based on type and difficulty."""

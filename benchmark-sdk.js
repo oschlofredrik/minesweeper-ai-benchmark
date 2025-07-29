@@ -141,7 +141,16 @@ async function handleStartEvaluationSDK(e) {
         }
         
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            let errorDetails = '';
+            try {
+                const errorData = await response.json();
+                errorDetails = errorData.error || errorData.details || '';
+                console.error('[SDK] Error response:', errorData);
+            } catch (e) {
+                // If response is not JSON
+                errorDetails = await response.text();
+            }
+            throw new Error(`HTTP error! status: ${response.status}. ${errorDetails}`);
         }
         
         // Get response data
