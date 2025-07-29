@@ -1,57 +1,57 @@
 {
   "functions": {
-    "packages/api/index.py": {
+    "api/index.py": {
       "maxDuration": 30
     },
-    "packages/api/leaderboard_optimized.py": {
+    "api/leaderboard_optimized.py": {
       "maxDuration": 10
     },
-    "packages/api/play_optimized.py": {
+    "api/play_optimized.py": {
       "maxDuration": 60
     },
-    "packages/api/game_runner.py": {
+    "api/game_runner.py": {
       "maxDuration": 300
     },
-    "packages/api/evaluate-sdk.py": {
+    "api/evaluate-sdk.py": {
       "maxDuration": 300
     }
   },
   "rewrites": [
     {
       "source": "/api/leaderboard",
-      "destination": "/packages/api/leaderboard_optimized.py"
+      "destination": "/api/leaderboard_optimized.py"
     },
     {
       "source": "/api/leaderboard/(.*)",
-      "destination": "/packages/api/leaderboard_optimized.py"
+      "destination": "/api/leaderboard_optimized.py"
     },
     {
       "source": "/api/play",
-      "destination": "/packages/api/play_optimized.py"
+      "destination": "/api/play_optimized.py"
     },
     {
       "source": "/api/play/(.*)",
-      "destination": "/packages/api/play_optimized.py"
+      "destination": "/api/play_optimized.py"
     },
     {
       "source": "/api/benchmark/(.*)",
-      "destination": "/packages/api/play_optimized.py"
+      "destination": "/api/play_optimized.py"
     },
     {
       "source": "/api/games/(.*)",
-      "destination": "/packages/api/game_runner.py"
+      "destination": "/api/game_runner.py"
     },
     {
       "source": "/api/evaluate",
-      "destination": "/packages/api/evaluate-sdk.py"
+      "destination": "/api/evaluate-sdk.py"
     },
     {
       "source": "/api/(.*)",
-      "destination": "/packages/api/index.py"
+      "destination": "/api/index.py"
     },
     {
       "source": "/(.*)",
-      "destination": "/packages/api/index.py"
+      "destination": "/api/index.py"
     }
   ],
   "env": {
