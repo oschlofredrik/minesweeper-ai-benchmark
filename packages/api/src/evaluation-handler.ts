@@ -2,7 +2,13 @@ import { openai } from '@ai-sdk/openai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { streamText, generateText, tool } from 'ai';
 import { z } from 'zod';
-import type { ModelConfig, GameType } from '@tilts/shared';
+// Type definitions
+type GameType = 'minesweeper' | 'risk' | 'sudoku' | 'number_puzzle';
+type ModelConfig = {
+  provider: string;
+  name: string;
+  temperature?: number;
+};
 import { createGame, formatGameStateForAI, type GameInstance } from './game-bridge';
 
 // Move schema for Minesweeper

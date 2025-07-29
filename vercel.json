@@ -50,10 +50,6 @@
       "destination": "/api/evaluation_status.py"
     },
     {
-      "source": "/api/evaluation/(.*)",
-      "destination": "/api/evaluation/[id]/route.ts"
-    },
-    {
       "source": "/api/(.*)",
       "destination": "/api/index.py"
     }

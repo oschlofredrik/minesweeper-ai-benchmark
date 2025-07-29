@@ -1,5 +1,38 @@
-import { SimpleMinesweeper } from '../game_runner';
-import type { GameType } from '@tilts/shared';
+// Type definitions
+type GameType = 'minesweeper' | 'risk' | 'sudoku' | 'number_puzzle';
+
+// Placeholder for SimpleMinesweeper - will be imported from Python
+class SimpleMinesweeper {
+  rows: number;
+  cols: number;
+  num_mines: number;
+  board: number[][];
+  revealed: boolean[][];
+  flags: boolean[][];
+  game_over: boolean;
+  won: boolean;
+
+  constructor(rows: number, cols: number, mines: number) {
+    this.rows = rows;
+    this.cols = cols;
+    this.num_mines = mines;
+    this.board = Array(rows).fill(null).map(() => Array(cols).fill(0));
+    this.revealed = Array(rows).fill(null).map(() => Array(cols).fill(false));
+    this.flags = Array(rows).fill(null).map(() => Array(cols).fill(false));
+    this.game_over = false;
+    this.won = false;
+  }
+
+  reveal(row: number, col: number): { valid: boolean; message: string } {
+    // Placeholder implementation
+    return { valid: true, message: 'Revealed' };
+  }
+
+  flag(row: number, col: number): { valid: boolean; message: string } {
+    // Placeholder implementation
+    return { valid: true, message: 'Flagged' };
+  }
+}
 
 export interface GameInstance {
   type: GameType;
@@ -18,7 +51,7 @@ export function createGame(gameType: GameType, difficulty: string): GameInstance
       hard: { rows: 16, cols: 30, mines: 99 }
     };
     
-    const config = difficulties[difficulty] || difficulties.medium;
+    const config = difficulties[difficulty as keyof typeof difficulties] || difficulties.medium;
     const game = new SimpleMinesweeper(config.rows, config.cols, config.mines);
     
     return {
