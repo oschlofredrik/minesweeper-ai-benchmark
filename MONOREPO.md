@@ -21,6 +21,7 @@ tilts/
 - Python API handlers for Vercel
 - TypeScript AI integration using Vercel AI SDK
 - Game evaluation and streaming endpoints
+- **Note**: All AI features must use Vercel AI SDK (see `/docs/AI_IMPLEMENTATION_GUIDE.md`)
 
 ### @tilts/web
 - Static frontend files

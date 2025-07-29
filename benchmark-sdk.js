@@ -114,7 +114,8 @@ async function handleStartEvaluationSDK(e) {
         const requestBody = {
             ...evalConfig,
             game: evalConfig.gameType,  // Convert gameType to game
-            num_games: evalConfig.numGames  // Convert numGames to num_games
+            num_games: evalConfig.numGames,  // Convert numGames to num_games
+            use_sdk: useSDK  // Enable SDK evaluation
         };
         
         console.log('[SDK] Sending request to:', url.toString());

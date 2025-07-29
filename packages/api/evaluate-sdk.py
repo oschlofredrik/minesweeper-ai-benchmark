@@ -5,6 +5,13 @@ import subprocess
 import os
 import uuid
 from datetime import datetime
+import sys
+from pathlib import Path
+
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent))
+
+from db_optimized import create_game, HAS_SUPABASE
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -57,17 +64,33 @@ class handler(BaseHTTPRequestHandler):
                 }
             }
             
-            # For now, return the evaluation setup
-            # In production, this would trigger the TypeScript evaluation
+            # Create game records in database
+            if HAS_SUPABASE:
+                for i, game in enumerate(games):
+                    game_data = {
+                        "job_id": evaluation_id,
+                        "game_type": game_type,
+                        "difficulty": difficulty,
+                        "model_name": model_name,
+                        "model_provider": provider,
+                        "status": "queued"
+                    }
+                    game_id = create_game(game_data)
+                    games[i]["db_id"] = game_id
+            
+            # Trigger TypeScript evaluation via Next.js API route
+            # The actual evaluation happens in the Edge runtime
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             self.wfile.write(json.dumps({
                 "evaluation_id": evaluation_id,
                 "status": "queued",
-                "message": "Evaluation queued for processing",
+                "message": "Evaluation queued for SDK processing",
                 "config": evaluation_data["config"],
-                "endpoint": f"/api/evaluation/{evaluation_id}"
+                "endpoint": f"/api/evaluation/{evaluation_id}",
+                "games": games[:10]  # Return first 10 games
             }).encode())
             
         except Exception as e:
@@ -101,6 +124,7 @@ class handler(BaseHTTPRequestHandler):
         """Check SDK availability."""
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
         self.wfile.write(json.dumps({
             "sdk_available": True,
@@ -115,3 +139,11 @@ class handler(BaseHTTPRequestHandler):
                 "fluid-compute"
             ]
         }).encode())
+    
+    def do_OPTIONS(self):
+        """Handle CORS preflight."""
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()

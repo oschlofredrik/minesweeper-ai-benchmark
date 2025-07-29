@@ -42,8 +42,16 @@
       "destination": "/api/game_runner.py"
     },
     {
-      "source": "/api/evaluate",
+      "source": "/api/evaluate-sdk",
       "destination": "/api/evaluate-sdk.py"
+    },
+    {
+      "source": "/api/evaluation/(.*)/status",
+      "destination": "/api/evaluation_status.py"
+    },
+    {
+      "source": "/api/evaluation/(.*)",
+      "destination": "/api/evaluation/[id]/route.ts"
     },
     {
       "source": "/api/(.*)",

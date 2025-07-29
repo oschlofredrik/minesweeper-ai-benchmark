@@ -31,6 +31,8 @@ Tilts is built as a serverless application on Vercel with Supabase for data pers
 - **OpenAI**: GPT-4, GPT-4o, GPT-3.5
 - **Anthropic**: Claude 3 Opus, Sonnet, Haiku
 - **Method**: Function calling for structured responses
+- **Implementation**: Vercel AI SDK (required for all AI features)
+- **Reference**: See `/docs/AI_IMPLEMENTATION_GUIDE.md` for implementation details
 
 ## Data Flow
 1. User initiates evaluation via web UI

@@ -3,6 +3,8 @@
 ## Overview
 Phase 2 introduces the Vercel AI SDK for improved streaming, multi-step evaluations, and Fluid Compute support.
 
+**IMPORTANT**: When implementing AI features, always use the Vercel AI SDK instead of direct HTTP API calls. The SDK provides better error handling, streaming support, and standardized interfaces across providers.
+
 ## New Features
 
 ### 1. Streaming Evaluations
@@ -114,3 +116,36 @@ If issues occur:
 - **Better error recovery** with retries
 - **Structured moves** eliminate parsing errors
 - **5-minute games** supported (vs 60s limit)
+
+## Implementation Guidelines
+
+### For New AI Features
+1. **Always use Vercel AI SDK** - Do not implement direct HTTP calls to AI providers
+2. **Use the SDK streaming endpoints** - `/api/evaluate-sdk` for evaluations
+3. **Import from @ai-sdk/openai or @ai-sdk/anthropic** - Standard SDK packages
+4. **Follow the SDK patterns** - See `/packages/api/evaluate-sdk.py` for reference
+
+### Deprecated Approaches
+- Direct HTTP calls to OpenAI/Anthropic APIs (e.g., `ai_models_http.py`)
+- Manual response parsing and error handling
+- Custom streaming implementations
+
+### Migration from HTTP to SDK
+If you find code using direct HTTP calls:
+1. Replace with appropriate SDK client
+2. Use SDK's built-in streaming and error handling
+3. Leverage SDK's standardized response format
+
+Example:
+```typescript
+// Instead of direct HTTP calls
+import { openai } from '@ai-sdk/openai';
+import { streamText } from 'ai';
+
+// Use the SDK
+const result = await streamText({
+  model: openai('gpt-4'),
+  messages,
+  tools: gameTools,
+});
+```

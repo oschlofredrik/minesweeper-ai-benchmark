@@ -1,0 +1,12 @@
+{
+  "functions": {
+    "evaluation/sdk-runner.ts": {
+      "runtime": "@vercel/node@3.0.0",
+      "maxDuration": 300
+    },
+    "evaluation/[id]/route.ts": {
+      "runtime": "edge",
+      "maxDuration": 300
+    }
+  }
+}
