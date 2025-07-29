@@ -1,0 +1,256 @@
+/* Realtime UI Components */
+
+/* Presence Indicators */
+.presence-container {
+    display: flex;
+    gap: var(--unit);
+    flex-wrap: wrap;
+    padding: var(--unit-2);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius);
+    margin-bottom: var(--unit-3);
+}
+
+.presence-user {
+    display: flex;
+    align-items: center;
+    gap: var(--unit);
+    padding: var(--unit) var(--unit-2);
+    background: var(--color-bg);
+    border-radius: var(--radius);
+    font-size: var(--font-size-small);
+}
+
+.presence-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-success);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.2);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Realtime Notifications */
+.realtime-notification {
+    position: fixed;
+    bottom: var(--unit-3);
+    right: var(--unit-3);
+    padding: var(--unit-2) var(--unit-3);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    animation: slideIn 0.3s ease-out;
+    z-index: 1000;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Spectator Mode */
+.spectator-mode {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.spectator-header {
+    display: flex;
+    align-items: center;
+    gap: var(--unit-2);
+    padding: var(--unit-2);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.spectator-badge {
+    padding: var(--unit) var(--unit-2);
+    background: var(--color-danger);
+    color: white;
+    border-radius: var(--radius);
+    font-size: var(--font-size-small);
+    font-weight: 600;
+    animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.spectator-content {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: var(--unit-3);
+    padding: var(--unit-3);
+    overflow: auto;
+}
+
+.spectator-players,
+.spectator-games,
+.spectator-leaderboard {
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius);
+    padding: var(--unit-2);
+}
+
+.spectator-events {
+    height: 200px;
+    border-top: 1px solid var(--color-border);
+    padding: var(--unit-2);
+    overflow-y: auto;
+}
+
+.events-stream {
+    display: flex;
+    flex-direction: column;
+    gap: var(--unit);
+}
+
+.event {
+    display: flex;
+    align-items: center;
+    gap: var(--unit-2);
+    padding: var(--unit);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius);
+    font-size: var(--font-size-small);
+}
+
+.event-time {
+    color: var(--color-text-secondary);
+    min-width: 60px;
+}
+
+.event-player_join {
+    border-left: 3px solid var(--color-success);
+}
+
+.event-player_leave {
+    border-left: 3px solid var(--color-danger);
+}
+
+.event-game_move {
+    border-left: 3px solid var(--color-primary);
+}
+
+.event-game_end {
+    border-left: 3px solid var(--color-warning);
+}
+
+/* Live Game Cards */
+.game-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: var(--unit-2);
+    transition: all 0.2s ease;
+}
+
+.game-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--unit);
+}
+
+.game-player {
+    font-weight: 500;
+}
+
+.game-status {
+    font-size: var(--font-size-small);
+    padding: 2px var(--unit);
+    border-radius: var(--radius);
+}
+
+.status-running {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+}
+
+.status-completed {
+    background: var(--color-success-light);
+    color: var(--color-success);
+}
+
+.status-failed {
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+}
+
+.game-progress {
+    height: 4px;
+    background: var(--color-bg-secondary);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: var(--unit);
+}
+
+.game-progress .progress-bar {
+    height: 100%;
+    background: var(--color-primary);
+    transition: width 0.3s ease;
+}
+
+.game-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-size-small);
+    color: var(--color-text-secondary);
+}
+
+/* Player Ready States */
+.player-card.ready {
+    border: 1px solid var(--color-success);
+    background: var(--color-success-light);
+}
+
+.status-ready {
+    color: var(--color-success);
+    font-weight: 500;
+}
+
+.status-waiting {
+    color: var(--color-text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .spectator-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .realtime-notification {
+        left: var(--unit-2);
+        right: var(--unit-2);
+        bottom: var(--unit-2);
+    }
+}

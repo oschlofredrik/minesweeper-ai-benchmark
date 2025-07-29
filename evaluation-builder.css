@@ -1,0 +1,415 @@
+/**
+ * Evaluation Builder Styles
+ * Clean, modern UI following Dieter Rams design principles
+ */
+
+/* Builder Container */
+.evaluation-builder {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.builder-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.builder-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.builder-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+/* Builder Sections */
+.builder-section {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.builder-section h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Scoring Types */
+.scoring-types {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.radio-card {
+    position: relative;
+    display: block;
+    padding: 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.radio-card:hover {
+    border-color: var(--primary);
+    background: var(--bg-light);
+}
+
+.radio-card.selected {
+    border-color: var(--primary);
+    background: rgba(74, 144, 226, 0.05);
+}
+
+.radio-card input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+}
+
+.radio-card-content h4 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.radio-card-content p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+/* Rule Components */
+.rule-components {
+    margin-bottom: 1rem;
+}
+
+.component-palette {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.component-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: move;
+    transition: all 0.2s ease;
+}
+
+.component-item:hover {
+    background: var(--bg-light);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.component-item i {
+    color: var(--primary);
+}
+
+.drop-hint {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-secondary);
+    border: 2px dashed var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-light);
+}
+
+/* Rules List */
+.rules-list {
+    min-height: 100px;
+}
+
+.rules-list.drag-over {
+    background: rgba(74, 144, 226, 0.05);
+    border-color: var(--primary);
+}
+
+.rule-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.rule-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.rule-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.rule-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.icon-button {
+    background: none;
+    border: none;
+    padding: 0.5rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: color 0.2s ease;
+}
+
+.icon-button:hover {
+    color: var(--primary);
+}
+
+.rule-summary {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+/* Rule Editor */
+.rule-editor {
+    padding: 1rem 0;
+}
+
+.rule-editor h4 {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.pattern-item,
+.threshold-item,
+.penalty-item {
+    background: var(--bg-light);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+/* Test Area */
+.test-area {
+    background: var(--bg-light);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 1.5rem;
+}
+
+.test-inputs {
+    margin-bottom: 1rem;
+}
+
+.test-results {
+    margin-top: 1rem;
+}
+
+.test-result-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 1rem;
+}
+
+.result-scores {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.score-item {
+    text-align: center;
+}
+
+.score-item label {
+    display: block;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.score-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.rule-results {
+    margin-top: 1rem;
+}
+
+.rule-result {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.rule-result:last-child {
+    border-bottom: none;
+}
+
+.rule-type {
+    font-weight: 500;
+}
+
+.rule-score {
+    color: var(--success);
+    font-weight: 600;
+}
+
+.rule-details {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+/* Loading States */
+.loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
+
+.loading::after {
+    content: '';
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    margin-left: 0.5rem;
+    border: 2px solid var(--border-color);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Form Enhancements */
+.form-control {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    transition: border-color 0.2s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* Button Variants */
+.button-sm {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.button-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.button-danger:hover {
+    background: #c82333;
+}
+
+/* Modal Enhancements */
+.modal-large {
+    max-width: 800px;
+}
+
+.modal-body {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding-top: 1rem;
+    margin-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .evaluation-builder {
+        padding: 1rem;
+    }
+    
+    .builder-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .scoring-types {
+        grid-template-columns: 1fr;
+    }
+    
+    .component-palette {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .radio-card.selected {
+        background: rgba(74, 144, 226, 0.1);
+    }
+    
+    .component-item:hover {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+}
