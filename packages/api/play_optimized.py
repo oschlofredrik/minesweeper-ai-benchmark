@@ -25,12 +25,17 @@ except ImportError:
 
 # Import game runner
 try:
-    from game_runner import SimpleMinesweeper, run_ai_turn
+    from game_runner import (
+        SimpleMinesweeper, run_ai_turn,
+        get_minesweeper_prompt, get_function_schema, execute_minesweeper_move
+    )
     from ai_models_http import call_ai_model, format_game_messages, extract_function_call
-except ImportError:
+except ImportError as e:
+    print(f"[IMPORT] Failed to import game modules: {e}")
     SimpleMinesweeper = None
     run_ai_turn = None
     call_ai_model = None
+    get_minesweeper_prompt = None
 
 # Batch processing configuration
 BATCH_SIZE = int(os.environ.get('LEADERBOARD_BATCH_SIZE', '10'))
@@ -75,6 +80,10 @@ class handler(BaseHTTPRequestHandler):
                 wins = sum(1 for g in completed_games if g.get('won', False))
                 total_moves = sum(g.get('total_moves', 0) for g in completed_games)
                 
+                # Include error information if any games failed
+                error_games = [g for g in games if g.get('status') == 'error']
+                errors = [g.get('error', 'Unknown error') for g in error_games if g.get('error')]
+                
                 response = {
                     "job_id": job_id,
                     "status": "completed" if len(completed_games) == total else "in_progress",
@@ -88,6 +97,10 @@ class handler(BaseHTTPRequestHandler):
                         "avg_moves": total_moves / len(completed_games) if completed_games else 0
                     }
                 }
+                
+                # Add errors if any
+                if errors:
+                    response["errors"] = errors
             else:
                 # Fallback response
                 response = {
@@ -232,6 +245,11 @@ class handler(BaseHTTPRequestHandler):
         
         print(f"[GAME] Game type: {game_type}, Model: {model_name}, Provider: {provider}")
         
+        # Check imports
+        print(f"[GAME] SimpleMinesweeper available: {SimpleMinesweeper is not None}")
+        print(f"[GAME] call_ai_model available: {call_ai_model is not None}")
+        print(f"[GAME] get_minesweeper_prompt available: {get_minesweeper_prompt is not None}")
+        
         if not SimpleMinesweeper:
             raise ImportError("SimpleMinesweeper not available")
         if not call_ai_model:
@@ -254,20 +272,29 @@ class handler(BaseHTTPRequestHandler):
         max_moves = 50
         start_time = datetime.utcnow()
         
+        # Get function schema for structured responses
+        function_schema = get_function_schema(game_type) if 'get_function_schema' in globals() else None
+        
         for move_num in range(max_moves):
-            # Get game state
-            board_state = game.get_board_state()
-            prompt = f"Current Minesweeper board:\n{board_state}\n\nMake your next move (reveal row col or flag row col):"
+            # Get proper game prompt with instructions
+            if get_minesweeper_prompt:
+                prompt = get_minesweeper_prompt(game)
+            else:
+                # Fallback prompt
+                board_state = game.get_board_state()
+                prompt = f"Current Minesweeper board:\n{board_state}\n\nMake your next move (reveal row col or flag row col):"
             
             # Call AI
             messages = format_game_messages(game_type, prompt)
             
             try:
                 print(f"[GAME] Calling AI for move {move_num + 1}")
+                # Include function schema if available for better structured responses
                 response = call_ai_model(
                     provider=provider,
                     model=model_name,
                     messages=messages,
+                    functions=[function_schema] if function_schema else None,
                     temperature=0.7
                 )
                 print(f"[GAME] AI responded")
@@ -278,17 +305,21 @@ class handler(BaseHTTPRequestHandler):
                     print(f"[GAME] Could not extract move from AI response")
                     break
                 
-                # Execute move
-                action = ai_move.get('action', 'reveal')
-                row = ai_move.get('row', 0)
-                col = ai_move.get('col', 0)
-                
-                if action == 'reveal':
-                    valid, message = game.reveal(row, col)
-                elif action == 'flag':
-                    valid, message = game.flag(row, col)
+                # Execute move using proper function if available
+                if 'execute_minesweeper_move' in globals() and execute_minesweeper_move:
+                    valid, message = execute_minesweeper_move(game, ai_move)
                 else:
-                    valid, message = False, "Invalid action"
+                    # Fallback execution
+                    action = ai_move.get('action', 'reveal')
+                    row = ai_move.get('row', 0)
+                    col = ai_move.get('col', 0)
+                    
+                    if action == 'reveal':
+                        valid, message = game.reveal(row, col)
+                    elif action == 'flag':
+                        valid, message = game.flag(row, col)
+                    else:
+                        valid, message = False, "Invalid action"
                 
                 moves.append({
                     'move_number': move_num + 1,
