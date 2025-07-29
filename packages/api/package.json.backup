@@ -9,7 +9,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@tilts/shared": "workspace:*",
+    "@tilts/shared": "file:../shared",
     "ai": "^3.0.0",
     "@ai-sdk/openai": "^0.0.40",
     "@ai-sdk/anthropic": "^0.0.30",
