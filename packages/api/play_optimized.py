@@ -203,10 +203,15 @@ class handler(BaseHTTPRequestHandler):
                 
                 # Actually run the game
                 print(f"[PLAY] Running game {game_id}")
+                print(f"[PLAY] Config: provider={config.get('provider')}, model={config.get('model')}")
+                
                 result = self.run_single_game(game_id, config)
+                
+                print(f"[PLAY] Game completed: won={result.get('won')}, moves={result.get('total_moves')}")
                 
                 # Handle completion
                 self.handle_game_completion(game_id, result)
+                print(f"[PLAY] Game {game_id} results saved")
                 
             except Exception as e:
                 print(f"[PLAY] Error running game {game_id}: {e}")
@@ -225,8 +230,12 @@ class handler(BaseHTTPRequestHandler):
         provider = config.get('provider', 'openai')
         difficulty = config.get('difficulty', 'medium')
         
-        if not SimpleMinesweeper or not call_ai_model:
-            raise ImportError("Game runner or AI models not available")
+        print(f"[GAME] Game type: {game_type}, Model: {model_name}, Provider: {provider}")
+        
+        if not SimpleMinesweeper:
+            raise ImportError("SimpleMinesweeper not available")
+        if not call_ai_model:
+            raise ImportError("call_ai_model not available")
         
         # Initialize game
         if game_type == 'minesweeper':
@@ -254,12 +263,14 @@ class handler(BaseHTTPRequestHandler):
             messages = format_game_messages(game_type, prompt)
             
             try:
+                print(f"[GAME] Calling AI for move {move_num + 1}")
                 response = call_ai_model(
                     provider=provider,
                     model=model_name,
                     messages=messages,
                     temperature=0.7
                 )
+                print(f"[GAME] AI responded")
                 
                 # Extract move
                 ai_move = extract_function_call(response)
