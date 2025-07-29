@@ -55,7 +55,16 @@ async function handleStartEvaluationSDK(e) {
         maxSteps: 50
     };
     
-    console.log('Starting SDK evaluation with config:', evalConfig);
+    console.log('[SDK] Starting evaluation with config:', evalConfig);
+    
+    // Update UI to show starting
+    const eventStream = document.getElementById('event-stream-ui');
+    if (eventStream && window.eventStreamUI) {
+        window.eventStreamUI.addEvent({
+            type: 'info',
+            message: `Starting ${evalConfig.numGames} ${evalConfig.gameType} game(s) with ${evalConfig.model}...`
+        });
+    }
     
     // Validate config
     if (!evalConfig.model || !evalConfig.provider) {
@@ -102,15 +111,23 @@ async function handleStartEvaluationSDK(e) {
         const originalFlag = localStorage.getItem('USE_VERCEL_SDK');
         localStorage.setItem('USE_VERCEL_SDK', 'true');
         
+        const requestBody = {
+            ...evalConfig,
+            game: evalConfig.gameType,  // Convert gameType to game
+            num_games: evalConfig.numGames  // Convert numGames to num_games
+        };
+        
+        console.log('[SDK] Sending request to:', url.toString());
+        console.log('[SDK] Request body:', requestBody);
+        
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                ...evalConfig,
-                game: evalConfig.gameType,  // Convert gameType to game
-                num_games: evalConfig.numGames  // Convert numGames to num_games
-            })
+            body: JSON.stringify(requestBody)
         });
+        
+        console.log('[SDK] Response status:', response.status);
+        console.log('[SDK] Response headers:', response.headers);
         
         // Restore original flag
         if (originalFlag) {
@@ -123,21 +140,60 @@ async function handleStartEvaluationSDK(e) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        // Handle streaming response
-        if (evalConfig.numGames === 1 && evalConfig.streaming) {
-            // Process the stream
-            await processSDKStream(response.body.getReader());
+        // Get response data
+        const result = await response.json();
+        console.log('[SDK] Response data:', result);
+        
+        if (result.job_id) {
+            console.log('[SDK] Job created with ID:', result.job_id);
+            if (window.eventStreamUI) {
+                window.eventStreamUI.addEvent({
+                    type: 'success',
+                    message: `Job created: ${result.job_id}`
+                });
+            }
+            
+            // TODO: Poll for job status
+            pollJobStatus(result.job_id);
         } else {
-            // Handle batch response
-            const result = await response.json();
-            console.log('Batch evaluation result:', result);
-            updateBatchResults(result);
+            console.error('[SDK] No job ID in response');
         }
         
     } catch (error) {
         console.error('Error starting SDK evaluation:', error);
         alert(`Error starting evaluation: ${error.message}`);
     }
+}
+
+// Poll for job status
+async function pollJobStatus(jobId) {
+    console.log('[SDK] Starting to poll job:', jobId);
+    
+    const pollInterval = setInterval(async () => {
+        try {
+            const response = await fetch(`/api/play/games/${jobId}`);
+            const data = await response.json();
+            
+            console.log('[SDK] Job status:', data);
+            
+            if (data.status === 'completed' || data.status === 'error') {
+                clearInterval(pollInterval);
+                console.log('[SDK] Job finished:', data);
+                
+                if (window.eventStreamUI) {
+                    window.eventStreamUI.addEvent({
+                        type: data.status === 'completed' ? 'success' : 'error',
+                        message: `Job ${data.status}: ${data.games?.length || 0} games completed`
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('[SDK] Error polling job:', error);
+        }
+    }, 2000);
+    
+    // Store interval for cleanup
+    window.currentPollInterval = pollInterval;
 }
 
 // Process Vercel AI SDK stream
@@ -390,6 +446,12 @@ function resetBenchmarkView() {
     if (window.currentEvaluation) {
         window.currentEvaluation.abort();
         window.currentEvaluation = null;
+    }
+    
+    // Clear polling interval
+    if (window.currentPollInterval) {
+        clearInterval(window.currentPollInterval);
+        window.currentPollInterval = null;
     }
 }
 
