@@ -1,11 +1,11 @@
-# Minesweeper AI Benchmark - Quick Start Guide
+# Tilts - Quick Start Guide
 
 ## Installation
 
 1. **Clone the repository**
 ```bash
 git clone <repository-url>
-cd minesweeper-benchmark
+cd tilts
 ```
 
 2. **Install dependencies**

@@ -107,6 +107,9 @@ async function handleStartEvaluationSDK(e) {
         // Use the play endpoint (optimized version handles benchmarks)
         const url = new URL('/api/play', window.location.origin);
         
+        // SDK endpoint expects use_sdk flag
+        const useSDK = true;
+        
         // Add SDK flag to environment or as query param
         const originalFlag = localStorage.getItem('USE_VERCEL_SDK');
         localStorage.setItem('USE_VERCEL_SDK', 'true');
