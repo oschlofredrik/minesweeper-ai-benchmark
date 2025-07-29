@@ -13,7 +13,7 @@ function initializeGameVisualization(config) {
         }
         
         // Create new visualizer
-        gameVisualizer = createGameVisualizer(config.game, 'tilts-board');
+        gameVisualizer = createGameVisualizer(config.gameType, 'tilts-board');
         
         // Initialize with game config
         const gameConfig = {
@@ -23,7 +23,7 @@ function initializeGameVisualization(config) {
         };
         
         // Override with difficulty settings
-        if (config.game === 'minesweeper') {
+        if (config.gameType === 'minesweeper') {
             const difficultySettings = {
                 easy: { rows: 9, cols: 9, mines: 10 },
                 medium: { rows: 16, cols: 16, mines: 40 },
@@ -95,8 +95,8 @@ async function handleStartEvaluationSDK(e) {
         // Create job ID for tracking
         currentJobId = `eval_${Date.now()}`;
         
-        // Use existing benchmark endpoint with SDK flag
-        const url = new URL('/api/benchmark/run', window.location.origin);
+        // Use the play endpoint (optimized version handles benchmarks)
+        const url = new URL('/api/play', window.location.origin);
         
         // Add SDK flag to environment or as query param
         const originalFlag = localStorage.getItem('USE_VERCEL_SDK');
