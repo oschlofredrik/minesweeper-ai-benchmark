@@ -426,10 +426,12 @@ class handler(BaseHTTPRequestHandler):
             
             # Start game execution in background thread
             def run_games():
+                print(f"[SDK] Background thread started for evaluation {evaluation_id}")
                 results = []
                 for game in games:
                     game_id = game.get("db_id", game["id"])
                     try:
+                        print(f"[SDK] Running game {game_id}")
                         result = run_single_game(game_id, {
                             'game_type': game_type,
                             'provider': provider,
@@ -437,8 +439,11 @@ class handler(BaseHTTPRequestHandler):
                             'difficulty': difficulty
                         })
                         results.append(result)
+                        print(f"[SDK] Game {game_id} completed")
                     except Exception as e:
+                        import traceback
                         print(f"[SDK] Error running game {game_id}: {e}")
+                        print(f"[SDK] Traceback: {traceback.format_exc()}")
                         if HAS_SUPABASE:
                             update_game(game_id, {
                                 'status': 'error',
@@ -450,6 +455,7 @@ class handler(BaseHTTPRequestHandler):
             thread = threading.Thread(target=run_games)
             thread.daemon = True
             thread.start()
+            print(f"[SDK] Thread started for evaluation {evaluation_id}")
             
             # Return response immediately
             self.send_response(200)
