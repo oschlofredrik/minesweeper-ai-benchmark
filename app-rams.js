@@ -74,11 +74,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check for join code in URL
     handleJoinFromURL();
     
-    // Show initial section
+    // Show initial section and handle join parameter
     const hash = window.location.hash.substring(1);
+    const urlParams = new URLSearchParams(window.location.search);
+    const joinCode = urlParams.get('join');
+    
     if (hash && document.getElementById(hash)) {
         console.log(`[INIT] Navigating to hash: ${hash}`);
         navigateTo(hash);
+        
+        // If we have a join code, show the join modal
+        if (joinCode && hash === 'compete') {
+            setTimeout(() => {
+                document.getElementById('quick-join-code').value = joinCode;
+                document.getElementById('join-session-modal').classList.add('active');
+            }, 500);
+        }
     } else {
         console.log('[INIT] Showing default section: overview');
         showSection('overview');

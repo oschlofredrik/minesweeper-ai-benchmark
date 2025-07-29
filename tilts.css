@@ -1,6 +1,15 @@
 /* Tilts Visualization - Dieter Rams Style */
 
 /* Form Controls Enhancement */
+select,
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+.form-control {
+    border-radius: 0 !important;
+}
+
 #evaluation-form select,
 #evaluation-form input[type="number"] {
     background-color: var(--bg-primary);
@@ -9,6 +18,7 @@
     -webkit-appearance: none;
     -moz-appearance: none;
     cursor: pointer;
+    border-radius: 0;
 }
 
 #evaluation-form select {
@@ -37,7 +47,7 @@
     padding: 0 calc(var(--unit) * 1.5);
     font-size: var(--text-base);
     line-height: 1;
-    border-radius: var(--radius);
+    border-radius: 0;
 }
 
 .tilts-container {

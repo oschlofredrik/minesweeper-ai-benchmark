@@ -53,7 +53,7 @@
         <div class="mt-4">
           <h4 class="text-sm text-muted">Quick Actions</h4>
           <button class="button button-small" onclick="navigateTo('compete')">Create Session</button>
-          <button class="button button-small" onclick="showJoinSession()">Join Session</button>
+          <a href="/join.html" class="button button-small" style="display: inline-block; text-align: center;">Join Session</a>
         </div>
 
         <!-- Admin Button in Sidebar -->
@@ -96,7 +96,7 @@
             </p>
             <div class="button-group mt-4">
               <button class="button button-primary" onclick="navigateTo('compete')">Host a Competition</button>
-              <button class="button" onclick="showJoinSession()">Join with Code</button>
+              <a href="/join.html" class="button">Join with Code</a>
               <button class="button" onclick="navigateTo('benchmark')">Benchmark AI</button>
             </div>
           </div>
@@ -107,76 +107,57 @@
           <h2>AI Competitions</h2>
           <p class="text-muted mb-4">Host or join Kahoot-style AI competitions with friends</p>
           
-          <div class="grid grid-cols-2 mb-4">
-            <div class="card">
-              <h3>Create Competition</h3>
-              <p class="text-muted">Host a new competition session</p>
-              <form id="create-session-form" class="form-stack">
-                <div class="form-group">
-                  <label>Session Name</label>
-                  <input type="text" name="session-name" id="session-name" placeholder="Friday AI Challenge" required>
+          <div class="card mb-4">
+            <h3>Create Competition</h3>
+            <p class="text-muted">Host a new AI competition session for multiple players</p>
+            <form id="create-session-form" class="form-stack">
+              <div class="form-group">
+                <label>Session Name</label>
+                <input type="text" name="session-name" id="session-name" placeholder="Friday AI Challenge" required>
+              </div>
+              <div class="form-group">
+                <label>Game Type</label>
+                <select name="game-type" id="game-type">
+                  <option value="minesweeper">Minesweeper</option>
+                  <option value="risk">Risk</option>
+                  <option value="sudoku">Sudoku</option>
+                  <option value="number_puzzle">Number Puzzle</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Format</label>
+                <select name="competition-format" id="competition-format">
+                  <option value="single_round">Single Round</option>
+                  <option value="best_of_three">Best of 3</option>
+                  <option value="tournament">Tournament</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Max Players</label>
+                <input type="number" name="max-players" id="max-players" value="20" min="2" max="100">
+              </div>
+              
+              <!-- Evaluation Selection -->
+              <div class="form-group">
+                <label>Scoring Configuration</label>
+                <button type="button" class="button button-secondary" onclick="showEvaluationSelector()">
+                  Configure Metrics
+                </button>
+                <div id="selected-evaluations-summary" class="text-sm text-muted mt-2">
+                  No metrics selected (using default scoring)
                 </div>
-                <div class="form-group">
-                  <label>Game Type</label>
-                  <select name="game-type" id="game-type">
-                    <option value="minesweeper">Minesweeper</option>
-                    <option value="risk">Risk</option>
-                    <option value="sudoku">Sudoku</option>
-                    <option value="number_puzzle">Number Puzzle</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label>Format</label>
-                  <select name="competition-format" id="competition-format">
-                    <option value="single_round">Single Round</option>
-                    <option value="best_of_three">Best of 3</option>
-                    <option value="tournament">Tournament</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label>Max Players</label>
-                  <input type="number" name="max-players" id="max-players" value="20" min="2" max="100">
-                </div>
-                
-                <!-- Evaluation Selection -->
-                <div class="form-group">
-                  <label>Scoring Configuration</label>
-                  <button type="button" class="button button-secondary" onclick="showEvaluationSelector()">
-                    Configure Metrics
-                  </button>
-                  <div id="selected-evaluations-summary" class="text-sm text-muted mt-2">
-                    No metrics selected (using default scoring)
-                  </div>
-                </div>
-                
-                <button type="submit" class="button button-primary">Create Session</button>
-              </form>
-            </div>
-            
-            <div class="card">
-              <h3>Join Competition</h3>
-              <p class="text-muted">Enter a code to join an existing session</p>
-              <form id="join-session-form" class="form-stack">
-                <div class="form-group">
-                  <label>Join Code</label>
-                  <input type="text" id="join-code" placeholder="PLAY123" maxlength="10" style="text-transform: uppercase;" required>
-                </div>
-                <div class="form-group">
-                  <label>Your Name</label>
-                  <input type="text" id="player-name" placeholder="Enter your name" required>
-                </div>
-                <div class="form-group">
-                  <label>AI Model</label>
-                  <select id="player-model">
-                    <option value="gpt-4">GPT-4</option>
-                    <option value="claude-3-opus">Claude 3 Opus</option>
-                    <option value="claude-3-sonnet">Claude 3 Sonnet</option>
-                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                  </select>
-                </div>
-                <button type="submit" class="button button-primary">Join Session</button>
-              </form>
-            </div>
+              </div>
+              
+              <button type="submit" class="button button-primary">Create Session</button>
+            </form>
+          </div>
+          
+          <div class="card mb-4">
+            <h3>Join a Competition</h3>
+            <p class="text-muted">Have a competition code? Join an existing session</p>
+            <a href="/join.html" class="button button-primary button-large" style="width: 100%; text-align: center;">
+              Join with Code
+            </a>
           </div>
           
           <div class="card">

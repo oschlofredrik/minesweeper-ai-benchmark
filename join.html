@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Join Competition - Tilts</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/rams-design.css" />
+    <link rel="stylesheet" href="/tilts.css" />
+    <style>
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: var(--bg-primary);
+      }
+      
+      .join-container {
+        width: 100%;
+        max-width: 400px;
+        padding: calc(var(--unit) * 4);
+      }
+      
+      .join-code-input {
+        font-size: var(--text-2xl);
+        text-align: center;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        padding: calc(var(--unit) * 3);
+        border: 2px solid var(--gray-400);
+        border-radius: 0;
+        width: 100%;
+        margin-bottom: calc(var(--unit) * 3);
+      }
+      
+      .join-code-input:focus {
+        outline: none;
+        border-color: var(--text-primary);
+      }
+      
+      .back-link {
+        display: inline-block;
+        margin-bottom: calc(var(--unit) * 3);
+        color: var(--text-muted);
+        text-decoration: none;
+        border: none;
+      }
+      
+      .back-link:hover {
+        color: var(--text-primary);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="join-container">
+      <a href="/" class="back-link">← Back to Tilts</a>
+      
+      <div class="card">
+        <h1 style="text-align: center; margin-bottom: calc(var(--unit) * 4);">Join Competition</h1>
+        
+        <form id="join-form" onsubmit="handleJoin(event)">
+          <div class="form-group">
+            <label style="text-align: center; display: block; margin-bottom: calc(var(--unit) * 2);">
+              Enter Competition Code
+            </label>
+            <input 
+              type="text" 
+              id="join-code" 
+              class="join-code-input"
+              placeholder="ABC123"
+              maxlength="6"
+              pattern="[A-Za-z0-9]{4,6}"
+              required
+              autofocus
+            >
+          </div>
+          
+          <button type="submit" class="button button-primary button-large" style="width: 100%;">
+            Join Competition
+          </button>
+        </form>
+        
+        <p class="text-muted" style="text-align: center; margin-top: calc(var(--unit) * 3);">
+          Ask your host for the competition code
+        </p>
+      </div>
+    </div>
+    
+    <script>
+      // Auto-capitalize input
+      document.getElementById('join-code').addEventListener('input', function(e) {
+        e.target.value = e.target.value.toUpperCase();
+      });
+      
+      function handleJoin(event) {
+        event.preventDefault();
+        const code = document.getElementById('join-code').value;
+        
+        // Store the join code
+        sessionStorage.setItem('joinCode', code);
+        
+        // Redirect to main page with compete section and join modal
+        window.location.href = '/#compete?join=' + code;
+      }
+    </script>
+  </body>
+</html>
