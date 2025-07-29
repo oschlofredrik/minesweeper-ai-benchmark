@@ -307,44 +307,16 @@ async function loadLeaderboard() {
 // Update games list
 async function updateGamesList() {
     try {
-        const response = await fetch(`${API_BASE}/api/play/games`);
-        const games = await response.json();
-        
-        // Update active games map
-        games.forEach(game => {
-            activeGames.set(game.job_id, game);
-        });
-        
-        // Update sidebar if it exists
+        // TODO: This should fetch active game sessions, not game types
+        // For now, just clear the sidebars
         const sidebar = document.getElementById('active-games-sidebar');
         if (sidebar) {
-            if (games.length === 0) {
-                sidebar.innerHTML = '<p class="text-sm text-muted">No active games</p>';
-            } else {
-                sidebar.innerHTML = games.map(game => `
-                    <div class="mb-2" style="cursor: pointer;" onclick="selectGame('${game.job_id}')">
-                        <div class="text-sm">${game.model_name}</div>
-                        <div class="progress">
-                            <div class="progress-bar" style="width: ${game.progress * 100}%"></div>
-                        </div>
-                        <div class="text-sm text-muted">${game.message}</div>
-                    </div>
-                `).join('');
-            }
+            sidebar.innerHTML = '<p class="text-sm text-muted">No active games</p>';
         }
         
-        // Also update the active sessions sidebar if present
         const sessionsSidebar = document.getElementById('active-sessions-sidebar');
-        if (sessionsSidebar && games.length > 0) {
-            sessionsSidebar.innerHTML = games.map(game => `
-                <div class="mb-2" style="cursor: pointer;" onclick="selectGame('${game.job_id}')">
-                    <div class="text-sm">${game.model_name}</div>
-                    <div class="progress">
-                        <div class="progress-bar" style="width: ${game.progress * 100}%"></div>
-                    </div>
-                    <div class="text-sm text-muted">${game.message}</div>
-                </div>
-            `).join('');
+        if (sessionsSidebar) {
+            sessionsSidebar.innerHTML = '<p class="text-sm text-muted">No active sessions</p>';
         }
     } catch (error) {
         console.error('Failed to update games:', error);

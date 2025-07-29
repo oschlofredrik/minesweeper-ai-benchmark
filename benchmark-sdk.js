@@ -48,7 +48,7 @@ async function handleStartEvaluationSDK(e) {
         model: document.getElementById('model-name').value,
         provider: document.getElementById('model-provider').value,
         numGames: parseInt(document.getElementById('num-games').value),
-        difficulty: document.getElementById('difficulty').value,
+        difficulty: document.getElementById('difficulty-select').value,
         scenario: null,
         streaming: true,
         temperature: 0.7,
