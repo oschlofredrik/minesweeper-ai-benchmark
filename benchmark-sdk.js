@@ -140,21 +140,25 @@ async function handleStartEvaluationSDK(e) {
             localStorage.removeItem('USE_VERCEL_SDK');
         }
         
-        if (!response.ok) {
-            let errorDetails = '';
-            try {
-                const errorData = await response.json();
-                errorDetails = errorData.error || errorData.details || '';
-                console.error('[SDK] Error response:', errorData);
-            } catch (e) {
-                // If response is not JSON
-                errorDetails = await response.text();
+        // Get response data first
+        let result;
+        const responseText = await response.text();
+        
+        try {
+            result = JSON.parse(responseText);
+        } catch (e) {
+            console.error('[SDK] Failed to parse response as JSON:', responseText);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}. Response: ${responseText}`);
             }
-            throw new Error(`HTTP error! status: ${response.status}. ${errorDetails}`);
+            throw new Error('Invalid JSON response from server');
         }
         
-        // Get response data
-        const result = await response.json();
+        if (!response.ok) {
+            const errorDetails = result.error || result.details || responseText;
+            console.error('[SDK] Error response:', result);
+            throw new Error(`HTTP error! status: ${response.status}. ${errorDetails}`);
+        }
         console.log('[SDK] Response data:', result);
         
         if (result.evaluation_id) {
