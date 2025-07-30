@@ -104,7 +104,7 @@ async function handleStartEvaluationSDK(e) {
         // Create job ID for tracking
         currentJobId = `eval_${Date.now()}`;
         
-        // Use the simple game playing endpoint
+        // Use the play-game endpoint
         const url = new URL('/api/play-game', window.location.origin);
         
         // SDK endpoint expects use_sdk flag
