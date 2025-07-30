@@ -147,6 +147,12 @@ function getMinesweeperPrompt(game) {
     prompt += "\n";
   }
   
+  prompt += "\nLegend:\n";
+  prompt += "? = unrevealed cell (can be revealed or flagged)\n";
+  prompt += "F = flagged cell (suspected mine)\n";
+  prompt += "0-8 = revealed cell showing number of adjacent mines\n";
+  prompt += "-1 = revealed mine (game over)\n";
+  prompt += "\nIMPORTANT: You can only reveal cells marked with '?'. Cells showing numbers are already revealed!\n";
   prompt += "\nAnalyze the board and make the best move. Respond with a JSON object containing:\n";
   prompt += '{"action": "reveal" or "flag", "row": number, "col": number, "reasoning": "explanation"}';
   
@@ -212,7 +218,7 @@ module.exports = async function handler(req, res) {
         messages: [
           {
             role: 'system',
-            content: 'You are an expert Minesweeper player. Analyze the game state and make optimal moves.'
+            content: 'You are an expert Minesweeper player. You must analyze the board carefully and only reveal cells marked with "?". Cells showing numbers (0-8) are already revealed and cannot be acted upon. When you see a number, it indicates how many mines are adjacent to that cell. Use this information to deduce safe cells. Give your response as a JSON object.'
           },
           {
             role: 'user',

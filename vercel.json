@@ -22,6 +22,10 @@
       "destination": "/api/play-game-sdk.js"
     },
     {
+      "source": "/api/evaluate-sync",
+      "destination": "/api/evaluate-ai-sdk.js"
+    },
+    {
       "source": "/api/leaderboard",
       "destination": "/api/leaderboard_optimized.py"
     },
