@@ -37,10 +37,19 @@ class SimpleMinesweeper {
       this.board[r][c] = -1;
     }
     
-    // Debug: Log mine at (3,0) if it exists
+    // Debug: Log critical mine positions
+    console.log('[DEBUG] Board generation complete:');
     if (this.mines.has('3,0')) {
-      console.log('[DEBUG] Mine placed at (3,0) during board generation');
+      console.log('[DEBUG] ⚠️  Mine placed at (3,0)');
     }
+    // Log first column mine distribution
+    let firstColMines = 0;
+    for (let r = 0; r < Math.min(5, this.rows); r++) {
+      if (this.mines.has(`${r},0`)) {
+        firstColMines++;
+      }
+    }
+    console.log(`[DEBUG] Mines in first column (rows 0-4): ${firstColMines}`);
   }
 
   _calculateNumbers() {
@@ -253,7 +262,14 @@ module.exports = async function handler(req, res) {
         console.log(`[SDK] First prompt preview:\n${prompt.substring(0, 300)}...`);
       } else if (moves.length === 1) {
         // Log second prompt to see if board updated
-        console.log(`[SDK] Second prompt preview (should show revealed cells):\n${prompt.substring(0, 300)}...`);
+        console.log(`[SDK] Second move - FULL board state being sent to AI:`);
+        // Show first 5 rows of the board for debugging
+        const lines = prompt.split('\n');
+        for (let i = 0; i < Math.min(20, lines.length); i++) {
+          if (lines[i].includes('|') || lines[i].includes('Legend:')) {
+            console.log(`[SDK] ${lines[i]}`);
+          }
+        }
       }
       
       const moveStart = Date.now();
@@ -264,7 +280,15 @@ module.exports = async function handler(req, res) {
         messages: [
           {
             role: 'system',
-            content: 'You are an expert Minesweeper player who NEVER makes risky moves. Before choosing any cell to reveal, check ALL adjacent revealed numbers. If any number indicates that cell MUST be a mine, flag it instead. For example, if a "1" has only one unrevealed neighbor, that neighbor is definitely a mine. Only reveal cells that are PROVEN SAFE by the numbers. When in doubt, look for cells with "0" nearby or cells that satisfy multiple number constraints. Give concise move commands in the format: action row col'
+            content: `You are an expert Minesweeper player. CRITICAL RULES:
+1. ALWAYS analyze ALL revealed numbers before making a move
+2. If a revealed cell shows "1" and has only ONE unrevealed neighbor, that neighbor IS A MINE - NEVER reveal it!
+3. If a revealed cell shows "2" and has only TWO unrevealed neighbors, both ARE MINES
+4. Before revealing ANY cell, check ALL adjacent revealed numbers to ensure it's safe
+5. Example: If cell (2,0) shows "1" and its only unrevealed neighbor is (3,0), then (3,0) is a mine!
+6. Only reveal cells that are PROVEN SAFE by the numbers
+7. When starting, prefer corners and edges that are far from revealed numbers
+Give concise move commands in the format: action row col`
           },
           {
             role: 'user',
@@ -280,11 +304,39 @@ module.exports = async function handler(req, res) {
       
       // Debug: Log what the AI should be seeing
       if (moves.length === 1) {
-        // After first move, log critical cells
+        // After first move, log critical cells and board analysis
         const visibleBoard = game.getVisibleState();
-        console.log(`[SDK] Critical check - Cell at (2,0): ${visibleBoard[2][0]}`);
-        console.log(`[SDK] Critical check - Cell at (3,0): ${visibleBoard[3][0]}`);
+        console.log(`[SDK] \n=== CRITICAL DEBUG - Move 2 Analysis ===`);
+        console.log(`[SDK] Cell at (2,0): ${visibleBoard[2][0]}`);
+        console.log(`[SDK] Cell at (3,0): ${visibleBoard[3][0]}`);
+        console.log(`[SDK] Cell at (4,0): ${visibleBoard[4][0]}`);
+        
+        // Check if (2,0) shows a "1" which would indicate (3,0) is a mine
+        if (visibleBoard[2][0] === '1') {
+          console.log(`[SDK] WARNING: Cell (2,0) shows '1' - this means (3,0) MUST be a mine!`);
+          // Count unrevealed neighbors of (2,0)
+          let unrevealedNeighbors = 0;
+          const neighbors = [
+            [1,0], [1,1], // above
+            [2,1],        // right
+            [3,0], [3,1]  // below
+          ];
+          neighbors.forEach(([r,c]) => {
+            if (r >= 0 && r < game.rows && c >= 0 && c < game.cols) {
+              if (visibleBoard[r][c] === '?') {
+                unrevealedNeighbors++;
+                console.log(`[SDK]   - Neighbor (${r},${c}) is unrevealed`);
+              }
+            }
+          });
+          console.log(`[SDK] Total unrevealed neighbors of (2,0): ${unrevealedNeighbors}`);
+          if (unrevealedNeighbors === 1) {
+            console.log(`[SDK] CONFIRMED: Only one unrevealed neighbor, so (3,0) is definitely a mine!`);
+          }
+        }
+        
         console.log(`[SDK] AI is about to choose: ${text}`);
+        console.log(`[SDK] === END DEBUG ===\n`);
       }
 
       // Parse move - expecting format like "reveal 3 5"
