@@ -48,7 +48,8 @@ except Exception as e:
             payload = {
                 "model": model,
                 "messages": messages,
-                "temperature": temperature
+                "temperature": temperature,
+                "store": True  # Enable storing completions in OpenAI dashboard
             }
             
             if functions:

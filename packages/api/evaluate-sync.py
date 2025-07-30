@@ -194,7 +194,8 @@ def call_ai_model(provider, model, messages, functions=None, temperature=0.7):
         payload = {
             "model": model,
             "messages": messages,
-            "temperature": temperature
+            "temperature": temperature,
+            "store": True  # Enable storing completions in OpenAI dashboard
         }
         
         req = urllib.request.Request(url, 

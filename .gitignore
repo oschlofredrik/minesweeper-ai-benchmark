@@ -155,3 +155,4 @@ logs/
 **/.env
 *.tsbuildinfo
 packages/*/tsconfig.tsbuildinfo
+.env*.local

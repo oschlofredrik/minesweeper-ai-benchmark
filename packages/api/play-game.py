@@ -143,7 +143,8 @@ def get_ai_move(game_state, model='gpt-4o-mini'):
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.7,
-        "max_tokens": 50
+        "max_tokens": 50,
+        "store": True  # Enable storing completions in OpenAI dashboard
     }
     
     req = urllib.request.Request(url, 
