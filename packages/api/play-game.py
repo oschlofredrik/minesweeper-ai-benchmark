@@ -152,9 +152,14 @@ def get_ai_move(game_state, model='gpt-4o-mini'):
         method='POST'
     )
     
+    print(f"[AI] Calling OpenAI API with model {model}")
+    print(f"[AI] API Key: {api_key[:20]}...")
+    
     with urllib.request.urlopen(req) as response:
         result = json.loads(response.read().decode('utf-8'))
         ai_text = result['choices'][0]['message']['content'].strip()
+        print(f"[AI] OpenAI response: {ai_text}")
+        print(f"[AI] Usage: {result.get('usage', {})}")
         
         # Parse move
         parts = ai_text.lower().split()
