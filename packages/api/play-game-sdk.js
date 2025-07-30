@@ -287,15 +287,26 @@ module.exports = async function handler(req, res) {
             role: 'system',
             content: isReasoningModel 
               ? 'You are playing Minesweeper. Analyze the board and choose the safest move. Reply with just: action row col'
-              : `You are an expert Minesweeper player. CRITICAL RULES:
-1. ALWAYS analyze ALL revealed numbers before making a move
-2. If a revealed cell shows "1" and has only ONE unrevealed neighbor, that neighbor IS A MINE - NEVER reveal it!
-3. If a revealed cell shows "2" and has only TWO unrevealed neighbors, both ARE MINES
-4. Before revealing ANY cell, check ALL adjacent revealed numbers to ensure it's safe
-5. Example: If cell (2,0) shows "1" and its only unrevealed neighbor is (3,0), then (3,0) is a mine!
-6. Only reveal cells that are PROVEN SAFE by the numbers
-7. When starting, prefer corners and edges that are far from revealed numbers
-Give concise move commands in the format: action row col`
+              : `You are an expert Minesweeper player.
+
+GOLDEN RULE: Only reveal cells that are 100% GUARANTEED safe.
+
+When you see a number N:
+- It means exactly N mines are in the 8 adjacent cells
+- If you cannot determine which specific cells are mines, DO NOT GUESS
+- Move to a DIFFERENT part of the board instead
+
+STRATEGY:
+1. Start in corners (0,0), (0,15), (15,0), or (15,15)
+2. If you find a number and cannot deduce safe cells nearby, LEAVE THAT AREA
+3. Try a different corner or edge far away
+4. Only return to numbered cells when you have enough information
+
+NEVER:
+- Guess which cell has a mine when multiple options exist
+- Reveal cells adjacent to a number unless you're 100% certain they're safe
+
+Reply with only: action row col`
           },
           {
             role: 'user',
