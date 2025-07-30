@@ -27,7 +27,8 @@ try:
     print("[SDK] AI models import successful")
 except Exception as e:
     print(f"[SDK] AI models import error: {e}")
-    # Fallback implementation
+    # Direct implementation when import fails - but log prominently
+    print("[SDK] WARNING: Using direct HTTP implementation instead of ai_models_http")
     def call_ai_model(provider, model, messages, functions=None, temperature=0.7):
         """Fallback AI caller using direct HTTP."""
         import urllib.request
@@ -222,19 +223,18 @@ def extract_move_from_response(response):
             import re
             json_match = re.search(r'\{[^}]+\}', content)
             if json_match:
-                return json.loads(json_match.group())
+                try:
+                    return json.loads(json_match.group())
+                except json.JSONDecodeError as e:
+                    raise ValueError(f"Invalid JSON in AI response: {e}")
             
-            # Fallback parsing
-            if 'reveal' in content.lower():
-                # Try to extract coordinates
-                numbers = re.findall(r'\d+', content)
-                if len(numbers) >= 2:
-                    return {'action': 'reveal', 'row': int(numbers[0]), 'col': int(numbers[1])}
+            # No fallback - raise error if JSON not found
+            raise ValueError(f"Could not parse AI response as JSON: {content[:200]}")
             
-        return None
+        raise ValueError("No valid content in AI response")
     except Exception as e:
         print(f"[SDK] Error extracting move: {e}")
-        return None
+        raise  # Re-raise to make errors visible
 
 def execute_move(game, move):
     """Execute a move on the game."""

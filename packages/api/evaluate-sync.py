@@ -147,18 +147,18 @@ def extract_move_from_response(response):
             # Try to extract JSON from content
             json_match = re.search(r'\{[^}]+\}', content)
             if json_match:
-                return json.loads(json_match.group())
+                try:
+                    return json.loads(json_match.group())
+                except json.JSONDecodeError as e:
+                    raise ValueError(f"Invalid JSON in AI response: {e}")
             
-            # Fallback parsing
-            if 'reveal' in content.lower():
-                numbers = re.findall(r'\d+', content)
-                if len(numbers) >= 2:
-                    return {'action': 'reveal', 'row': int(numbers[0]), 'col': int(numbers[1])}
-        
-        return None
+            # No fallback - raise error if JSON not found
+            raise ValueError(f"Could not parse AI response as JSON: {content[:200]}")
+        else:
+            raise ValueError("No choices in AI response")
     except Exception as e:
         print(f"[SYNC] Error extracting move: {e}")
-        return None
+        raise  # Re-raise to make errors visible
 
 def execute_move(game, move):
     try:

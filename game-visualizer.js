@@ -59,6 +59,28 @@ class MinesweeperVisualizer extends GameVisualizer {
         this.render();
     }
     
+    updateFromBoardArray(boardArray) {
+        if (!boardArray || !Array.isArray(boardArray)) return;
+        
+        for (let r = 0; r < this.rows && r < boardArray.length; r++) {
+            for (let c = 0; c < this.cols && c < boardArray[r].length; c++) {
+                const cell = boardArray[r][c];
+                if (cell === '?') {
+                    this.board[r][c] = { state: 'hidden', value: null, flagged: false };
+                } else if (cell === 'F') {
+                    this.board[r][c] = { state: 'hidden', value: null, flagged: true };
+                } else {
+                    const num = parseInt(cell);
+                    if (!isNaN(num)) {
+                        this.board[r][c] = { state: 'revealed', value: num === -1 ? -1 : num, flagged: false };
+                    }
+                }
+            }
+        }
+        
+        this.render();
+    }
+    
     updateState(gameState) {
         if (!gameState || !gameState.board) return;
         

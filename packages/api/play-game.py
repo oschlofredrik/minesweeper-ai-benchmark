@@ -161,29 +161,20 @@ def get_ai_move(game_state, model='gpt-4o-mini'):
         print(f"[AI] OpenAI response: {ai_text}")
         print(f"[AI] Usage: {result.get('usage', {})}")
         
-        # Parse move
-        parts = ai_text.lower().split()
-        if len(parts) >= 3:
-            action = parts[0]
-            try:
-                row = int(parts[1])
-                col = int(parts[2])
-                return {
-                    'action': action,
-                    'row': row,
-                    'col': col,
-                    'raw_response': ai_text
-                }
-            except:
-                pass
-        
-        # Fallback
+    # Parse move - no fallbacks
+    parts = ai_text.lower().split()
+    if len(parts) >= 3 and parts[0] in ['reveal', 'flag']:
+        action = parts[0]
+        row = int(parts[1])
+        col = int(parts[2])
         return {
-            'action': 'reveal',
-            'row': rows // 2,
-            'col': cols // 2,
+            'action': action,
+            'row': row,
+            'col': col,
             'raw_response': ai_text
         }
+    else:
+        raise ValueError(f"Could not parse AI response: {ai_text}")
 
 
 class handler(BaseHTTPRequestHandler):
