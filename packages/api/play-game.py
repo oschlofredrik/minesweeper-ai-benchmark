@@ -120,10 +120,19 @@ def get_ai_move(game_state, model='gpt-4o-mini'):
             prompt += f"{game_state[r][c]:2} "
         prompt += "\n"
     
-    prompt += "\n? = unrevealed, F = flagged, numbers = adjacent mines\n"
-    prompt += "Choose ONE move. Reply with just: action row col\n"
+    prompt += "\nLegend:\n"
+    prompt += "? = unrevealed cell (can be revealed or flagged)\n"
+    prompt += "F = flagged cell (suspected mine)\n"
+    prompt += "0-8 = revealed cell showing number of adjacent mines\n"
+    prompt += "-1 = revealed mine (game over)\n"
+    prompt += "\nIMPORTANT: You can only reveal cells marked with '?'. Cells showing numbers are already revealed!\n"
+    prompt += "\nChoose ONE move. Reply with just: action row col\n"
     prompt += "Example: reveal 3 5\n"
     prompt += "Example: flag 7 2\n"
+    
+    # Log the prompt for debugging
+    print(f"[AI] Sending prompt ({len(prompt)} chars):")
+    print(f"[AI] First 500 chars: {prompt[:500]}...")
     
     # Call OpenAI
     api_key = os.environ.get('OPENAI_API_KEY', '')
@@ -139,7 +148,7 @@ def get_ai_move(game_state, model='gpt-4o-mini'):
     payload = {
         "model": model,
         "messages": [
-            {"role": "system", "content": "You are an expert Minesweeper player. Give concise move commands."},
+            {"role": "system", "content": "You are an expert Minesweeper player. You must analyze the board carefully and only reveal cells marked with '?'. Cells showing numbers (0-8) are already revealed and cannot be acted upon. When you see a number, it indicates how many mines are adjacent to that cell. Use this information to deduce safe cells. Give concise move commands in the format: action row col"},
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.7,
@@ -232,6 +241,13 @@ class handler(BaseHTTPRequestHandler):
                 })
                 
                 print(f"[GAME] Move {len(moves)}: {ai_move['action']} ({ai_move['row']}, {ai_move['col']}) - {message}")
+                
+                # Debug: Show a sample of the board state
+                if len(moves) % 5 == 0:  # Every 5 moves
+                    board = game.get_visible_state()
+                    print(f"[GAME] Board state sample (first 3 rows):")
+                    for i in range(min(3, len(board))):
+                        print(f"[GAME] Row {i}: {' '.join(board[i][:10])}...")
             
             # Game complete
             duration = time.time() - start_time
