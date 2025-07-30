@@ -278,9 +278,8 @@ module.exports = async function handler(req, res) {
       // Record move
       moves.push({
         move_number: moves.length + 1,
-        action: action,
-        row: row,
-        col: col,
+        action: { action: action },  // Nested to match frontend expectations
+        position: { row: row, col: col },  // Object format for position
         valid: result.valid,
         message: result.message,
         board_state: boardState,
@@ -306,9 +305,9 @@ module.exports = async function handler(req, res) {
       game_id: `game_sdk_${Date.now()}`,
       status: 'completed',
       won: game.won,
-      total_moves: moves.length,
+      totalMoves: moves.length,  // Changed to camelCase for frontend compatibility
       duration: duration,
-      final_board: game.getVisibleState(),
+      finalBoard: game.getVisibleState(),  // Changed to camelCase
       moves: moves,
       api_key_used: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 20) + '...' : 'NO_KEY',
       endpoint_version: 'play-game-sdk-v1'
