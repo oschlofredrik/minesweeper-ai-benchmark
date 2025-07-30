@@ -1,0 +1,10 @@
+{
+  "name": "tilts",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "ai": "^3.5.0",
+    "@ai-sdk/openai": "^1.0.0",
+    "@ai-sdk/anthropic": "^1.0.0"
+  }
+}
