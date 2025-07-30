@@ -242,6 +242,30 @@ function displayGameResults(result) {
                     <span class="event-title">Move ${move.move_number || index + 1}: ${move.action?.action || 'unknown'} ${posStr}</span>
                     <span class="event-meta">${move.valid ? '✓' : '✗'} ${move.message || ''}</span>
                 </div>
+                ${(move.ai_response || move.reasoning) ? `
+                    <details class="move-details" open>
+                        <summary class="text-xs text-muted cursor-pointer">AI Response & Reasoning</summary>
+                        <div class="details-content">
+                            ${move.ai_response ? `
+                                <div class="ai-response-section">
+                                    <strong>AI Response:</strong>
+                                    <div class="ai-response-text">${move.ai_response}</div>
+                                </div>
+                            ` : ''}
+                            ${move.reasoning ? `
+                                <div class="reasoning-section">
+                                    <strong>Reasoning:</strong>
+                                    <div class="reasoning-text">${move.reasoning}</div>
+                                </div>
+                            ` : ''}
+                            ${move.response_time ? `
+                                <div class="text-xs text-muted">
+                                    <strong>Response Time:</strong> ${move.response_time}ms
+                                </div>
+                            ` : ''}
+                        </div>
+                    </details>
+                ` : ''}
             `;
             eventStreamList.appendChild(moveDiv);
             

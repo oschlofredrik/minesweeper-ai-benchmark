@@ -461,7 +461,7 @@ Reply with only: action row col`
       // Get board state AFTER the move
       const boardStateAfterMove = game.getVisibleState();
 
-      // Record move
+      // Record move with AI response details
       moves.push({
         move_number: moves.length + 1,
         action: { action: action },  // Nested to match frontend expectations
@@ -469,7 +469,11 @@ Reply with only: action row col`
         valid: result.valid,
         message: result.message,
         board_state: boardStateAfterMove,  // Use board state AFTER move
-        raw_response: text
+        raw_response: text,
+        ai_response: text,  // For frontend compatibility
+        response_time: moveDuration,
+        reasoning: isReasoningModel && response?.experimental_providerMetadata?.openai?.reasoningTokens ? 
+          `Used ${response.experimental_providerMetadata.openai.reasoningTokens} reasoning tokens` : null
       });
 
       console.log(`[SDK] Move ${moves.length}: ${action} (${row}, ${col}) - ${result.message}`);
