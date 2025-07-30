@@ -154,7 +154,12 @@ function getMinesweeperPrompt(game) {
   prompt += "F = flagged cell (suspected mine)\n";
   prompt += "0-8 = revealed cell showing number of adjacent mines\n";
   prompt += "-1 = revealed mine (game over)\n";
-  prompt += "\nIMPORTANT: You can only reveal cells marked with '?'. Cells showing numbers are already revealed!\n";
+  prompt += "\nIMPORTANT RULES:\n";
+  prompt += "1. You can only reveal cells marked with '?'. Cells showing numbers are already revealed!\n";
+  prompt += "2. When a cell shows a number N, it means exactly N mines are in the 8 adjacent cells.\n";
+  prompt += "3. If a revealed cell with number N has exactly N unrevealed neighbors, ALL of them are mines - flag them!\n";
+  prompt += "4. If a revealed cell with number N already has N flagged neighbors, all other neighbors are safe to reveal.\n";
+  prompt += "5. NEVER reveal a cell that must be a mine based on adjacent numbers!\n";
   prompt += "\nChoose ONE move. Reply with just: action row col\n";
   prompt += "Example: reveal 3 5\n";
   prompt += "Example: flag 7 2\n";
@@ -234,14 +239,14 @@ module.exports = async function handler(req, res) {
         messages: [
           {
             role: 'system',
-            content: 'You are an expert Minesweeper player. You must analyze the board carefully and only reveal cells marked with "?". Cells showing numbers (0-8) are already revealed and cannot be acted upon. When you see a number, it indicates how many mines are adjacent to that cell. Use this information to deduce safe cells. Give concise move commands in the format: action row col'
+            content: 'You are an expert Minesweeper player who NEVER makes risky moves. Before choosing any cell to reveal, check ALL adjacent revealed numbers. If any number indicates that cell MUST be a mine, flag it instead. For example, if a "1" has only one unrevealed neighbor, that neighbor is definitely a mine. Only reveal cells that are PROVEN SAFE by the numbers. When in doubt, look for cells with "0" nearby or cells that satisfy multiple number constraints. Give concise move commands in the format: action row col'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        temperature: 0.7,
+        temperature: 0.2,  // Lower temperature for more careful, deterministic play
         maxTokens: 50
       });
 
