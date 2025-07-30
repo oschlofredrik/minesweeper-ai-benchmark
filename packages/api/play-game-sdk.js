@@ -274,13 +274,18 @@ module.exports = async function handler(req, res) {
       
       const moveStart = Date.now();
       
-      // Use Vercel AI SDK to generate move
-      const { text } = await generateText({
+      // Check if this is a reasoning model (O3/O1 series)
+      const isReasoningModel = model.includes('o3') || model.includes('o1');
+      
+      // Prepare model settings
+      const modelSettings = {
         model: openai(model),
         messages: [
           {
             role: 'system',
-            content: `You are an expert Minesweeper player. CRITICAL RULES:
+            content: isReasoningModel 
+              ? 'You are playing Minesweeper. Analyze the board and choose the safest move. Reply with just: action row col'
+              : `You are an expert Minesweeper player. CRITICAL RULES:
 1. ALWAYS analyze ALL revealed numbers before making a move
 2. If a revealed cell shows "1" and has only ONE unrevealed neighbor, that neighbor IS A MINE - NEVER reveal it!
 3. If a revealed cell shows "2" and has only TWO unrevealed neighbors, both ARE MINES
@@ -295,12 +300,51 @@ Give concise move commands in the format: action row col`
             content: prompt
           }
         ],
-        temperature: 0.2,  // Lower temperature for more careful, deterministic play
         maxTokens: 50
-      });
+      };
+      
+      // Add reasoning-specific parameters
+      if (isReasoningModel) {
+        modelSettings.reasoningEffort = 'medium'; // Can be 'low', 'medium', or 'high'
+        // O3 models don't support temperature
+      } else {
+        modelSettings.temperature = 0.2; // Lower temperature for more careful play
+      }
+      
+      // Use Vercel AI SDK to generate move
+      const response = await generateText(modelSettings);
+      let text = response.text || '';
+      
+      // Log reasoning tokens if available
+      if (isReasoningModel && response.usage?.reasoningTokens) {
+        console.log(`[SDK] Reasoning tokens used: ${response.usage.reasoningTokens}`);
+      }
 
       const moveDuration = Date.now() - moveStart;
       console.log(`[SDK] AI response (${moveDuration}ms): ${text}`);
+      
+      // Check for empty response
+      if (!text || text.trim() === '') {
+        console.error(`[SDK] Empty response from ${model}. This may happen with reasoning models.`);
+        if (isReasoningModel) {
+          console.log(`[SDK] Retrying with simpler prompt...`);
+          // Retry with even simpler prompt for reasoning models
+          const retryResponse = await generateText({
+            model: openai(model),
+            messages: [{
+              role: 'user',
+              content: `${prompt}\n\nChoose your move. Format: action row col`
+            }],
+            reasoningEffort: 'low',
+            maxTokens: 20
+          });
+          text = retryResponse.text || '';
+          console.log(`[SDK] Retry response: ${text}`);
+        }
+        if (!text || text.trim() === '') {
+          throw new Error('Empty response from AI model');
+        }
+      }
       
       // Debug: Log what the AI should be seeing
       if (moves.length === 1) {
