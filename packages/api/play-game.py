@@ -217,7 +217,10 @@ class handler(BaseHTTPRequestHandler):
                 board_state = game.get_visible_state()
                 
                 # Get AI move
+                move_start = time.time()
                 ai_move = get_ai_move(board_state, model)
+                move_duration = time.time() - move_start
+                print(f"[GAME] AI response time: {move_duration:.2f}s")
                 
                 # Execute move
                 if ai_move['action'] == 'flag':
@@ -248,7 +251,9 @@ class handler(BaseHTTPRequestHandler):
                 'total_moves': len(moves),
                 'duration': duration,
                 'final_board': game.get_visible_state(),
-                'moves': moves
+                'moves': moves,
+                'api_key_used': os.environ.get('OPENAI_API_KEY', '')[:20] + '...' if os.environ.get('OPENAI_API_KEY') else 'NO_KEY',
+                'endpoint_version': 'play-game-v2'
             }
             
             self.send_response(200)
