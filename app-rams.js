@@ -156,39 +156,34 @@ function updateModelOptions() {
     
     if (!modelSelect) return;
     
-    // Clear current options
-    modelSelect.innerHTML = '';
+    // Store the original HTML structure if not already stored
+    if (!modelSelect.dataset.originalHtml) {
+        modelSelect.dataset.originalHtml = modelSelect.innerHTML;
+    }
     
-    // Add provider-specific models
-    if (provider === 'openai') {
-        const models = [
-            { value: 'gpt-4o-mini', text: 'GPT-4o Mini' },
-            { value: 'gpt-4o', text: 'GPT-4o' },
-            { value: 'gpt-4-turbo', text: 'GPT-4 Turbo' },
-            { value: 'gpt-4', text: 'GPT-4' },
-            { value: 'gpt-3.5-turbo', text: 'GPT-3.5 Turbo' },
-            { value: 'o3', text: 'O3' },
-            { value: 'o3-mini', text: 'O3 Mini' },
-            { value: 'o1', text: 'O1' },
-            { value: 'o1-mini', text: 'O1 Mini' }
-        ];
-        models.forEach(model => {
-            const option = new Option(model.text, model.value);
-            modelSelect.add(option);
-        });
-    } else if (provider === 'anthropic') {
-        const models = [
-            { value: 'claude-opus-4-20250514', text: 'Claude Opus 4' },
-            { value: 'claude-sonnet-4-20250514', text: 'Claude Sonnet 4' },
-            { value: 'claude-3-7-sonnet-20250219', text: 'Claude 3.7 Sonnet' },
-            { value: 'claude-3-5-sonnet-20241022', text: 'Claude 3.5 Sonnet' },
-            { value: 'claude-3-5-haiku-20241022', text: 'Claude 3.5 Haiku' },
-            { value: 'claude-3-haiku-20240307', text: 'Claude 3 Haiku' }
-        ];
-        models.forEach(model => {
-            const option = new Option(model.text, model.value);
-            modelSelect.add(option);
-        });
+    // Restore original HTML structure
+    modelSelect.innerHTML = modelSelect.dataset.originalHtml;
+    
+    // Remove optgroups that don't match the selected provider
+    const optgroups = modelSelect.querySelectorAll('optgroup');
+    optgroups.forEach(optgroup => {
+        const label = optgroup.label.toLowerCase();
+        if (provider === 'openai') {
+            // Keep only OpenAI-related optgroups
+            if (!label.includes('openai')) {
+                optgroup.remove();
+            }
+        } else if (provider === 'anthropic') {
+            // Keep only Anthropic-related optgroups
+            if (!label.includes('anthropic') && !label.includes('claude')) {
+                optgroup.remove();
+            }
+        }
+    });
+    
+    // Select first available option
+    if (modelSelect.options.length > 0) {
+        modelSelect.selectedIndex = 0;
     }
 }
 
