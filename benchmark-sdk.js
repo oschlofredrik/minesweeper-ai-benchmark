@@ -104,8 +104,8 @@ async function handleStartEvaluationSDK(e) {
         // Create job ID for tracking
         currentJobId = `eval_${Date.now()}`;
         
-        // Use the SDK evaluation endpoint
-        const url = new URL('/api/evaluate-sdk', window.location.origin);
+        // Use the simple game playing endpoint
+        const url = new URL('/api/play-game', window.location.origin);
         
         // SDK endpoint expects use_sdk flag
         const useSDK = true;
@@ -115,10 +115,9 @@ async function handleStartEvaluationSDK(e) {
         localStorage.setItem('USE_VERCEL_SDK', 'true');
         
         const requestBody = {
-            ...evalConfig,
-            game: evalConfig.gameType,  // Convert gameType to game
-            num_games: evalConfig.numGames,  // Convert numGames to num_games
-            use_sdk: useSDK  // Enable SDK evaluation
+            difficulty: evalConfig.difficulty || 'easy',
+            model: evalConfig.model || 'gpt-4o-mini',
+            max_moves: 50
         };
         
         console.log('[SDK] Sending request to:', url.toString());
@@ -161,7 +160,20 @@ async function handleStartEvaluationSDK(e) {
         }
         console.log('[SDK] Response data:', result);
         
-        if (result.evaluation_id) {
+        // Check if this is the synchronous response with complete results
+        if (result.status === 'completed' && result.moves) {
+            console.log('[SDK] Synchronous evaluation completed:', result);
+            
+            // Display the moves
+            displayGameResults(result);
+            
+            if (window.eventStreamUI) {
+                window.eventStreamUI.addEvent({
+                    type: 'success',
+                    message: `Evaluation completed: ${result.totalMoves} moves, Won: ${result.won}`
+                });
+            }
+        } else if (result.evaluation_id) {
             console.log('[SDK] Evaluation created with ID:', result.evaluation_id);
             currentJobId = result.evaluation_id;
             
@@ -186,6 +198,59 @@ async function handleStartEvaluationSDK(e) {
     } catch (error) {
         console.error('Error starting SDK evaluation:', error);
         alert(`Error starting evaluation: ${error.message}`);
+    }
+}
+
+// Display game results from synchronous evaluation
+function displayGameResults(result) {
+    console.log('[SDK] Displaying game results:', result);
+    
+    const eventStreamList = document.getElementById('event-stream-list');
+    if (!eventStreamList) return;
+    
+    // Clear existing content
+    eventStreamList.innerHTML = '';
+    
+    // Add summary
+    const summaryDiv = document.createElement('div');
+    summaryDiv.className = result.won ? 'event-item event-success' : 'event-item event-warning';
+    summaryDiv.innerHTML = `
+        <div class="event-header">
+            <span class="event-title">Game ${result.won ? 'Won' : 'Lost'}</span>
+            <span class="event-meta">${result.totalMoves} moves in ${result.duration?.toFixed(1) || 0}s</span>
+        </div>
+    `;
+    eventStreamList.appendChild(summaryDiv);
+    
+    // Display each move
+    if (result.moves && Array.isArray(result.moves)) {
+        result.moves.forEach((move, index) => {
+            const moveDiv = document.createElement('div');
+            moveDiv.className = move.valid ? 'event-item event-move' : 'event-item event-error';
+            
+            const position = move.position || move.action;
+            const posStr = position ? `(${position.row}, ${position.col})` : '';
+            
+            moveDiv.innerHTML = `
+                <div class="event-header">
+                    <span class="event-title">Move ${move.move_number || index + 1}: ${move.action?.action || 'unknown'} ${posStr}</span>
+                    <span class="event-meta">${move.valid ? '✓' : '✗'} ${move.message || ''}</span>
+                </div>
+            `;
+            eventStreamList.appendChild(moveDiv);
+            
+            // Update game visualizer if board state is available
+            if (window.gameVisualizer && move.board_state) {
+                window.gameVisualizer.updateFromBoardArray(move.board_state);
+                if (position) {
+                    window.gameVisualizer.highlightMove({
+                        row: position.row,
+                        col: position.col,
+                        action: move.action?.action
+                    });
+                }
+            }
+        });
     }
 }
 
