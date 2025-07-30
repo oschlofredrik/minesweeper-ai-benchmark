@@ -277,6 +277,8 @@ module.exports = async function handler(req, res) {
       // Check if this is a reasoning model (O3/O1 series)
       const isReasoningModel = model.includes('o3') || model.includes('o1');
       
+      console.log(`[SDK] Model: ${model}, isReasoningModel: ${isReasoningModel}`);
+      
       // Prepare model settings
       const modelSettings = {
         model: openai(model),
@@ -312,12 +314,27 @@ Give concise move commands in the format: action row col`
       }
       
       // Use Vercel AI SDK to generate move
-      const response = await generateText(modelSettings);
-      let text = response.text || '';
+      let response;
+      let text = '';
+      
+      try {
+        response = await generateText(modelSettings);
+        text = response.text || '';
+      } catch (error) {
+        console.error(`[SDK] Error calling model ${model}:`, error);
+        console.error(`[SDK] Error details:`, error.message);
+        if (error.response) {
+          console.error(`[SDK] API response:`, error.response);
+        }
+        throw error;
+      }
       
       // Log reasoning tokens if available
-      if (isReasoningModel && response.usage?.reasoningTokens) {
-        console.log(`[SDK] Reasoning tokens used: ${response.usage.reasoningTokens}`);
+      if (isReasoningModel && response) {
+        console.log(`[SDK] Response object:`, JSON.stringify(response, null, 2));
+        if (response.usage?.reasoningTokens) {
+          console.log(`[SDK] Reasoning tokens used: ${response.usage.reasoningTokens}`);
+        }
       }
 
       const moveDuration = Date.now() - moveStart;
