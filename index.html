@@ -197,11 +197,27 @@
               <div class="form-group">
                 <label>Model</label>
                 <select id="model-name">
-                  <option value="gpt-4o-mini">GPT-4o Mini</option>
-                  <option value="gpt-4o">GPT-4o</option>
-                  <option value="o3-mini">O3 Mini</option>
-                  <option value="gpt-4">GPT-4</option>
-                  <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                  <optgroup label="OpenAI GPT Models">
+                    <option value="gpt-4o-mini">GPT-4o Mini</option>
+                    <option value="gpt-4o">GPT-4o</option>
+                    <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                    <option value="gpt-4">GPT-4</option>
+                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                  </optgroup>
+                  <optgroup label="OpenAI O-Series (Reasoning)">
+                    <option value="o3">O3</option>
+                    <option value="o3-mini">O3 Mini</option>
+                    <option value="o1">O1</option>
+                    <option value="o1-mini">O1 Mini</option>
+                  </optgroup>
+                  <optgroup label="Anthropic Claude">
+                    <option value="claude-opus-4-20250514">Claude Opus 4</option>
+                    <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
+                    <option value="claude-3-7-sonnet-20250219">Claude 3.7 Sonnet</option>
+                    <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                    <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku</option>
+                    <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
+                  </optgroup>
                 </select>
               </div>
               
@@ -486,16 +502,25 @@ played by this model">Games</span>
               <label>Your AI Model:</label>
               <select id="lobby-model-select" class="form-control">
                 <option value="">Select a model...</option>
-                <optgroup label="OpenAI">
+                <optgroup label="OpenAI GPT Models">
                   <option value="gpt-4o-mini">GPT-4o Mini</option>
                   <option value="gpt-4o">GPT-4o</option>
-                  <option value="o3-mini">O3 Mini</option>
+                  <option value="gpt-4-turbo">GPT-4 Turbo</option>
                   <option value="gpt-4">GPT-4</option>
                   <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
                 </optgroup>
-                <optgroup label="Anthropic">
+                <optgroup label="OpenAI O-Series (Reasoning)">
+                  <option value="o3">O3</option>
+                  <option value="o3-mini">O3 Mini</option>
+                  <option value="o1">O1</option>
+                  <option value="o1-mini">O1 Mini</option>
+                </optgroup>
+                <optgroup label="Anthropic Claude">
+                  <option value="claude-opus-4-20250514">Claude Opus 4</option>
+                  <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
+                  <option value="claude-3-7-sonnet-20250219">Claude 3.7 Sonnet</option>
                   <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
-                  <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+                  <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku</option>
                   <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
                 </optgroup>
               </select>
