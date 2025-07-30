@@ -36,6 +36,11 @@ class SimpleMinesweeper {
       this.mines.add(`${r},${c}`);
       this.board[r][c] = -1;
     }
+    
+    // Debug: Log mine at (3,0) if it exists
+    if (this.mines.has('3,0')) {
+      console.log('[DEBUG] Mine placed at (3,0) during board generation');
+    }
   }
 
   _calculateNumbers() {
@@ -142,18 +147,38 @@ function getMinesweeperPrompt(game) {
   
   // Add board with row numbers
   for (let r = 0; r < rows; r++) {
-    prompt += r.toString().padStart(2, ' ') + " ";
+    prompt += r.toString().padStart(2, ' ') + " |";
     for (let c = 0; c < cols; c++) {
-      prompt += state[r][c].padStart(2, ' ') + " ";
+      const cell = state[r][c];
+      // Make the board more readable with consistent spacing and clear symbols
+      if (cell === '?') {
+        prompt += " ? ";  // Unrevealed
+      } else if (cell === 'F') {
+        prompt += " F ";  // Flagged
+      } else if (cell === '0') {
+        prompt += " . ";  // Empty (0 mines nearby)
+      } else if (cell === '-1') {
+        prompt += " * ";  // Mine (game over)
+      } else {
+        prompt += ` ${cell} `;  // Number 1-8
+      }
     }
-    prompt += "\n";
+    prompt += "|\n";
   }
+  
+  // Add bottom border
+  prompt += "   +";
+  for (let c = 0; c < cols; c++) {
+    prompt += "---";
+  }
+  prompt += "+\n";
   
   prompt += "\nLegend:\n";
   prompt += "? = unrevealed cell (can be revealed or flagged)\n";
   prompt += "F = flagged cell (suspected mine)\n";
-  prompt += "0-8 = revealed cell showing number of adjacent mines\n";
-  prompt += "-1 = revealed mine (game over)\n";
+  prompt += ". = empty cell (0 mines nearby)\n";
+  prompt += "1-8 = number of mines in adjacent cells\n";
+  prompt += "* = revealed mine (game over)\n";
   prompt += "\nIMPORTANT RULES:\n";
   prompt += "1. You can only reveal cells marked with '?'. Cells showing numbers are already revealed!\n";
   prompt += "2. When a cell shows a number N, it means exactly N mines are in the 8 adjacent cells.\n";
@@ -252,6 +277,15 @@ module.exports = async function handler(req, res) {
 
       const moveDuration = Date.now() - moveStart;
       console.log(`[SDK] AI response (${moveDuration}ms): ${text}`);
+      
+      // Debug: Log what the AI should be seeing
+      if (moves.length === 1) {
+        // After first move, log critical cells
+        const visibleBoard = game.getVisibleState();
+        console.log(`[SDK] Critical check - Cell at (2,0): ${visibleBoard[2][0]}`);
+        console.log(`[SDK] Critical check - Cell at (3,0): ${visibleBoard[3][0]}`);
+        console.log(`[SDK] AI is about to choose: ${text}`);
+      }
 
       // Parse move - expecting format like "reveal 3 5"
       const parts = text.toLowerCase().trim().split(/\s+/);
