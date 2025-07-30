@@ -312,13 +312,22 @@ Reply with only: action row col`
             role: 'user',
             content: prompt
           }
-        ],
-        maxTokens: 50
+        ]
       };
+      
+      // Only set maxTokens for non-reasoning models
+      if (!isReasoningModel) {
+        modelSettings.maxTokens = 50;
+      }
       
       // Add reasoning-specific parameters
       if (isReasoningModel) {
-        modelSettings.reasoningEffort = 'medium'; // Can be 'low', 'medium', or 'high'
+        // O3 models use providerOptions for reasoning effort
+        modelSettings.providerOptions = {
+          openai: {
+            reasoningEffort: 'medium' // Can be 'low', 'medium', or 'high'
+          }
+        };
         // O3 models don't support temperature
       } else {
         modelSettings.temperature = 0.2; // Lower temperature for more careful play
@@ -363,8 +372,12 @@ Reply with only: action row col`
               role: 'user',
               content: `${prompt}\n\nChoose your move. Format: action row col`
             }],
-            reasoningEffort: 'low',
-            maxTokens: 20
+            providerOptions: {
+              openai: {
+                reasoningEffort: 'low'
+              }
+            }
+            // No maxTokens limit for reasoning models
           });
           text = retryResponse.text || '';
           console.log(`[SDK] Retry response: ${text}`);

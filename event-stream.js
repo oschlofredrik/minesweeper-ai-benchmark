@@ -281,20 +281,49 @@ class EventStreamUI {
         const event = document.createElement('div');
         event.className = `event-item move ${data.success ? 'success' : 'failed'}`;
         
+        // Enhanced details including AI response and reasoning
         let detailsHtml = '';
         if (data.move_details) {
             detailsHtml = `
-                <details class="move-details">
-                    <summary class="text-xs text-muted cursor-pointer">View AI Response Details</summary>
-                    <div class="details-content text-xs">
-                        <div><strong>Intended:</strong> ${data.move_details.intended_action}</div>
-                        <div><strong>Position:</strong> Row ${data.move_details.position.row}, Col ${data.move_details.position.col}</div>
-                        ${data.move_details.function_call ? 
-                            `<div><strong>Function Call:</strong> <pre class="text-xs">${JSON.stringify(data.move_details.function_call, null, 2)}</pre></div>` : 
-                            `<div><strong>Raw Response:</strong> <pre class="text-xs">${data.move_details.raw_response_excerpt}</pre></div>`
-                        }
+                <details class="move-details" open>
+                    <summary class="text-xs text-muted cursor-pointer">AI Response & Reasoning</summary>
+                    <div class="details-content">
+                        ${data.ai_response ? `
+                            <div class="ai-response-section">
+                                <strong>AI Response:</strong>
+                                <div class="ai-response-text">${this.escapeHtml(data.ai_response)}</div>
+                            </div>
+                        ` : ''}
+                        ${data.reasoning ? `
+                            <div class="reasoning-section">
+                                <strong>Reasoning:</strong>
+                                <div class="reasoning-text">${this.formatReasoning(data.reasoning)}</div>
+                            </div>
+                        ` : ''}
+                        <div class="move-metadata text-xs text-muted">
+                            <div><strong>Action:</strong> ${data.move_details.intended_action || data.action}</div>
+                            <div><strong>Position:</strong> Row ${data.move_details.position?.row ?? data.row}, Col ${data.move_details.position?.col ?? data.col}</div>
+                            ${data.response_time ? `<div><strong>Response Time:</strong> ${data.response_time}ms</div>` : ''}
+                        </div>
                     </div>
                 </details>
+            `;
+        } else if (data.ai_response || data.reasoning) {
+            // Fallback if move_details not present but we have response/reasoning
+            detailsHtml = `
+                <div class="move-details-inline">
+                    ${data.ai_response ? `
+                        <div class="ai-response-section">
+                            <strong>AI:</strong> <span class="ai-response-text">${this.escapeHtml(data.ai_response)}</span>
+                        </div>
+                    ` : ''}
+                    ${data.reasoning ? `
+                        <div class="reasoning-section">
+                            <strong>Reasoning:</strong>
+                            <div class="reasoning-text">${this.formatReasoning(data.reasoning)}</div>
+                        </div>
+                    ` : ''}
+                </div>
             `;
         }
         
