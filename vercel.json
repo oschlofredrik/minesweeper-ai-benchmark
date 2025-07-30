@@ -18,6 +18,10 @@
   },
   "rewrites": [
     {
+      "source": "/api/play-game",
+      "destination": "/api/play-game-sdk.js"
+    },
+    {
       "source": "/api/leaderboard",
       "destination": "/api/leaderboard_optimized.py"
     },
@@ -43,7 +47,7 @@
     },
     {
       "source": "/api/evaluate-sdk",
-      "destination": "/api/evaluate-sdk.py"
+      "destination": "/api/evaluate-ai-sdk.js"
     },
     {
       "source": "/api/evaluation/(.*)/status",
