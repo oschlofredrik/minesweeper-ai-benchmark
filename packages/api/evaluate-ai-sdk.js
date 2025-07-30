@@ -1,5 +1,5 @@
-import { openai } from '@ai-sdk/openai';
-import { generateText } from 'ai';
+const { openai } = require('@ai-sdk/openai');
+const { generateText } = require('ai');
 
 // Simple Minesweeper game logic
 class SimpleMinesweeper {
@@ -153,7 +153,7 @@ function getMinesweeperPrompt(game) {
   return prompt;
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');

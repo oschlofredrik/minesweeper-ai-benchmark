@@ -2,9 +2,9 @@
   "name": "tilts",
   "version": "1.0.0",
   "private": true,
+  "type": "commonjs",
   "dependencies": {
-    "ai": "^3.0.0",
-    "@ai-sdk/openai": "^0.0.1",
-    "@ai-sdk/anthropic": "^0.0.1"
+    "ai": "^3.4.33",
+    "@ai-sdk/openai": "^1.0.5"
   }
 }
