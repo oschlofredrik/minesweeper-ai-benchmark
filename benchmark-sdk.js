@@ -222,6 +222,12 @@ function displayGameResults(result) {
     `;
     eventStreamList.appendChild(summaryDiv);
     
+    // Display initial board state if available
+    if (gameVisualizer && result.initialBoard) {
+        console.log('[SDK] Setting initial board state');
+        gameVisualizer.updateFromBoardArray(result.initialBoard);
+    }
+    
     // Display each move
     if (result.moves && Array.isArray(result.moves)) {
         result.moves.forEach((move, index) => {

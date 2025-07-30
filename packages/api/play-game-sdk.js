@@ -207,16 +207,23 @@ module.exports = async function handler(req, res) {
     
     const moves = [];
     const startTime = Date.now();
+    
+    // Capture initial board state
+    const initialBoardState = game.getVisibleState();
+    console.log(`[SDK] Initial board state captured`);
 
     // Play the game
     while (!game.gameOver && moves.length < max_moves) {
-      const boardState = game.getVisibleState();
+      const boardStateBeforeMove = game.getVisibleState();
       const prompt = getMinesweeperPrompt(game);
       
       // Log prompt for debugging
       console.log(`[SDK] Move ${moves.length + 1} - Prompt length: ${prompt.length} chars`);
       if (moves.length === 0) {
         console.log(`[SDK] First prompt preview:\n${prompt.substring(0, 300)}...`);
+      } else if (moves.length === 1) {
+        // Log second prompt to see if board updated
+        console.log(`[SDK] Second prompt preview (should show revealed cells):\n${prompt.substring(0, 300)}...`);
       }
       
       const moveStart = Date.now();
@@ -275,6 +282,9 @@ module.exports = async function handler(req, res) {
         ? game.flag(row, col)
         : game.reveal(row, col);
 
+      // Get board state AFTER the move
+      const boardStateAfterMove = game.getVisibleState();
+
       // Record move
       moves.push({
         move_number: moves.length + 1,
@@ -282,7 +292,7 @@ module.exports = async function handler(req, res) {
         position: { row: row, col: col },  // Object format for position
         valid: result.valid,
         message: result.message,
-        board_state: boardState,
+        board_state: boardStateAfterMove,  // Use board state AFTER move
         raw_response: text
       });
 
@@ -307,6 +317,7 @@ module.exports = async function handler(req, res) {
       won: game.won,
       totalMoves: moves.length,  // Changed to camelCase for frontend compatibility
       duration: duration,
+      initialBoard: initialBoardState,  // Add initial board state
       finalBoard: game.getVisibleState(),  // Changed to camelCase
       moves: moves,
       api_key_used: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 20) + '...' : 'NO_KEY',
