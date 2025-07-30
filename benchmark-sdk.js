@@ -240,15 +240,18 @@ function displayGameResults(result) {
             eventStreamList.appendChild(moveDiv);
             
             // Update game visualizer if board state is available
-            if (window.gameVisualizer && move.board_state) {
-                window.gameVisualizer.updateFromBoardArray(move.board_state);
+            if (gameVisualizer && move.board_state) {
+                console.log('[SDK] Updating visualizer with board state');
+                gameVisualizer.updateFromBoardArray(move.board_state);
                 if (position) {
-                    window.gameVisualizer.highlightMove({
+                    gameVisualizer.highlightMove({
                         row: position.row,
                         col: position.col,
                         action: move.action?.action
                     });
                 }
+            } else {
+                console.log('[SDK] No visualizer or board_state:', !!gameVisualizer, !!move.board_state);
             }
         });
     }

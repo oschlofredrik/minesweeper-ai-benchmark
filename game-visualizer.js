@@ -60,7 +60,15 @@ class MinesweeperVisualizer extends GameVisualizer {
     }
     
     updateFromBoardArray(boardArray) {
-        if (!boardArray || !Array.isArray(boardArray)) return;
+        if (!boardArray || !Array.isArray(boardArray)) {
+            console.log('[Visualizer] Invalid board array:', boardArray);
+            return;
+        }
+        
+        console.log('[Visualizer] Updating board from array, size:', boardArray.length, 'x', boardArray[0]?.length);
+        
+        let revealedCount = 0;
+        let flaggedCount = 0;
         
         for (let r = 0; r < this.rows && r < boardArray.length; r++) {
             for (let c = 0; c < this.cols && c < boardArray[r].length; c++) {
@@ -69,15 +77,18 @@ class MinesweeperVisualizer extends GameVisualizer {
                     this.board[r][c] = { state: 'hidden', value: null, flagged: false };
                 } else if (cell === 'F') {
                     this.board[r][c] = { state: 'hidden', value: null, flagged: true };
+                    flaggedCount++;
                 } else {
                     const num = parseInt(cell);
                     if (!isNaN(num)) {
                         this.board[r][c] = { state: 'revealed', value: num === -1 ? -1 : num, flagged: false };
+                        revealedCount++;
                     }
                 }
             }
         }
         
+        console.log('[Visualizer] Board updated - Revealed:', revealedCount, 'Flagged:', flaggedCount);
         this.render();
     }
     
